@@ -1,0 +1,134 @@
+const express = require('express');
+const router = express.Router();
+const aiService = require('../services/ai.service');
+const { verifyToken } = require('./auth.routes');
+const { db } = require('../config/firebase.config');
+
+// POST /api/ai/similar-problem
+// Generate a new AI problem based on an existing problem ID
+router.post('/similar-problem', verifyToken, async (req, res) => {
+  try {
+    const { problemId } = req.body;
+
+    if (!problemId) {
+      return res.status(400).json({ error: 'Problem ID is required' });
+    }
+
+    // Fetch the original problem details
+    const problemDoc = await db.collection('revisions').doc(problemId).get();
+    
+    if (!problemDoc.exists) {
+      return res.status(404).json({ error: 'Original problem not found' });
+    }
+
+    const problemData = problemDoc.data();
+    
+    // Generate similar problem
+    const aiProblem = await aiService.generateSimilarProblem(
+      problemData.problemTitle,
+      problemData.difficulty || 'Medium',
+      problemData.topics || [],
+      problemData.patterns || []
+    );
+
+    res.json(aiProblem);
+
+  } catch (error) {
+    console.error('Error generating similar problem:', error);
+    res.status(500).json({ error: 'Failed to generate similar problem', details: error.message });
+  }
+});
+
+// POST /api/ai/custom-problem
+// Generate a new AI problem based on pattern/topic/difficulty
+router.post('/custom-problem', verifyToken, async (req, res) => {
+  try {
+    const { pattern, topic, difficulty } = req.body;
+
+    if (!difficulty) {
+      return res.status(400).json({ error: 'Difficulty is required' });
+    }
+
+    const aiProblem = await aiService.generateProblemFromCriteria(
+      pattern,
+      topic,
+      difficulty
+    );
+
+    res.json(aiProblem);
+
+  } catch (error) {
+    console.error('Error generating custom problem:', error);
+    res.status(500).json({ error: 'Failed to generate custom problem', details: error.message });
+  }
+});
+
+// POST /api/ai/company-problem
+// Generate a new AI problem based on company focus
+router.post('/company-problem', verifyToken, async (req, res) => {
+  try {
+    const { company, topic, pattern, difficulty } = req.body;
+
+    if (!company || !difficulty) {
+      return res.status(400).json({ error: 'Company and Difficulty are required' });
+    }
+
+    const aiProblem = await aiService.generateCompanyProblem(
+      company,
+      topic,
+      pattern,
+      difficulty
+    );
+
+    res.json(aiProblem);
+
+  } catch (error) {
+    console.error('Error generating company problem:', error);
+    res.status(500).json({ error: 'Failed to generate company problem', details: error.message });
+  }
+});
+
+// POST /api/ai/problem-help
+// Generate hints and solutions for a problem
+router.post('/problem-help', verifyToken, async (req, res) => {
+  try {
+    const { title, description, difficulty } = req.body;
+
+    if (!title || !description) {
+      return res.status(400).json({ error: 'Title and description are required' });
+    }
+
+    const helpData = await aiService.generateProblemHelp(
+      title,
+      description,
+      difficulty || 'Medium'
+    );
+
+    res.json(helpData);
+
+  } catch (error) {
+    console.error('Error generating problem help:', error);
+    res.status(500).json({ error: 'Failed to generate problem help', details: error.message });
+  }
+});
+
+// POST /api/ai/problem-description
+// Generate problem description from title
+router.post('/problem-description', verifyToken, async (req, res) => {
+  try {
+    const { title } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+
+    const problemData = await aiService.generateProblemDescription(title);
+    res.json(problemData); // Return full object with title, description, examples, constraints
+
+  } catch (error) {
+    console.error('Error generating problem description:', error);
+    res.status(500).json({ error: 'Failed to generate problem description', details: error.message });
+  }
+});
+
+module.exports = router;

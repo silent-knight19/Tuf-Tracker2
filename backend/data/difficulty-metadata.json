@@ -1,0 +1,54 @@
+{
+    "difficulties": {
+        "Easy": {
+            "level": 1,
+            "description": "Basic understanding of data structures and algorithms. Typically takes 15-30 minutes to solve.",
+            "color": "#00b8a3",
+            "esperienza": "Beginner-friendly, focuses on fundamentals.",
+            "examples": [
+                "Two Sum",
+                "Valid Parentheses",
+                "Merge Two Sorted Lists",
+                "Climbing Stairs",
+                "Move Zeroes"
+            ]
+        },
+        "Medium": {
+            "level": 2,
+            "description": "Requires solid understanding and application of algorithms. Typically takes 30-60 minutes to solve.",
+            "color": "#ffc01e",
+            "esperienza": "Intermediate level, requires problem-solving skills.",
+            "examples": [
+                "3Sum",
+                "Group Anagrams",
+                "Permutations",
+                "Word Break",
+                "Decode String"
+            ]
+        },
+        "Hard": {
+            "level": 3,
+            "description": "Complex problems requiring advanced techniques and optimizations. Can take 60+ minutes to solve.",
+            "color": "#ef4743",
+            "esperienza": "Advanced level, requires deep algorithmic knowledge.",
+            "examples": [
+                "Median of Two Sorted Arrays",
+                "Trapping Rain Water",
+                "Word Ladder",
+                "Serialize and Deserialize Binary Tree",
+                "Burst Balloons"
+            ]
+        }
+    },
+    "scoring": {
+        "Easy": 1,
+        "Medium": 3,
+        "Hard": 5
+    },
+    "estimatedTime": {
+        "Easy": "15-30 minutes",
+        "Medium": "30-60 minutes",
+        "Hard": "60+ minutes"
+    },
+    "lastUpdated": "2024-12-03"
+}
