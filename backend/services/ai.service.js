@@ -418,14 +418,17 @@ Instructions:
 5. List constraints appropriate for the ${difficulty} difficulty.
 6. Ensure the problem is NOT a direct copy of a famous LeetCode problem, but a variation or a new application of the pattern.
 
-Return ONLY a valid JSON object with this structure:
+CRITICAL: You MUST return ONLY valid JSON. No extra text before or after. No markdown formatting.
+
+Return this exact structure:
 {
   "title": "New Problem Title",
   "difficulty": "${difficulty}",
   "description": "Full problem description in markdown format. Use code blocks for examples if needed.",
+  "functionSignature": "public int solve(int[] nums)",
   "examples": [
     {
-      "input": "x = [1, 2, 3]",
+      "input": "nums = [1, 2, 3]",
       "output": "6",
       "explanation": "Explanation here"
     }
@@ -436,21 +439,52 @@ Return ONLY a valid JSON object with this structure:
   ],
   "hints": ["Hint 1", "Hint 2"]
 }
+
+CRITICAL RULES:
+1. Include "functionSignature" field with the EXACT Java method signature.
+2. Examples should show inputs in the format: "paramName = value".
+3. ONLY return valid JSON.
 `;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 
+      // Log the raw response for debugging
+      console.log('Raw AI response length:', text.length);
+      console.log('Raw AI response preview:', text.substring(0, 200));
+
       let cleanedText = text.trim();
       if (cleanedText.startsWith('```json')) cleanedText = cleanedText.slice(7);
       if (cleanedText.startsWith('```')) cleanedText = cleanedText.slice(3);
       if (cleanedText.endsWith('```')) cleanedText = cleanedText.slice(0, -3);
+      cleanedText = cleanedText.trim();
 
-      return JSON.parse(cleanedText.trim());
+      // Additional validation
+      if (!cleanedText || cleanedText.length < 10) {
+        console.error('AI response too short or empty');
+        throw new Error('AI response was empty or too short');
+      }
+
+      try {
+        const parsed = JSON.parse(cleanedText);
+        
+        // Validate the structure
+        if (!parsed.title || !parsed.description || !parsed.examples) {
+          console.error('AI response missing required fields:', Object.keys(parsed));
+          throw new Error('AI response missing required fields');
+        }
+        
+        return parsed;
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError.message);
+        console.error('Cleaned text that failed to parse:', cleanedText.substring(0, 500));
+        throw parseError;
+      }
+
     } catch (error) {
       console.error('Error generating problem from criteria:', error);
-      throw new Error('Failed to generate problem from criteria');
+      throw new Error('Failed to generate problem from criteria: ' + error.message);
     }
   }
   // Generate hints and solutions for a problem
@@ -505,27 +539,33 @@ JSON Structure:
       await rateLimiter.checkAndWait();
 
       const prompt = `
-You are an expert DSA problem curator.
-Generate the standard problem for: "${title}".
+Generate a detailed problem description for the coding problem: "${title}"
 
-Return ONLY a valid JSON object with this exact structure:
+Return ONLY a valid JSON object with this structure:
 {
-  "title": "${title}",
-  "description": "Clear problem statement in markdown format",
+  "description": "Detailed problem statement",
+  "functionSignature": "public int[] twoSum(int[] nums, int target)",
   "examples": [
     {
-      "input": "example input",
-      "output": "example output",
-      "explanation": "why this output"
+      "input": "nums = [2,7,11,15], target = 9",
+      "output": "[0,1]",
+      "explanation": "nums[0] + nums[1] = 2 + 7 = 9"
     }
   ],
   "constraints": [
-    "constraint 1",
-    "constraint 2"
+    "2 <= nums.length <= 104",
+    "-109 <= nums[i] <= 109"
   ]
 }
 
-Do NOT include solution or hints. Just the problem description, examples, and constraints.
+CRITICAL RULES:
+1. Include "functionSignature" field with the EXACT Java method signature (e.g., "public int[] twoSum(int[] nums, int target)")
+2. Make sure the function signature matches common LeetCode conventions
+3. Examples should show inputs in the format: "paramName = value, paramName2 = value2"
+4. ONLY return valid JSON - no extra text, no markdown, no code blocks
+5. Ensure all fields are present
+
+Focus on creating a clear, LeetCode-style problem with proper Java signature.
 `;
 
       const result = await model.generateContent(prompt);
@@ -600,6 +640,77 @@ Return ONLY a valid JSON object with this structure:
     } catch (error) {
       console.error('Error generating company problem:', error);
       throw new Error('Failed to generate company problem');
+    }
+  }
+
+  // Generate edge cases for a problem
+  async generateEdgeCases(title, description, examples = [], constraints = [], functionSignature = null) {
+    try {
+      await rateLimiter.checkAndWait();
+
+      // Simplified prompt but comprehensive edge cases
+      const prompt = `Generate 5-8 comprehensive edge test cases for: "${title}"
+
+${functionSignature ? `Function signature: ${functionSignature}` : ''}
+
+Return ONLY valid JSON (no other text):
+[
+  {
+    "name": "descriptive test name",
+    "input": [arg1, arg2],
+    "expectedOutput": "expected output",
+    "explanation": "why this edge case is important"
+  }
+]
+
+Focus on:
+- Boundary conditions (min/max values, empty inputs)
+- Special cases (zero, negative, null)
+- Large inputs (performance testing)
+- Corner cases that break naive solutions
+
+Rules:
+- Input MUST be a JSON array with all function arguments IN ORDER
+- Keep explanations under 60 characters
+- Avoid special characters in strings (use simple quotes)
+- No trailing commas
+- Ensure valid JSON syntax
+`;
+
+      console.log('Generating edge cases for:', title);
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      console.log('Raw AI response (first 500 chars):', text.substring(0, 500));
+      console.log('Raw AI response (last 200 chars):', text.substring(Math.max(0, text.length - 200)));
+
+      let cleanedText = text.trim();
+      
+      // Remove markdown code blocks
+      if (cleanedText.startsWith('```json')) cleanedText = cleanedText.slice(7);
+      if (cleanedText.startsWith('```')) cleanedText = cleanedText.slice(3);
+      if (cleanedText.endsWith('```')) cleanedText = cleanedText.slice(0, -3);
+      cleanedText = cleanedText.trim();
+
+      // Try to find JSON array in the response
+      const jsonStart = cleanedText.indexOf('[');
+      const jsonEnd = cleanedText.lastIndexOf(']');
+      
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+        cleanedText = cleanedText.substring(jsonStart, jsonEnd + 1);
+      }
+
+      console.log('Cleaned text to parse:', cleanedText.substring(0, 300));
+
+      const parsed = JSON.parse(cleanedText);
+      console.log('Successfully parsed', parsed.length, 'edge cases');
+      return parsed;
+      
+    } catch (error) {
+      console.error('Error generating edge cases:', error.message);
+      console.error('Stack:', error.stack);
+      throw new Error('Failed to generate edge cases');
     }
   }
 }

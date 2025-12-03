@@ -131,4 +131,29 @@ router.post('/problem-description', verifyToken, async (req, res) => {
   }
 });
 
+// POST /api/ai/edge-cases
+// Generate edge cases for a problem
+router.post('/edge-cases', verifyToken, async (req, res) => { // Changed to verifyToken to match existing import
+  try {
+    const { title, description, examples, constraints, functionSignature } = req.body;
+    
+    if (!title) {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+    
+    const edgeCases = await aiService.generateEdgeCases(
+      title, 
+      description, 
+      examples || [], 
+      constraints || [],
+      functionSignature
+    );
+    
+    res.json(edgeCases);
+  } catch (error) {
+    console.error('Error generating edge cases:', error);
+    res.status(500).json({ error: error.message || 'Failed to generate edge cases' });
+  }
+});
+
 module.exports = router;
