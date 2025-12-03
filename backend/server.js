@@ -12,6 +12,7 @@ const analyticsRoutes = require('./routes/analytics.routes');
 const companyRoutes = require('./routes/company.routes');
 const revisionRoutes = require('./routes/revision.routes');
 const aiRoutes = require('./routes/ai.routes');
+const codeRunnerRoutes = require('./routes/codeRunner.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -51,6 +52,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/company', companyRoutes);
 app.use('/api/revisions', revisionRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/run', codeRunnerRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
