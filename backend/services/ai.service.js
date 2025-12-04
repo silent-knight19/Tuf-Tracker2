@@ -239,11 +239,11 @@ CRITICAL: Return a valid JSON object, but the CONTENT inside must be clean and n
 
 ABSOLUTE RULES FOR CONTENT FORMATTING:
 
-1. NO JSON-style escaping inside the fields - write naturally
-2. Use normal newlines in text - the JSON parser will handle them
-3. NO backslash n (\\n) - just write naturally with line breaks
+1. You MUST use proper JSON escaping for special characters.
+2. You MUST use \n for newlines within strings.
+3. Do NOT use actual line breaks inside string values, as this invalidates JSON.
 4. NO markdown backticks anywhere in the code - just plain Java
-5. NO markdown formatting (no **, ###, \`, etc.) in explanations
+5. NO markdown formatting (no **, ###, `, etc.) in explanations
 6. Write explanations like you're talking to a friend - natural paragraphs
 7. Code must be clean Java with proper indentation using spaces
 8. Use "null" for better approach if not applicable
@@ -257,8 +257,7 @@ CODE FORMATTING (CRITICAL):
 
 EXPLANATION STYLE:
 - Write in conversational ChatGPT tone
-- Use natural paragraphs and line breaks
-- No special characters or escaping
+- Use natural paragraphs and line breaks (escaped as \n)
 - Be friendly and clear
 - Avoid technical jargon unless necessary
 
