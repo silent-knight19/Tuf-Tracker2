@@ -72,36 +72,30 @@ class ProblemAnalyzerService {
   async analyzeProblem(title, platform = 'LeetCode', url = '') {
     await this.loadPreloadedData();
 
-    const cacheKey = this.generateProblemKey(title, platform);
+    // Use normalized keys for Firestore compatibility
+    const cacheKey = `analysis_${cache.normalizeKey(platform)}_${cache.normalizeKey(title)}`;
 
-    // 1. Check memory cache first
-    const cachedResult = cache.get(cacheKey);
-    if (cachedResult) {
-      console.log(`💰 Cache hit for: ${title}`);
-      return cachedResult;
-    }
+    return await cache.getCachedOrGenerate(
+      'problem_analysis_cache',
+      cacheKey,
+      async () => {
+        // 1. Check preloaded data
+        const preloadedResult = this.findInPreloadedData(title);
+        if (preloadedResult) {
+          console.log(`📚 Found in preloaded data: ${title}`);
+          return preloadedResult;
+        }
 
-    // 2. Check preloaded data
-    const preloadedResult = this.findInPreloadedData(title);
-    if (preloadedResult) {
-      console.log(`📚 Found in preloaded data: ${title}`);
-      cache.set(cacheKey, preloadedResult);
-      return preloadedResult;
-    }
-
-    // 3. Fallback to AI analysis
-    console.log(`🤖 Using AI to analyze: ${title}`);
-    const aiResult = await aiService.analyzeProblem(title, platform, url);
-    
-    const result = {
-      ...aiResult,
-      source: 'ai'
-    };
-
-    // Cache the AI result
-    cache.set(cacheKey, result);
-
-    return result;
+        // 2. Fallback to AI analysis
+        console.log(`🤖 Using AI to analyze: ${title}`);
+        const aiResult = await aiService.analyzeProblem(title, platform, url);
+        
+        return {
+          ...aiResult,
+          source: 'ai'
+        };
+      }
+    );
   }
 
   // Get all available topics and patterns
