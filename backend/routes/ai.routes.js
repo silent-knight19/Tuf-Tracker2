@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const aiService = require('../services/ai.service');
+const cacheService = require('../services/cache.service');
 const { verifyToken } = require('./auth.routes');
 const { db } = require('../config/firebase.config');
 
@@ -98,10 +99,18 @@ router.post('/problem-help', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'Title and description are required' });
     }
 
-    const helpData = await aiService.generateProblemHelp(
-      title,
-      description,
-      difficulty || 'Medium'
+    const cacheKey = `help_${cacheService.normalizeKey(title)}`;
+
+    const helpData = await cacheService.getCachedOrGenerate(
+      'ai_cache_help',
+      cacheKey,
+      async () => {
+        return await aiService.generateProblemHelp(
+          title,
+          description,
+          difficulty || 'Medium'
+        );
+      }
     );
 
     res.json(helpData);
@@ -122,7 +131,15 @@ router.post('/problem-description', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'Title is required' });
     }
 
-    const problemData = await aiService.generateProblemDescription(title);
+    const cacheKey = `desc_${cacheService.normalizeKey(title)}`;
+
+    const problemData = await cacheService.getCachedOrGenerate(
+      'ai_cache_descriptions',
+      cacheKey,
+      async () => {
+        return await aiService.generateProblemDescription(title);
+      }
+    );
     res.json(problemData); // Return full object with title, description, examples, constraints
 
   } catch (error) {
@@ -141,12 +158,20 @@ router.post('/edge-cases', verifyToken, async (req, res) => { // Changed to veri
       return res.status(400).json({ error: 'Title is required' });
     }
     
-    const edgeCases = await aiService.generateEdgeCases(
-      title, 
-      description, 
-      examples || [], 
-      constraints || [],
-      functionSignature
+    const cacheKey = `edgecases_${cacheService.normalizeKey(title)}`;
+
+    const edgeCases = await cacheService.getCachedOrGenerate(
+      'ai_cache_edgecases',
+      cacheKey,
+      async () => {
+        return await aiService.generateEdgeCases(
+          title, 
+          description, 
+          examples || [], 
+          constraints || [],
+          functionSignature
+        );
+      }
     );
     
     res.json(edgeCases);

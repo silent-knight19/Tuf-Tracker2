@@ -6,6 +6,7 @@ const problemAnalyzer = require('../services/problem-analyzer.service');
 const revisionService = require('../services/revision.service');
 const spacedRepetitionService = require('../services/spaced-repetition.service');
 const aiService = require('../services/ai.service');
+const cacheService = require('../services/cache.service');
 
 // GET /api/problems - Get all problems for a user
 router.get('/', verifyToken, async (req, res) => {
@@ -291,13 +292,21 @@ router.post('/:id/generate-notes', verifyToken, async (req, res) => {
     }
 
     const aiService = require('../services/ai.service');
-    const notes = await aiService.generateStudyNotes(
-      problem.title,
-      problem.platform,
-      problem.platformUrl,
-      problem.difficulty,
-      problem.topics,
-      problem.patterns
+    const cacheKey = `notes_${cacheService.normalizeKey(problem.title)}`;
+    
+    const notes = await cacheService.getCachedOrGenerate(
+      'ai_cache_notes',
+      cacheKey,
+      async () => {
+        return await aiService.generateStudyNotes(
+          problem.title,
+          problem.platform,
+          problem.platformUrl,
+          problem.difficulty,
+          problem.topics,
+          problem.patterns
+        );
+      }
     );
 
     res.json({ notes });
@@ -317,13 +326,21 @@ router.post('/generate-notes-preview', async (req, res) => {
     }
 
     const aiService = require('../services/ai.service');
-    const notes = await aiService.generateStudyNotes(
-      title,
-      platform || 'LeetCode',
-      platformUrl || '',
-      difficulty || 'Medium',
-      topics || [],
-      patterns || []
+    const cacheKey = `notes_${cacheService.normalizeKey(title)}`;
+
+    const notes = await cacheService.getCachedOrGenerate(
+      'ai_cache_notes',
+      cacheKey,
+      async () => {
+        return await aiService.generateStudyNotes(
+          title,
+          platform || 'LeetCode',
+          platformUrl || '',
+          difficulty || 'Medium',
+          topics || [],
+          patterns || []
+        );
+      }
     );
 
     res.json({ notes });
@@ -342,12 +359,20 @@ router.post('/generate-description-preview', async (req, res) => {
       return res.status(400).json({ error: 'Title is required' });
     }
 
-    const description = await aiService.generateProblemDescription(
-      title,
-      platform || 'LeetCode',
-      difficulty || 'Medium',
-      topics || [],
-      patterns || []
+    const cacheKey = `desc_${cacheService.normalizeKey(title)}`;
+
+    const description = await cacheService.getCachedOrGenerate(
+      'ai_cache_descriptions',
+      cacheKey,
+      async () => {
+        return await aiService.generateProblemDescription(
+          title,
+          platform || 'LeetCode',
+          difficulty || 'Medium',
+          topics || [],
+          patterns || []
+        );
+      }
     );
 
     res.json({ description });
@@ -381,13 +406,20 @@ router.post('/:id/generate-description', verifyToken, async (req, res) => {
       problem = problemDoc.data();
     }
 
-    // Generate description using AI
-    const description = await aiService.generateProblemDescription(
-      problem.title,
-      problem.platform || 'LeetCode',
-      problem.difficulty || 'Medium',
-      problem.topics || [],
-      problem.patterns || []
+    const cacheKey = `desc_${cacheService.normalizeKey(problem.title)}`;
+
+    const description = await cacheService.getCachedOrGenerate(
+      'ai_cache_descriptions',
+      cacheKey,
+      async () => {
+        return await aiService.generateProblemDescription(
+          problem.title,
+          problem.platform || 'LeetCode',
+          problem.difficulty || 'Medium',
+          problem.topics || [],
+          problem.patterns || []
+        );
+      }
     );
 
     // Update or create problem with description

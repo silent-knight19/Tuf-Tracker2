@@ -1,60 +1,50 @@
+const { db, admin } = require('../config/firebase.config');
+
 class CacheService {
-  constructor() {
-    this.cache = new Map();
-    this.ttl = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+  /**
+   * Helper to normalize keys for caching
+   * @param {string} str 
+   * @returns {string}
+   */
+  normalizeKey(str) {
+    if (!str) return 'unknown';
+    return str.toLowerCase().trim().replace(/[^a-z0-9]/g, '_');
   }
 
-  set(key, value, ttl = this.ttl) {
-    const expiresAt = Date.now() + ttl;
-    this.cache.set(key, { value, expiresAt });
-  }
+  /**
+   * Get cached data or generate it using the provided function
+   * @param {string} collectionName - Firestore collection name for cache
+   * @param {string} key - Unique document ID
+   * @param {Function} generateFn - Async function to generate data if cache miss
+   * @returns {Promise<any>}
+   */
+  async getCachedOrGenerate(collectionName, key, generateFn) {
+    try {
+      const docRef = db.collection(collectionName).doc(key);
+      const doc = await docRef.get();
 
-  get(key) {
-    const item = this.cache.get(key);
-    if (!item) return null;
-
-    if (Date.now() > item.expiresAt) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return item.value;
-  }
-
-  has(key) {
-    return this.get(key) !== null;
-  }
-
-  delete(key) {
-    this.cache.delete(key);
-  }
-
-  clear() {
-    this.cache.clear();
-  }
-
-  size() {
-    return this.cache.size;
-  }
-
-  // Clean expired entries
-  cleanup() {
-    const now = Date.now();
-    for (const [key, item] of this.cache.entries()) {
-      if (now > item.expiresAt) {
-        this.cache.delete(key);
+      if (doc.exists) {
+        console.log(`✅ Cache HIT for [${collectionName}/${key}]`);
+        return doc.data().data; // We store actual data in a 'data' field
       }
+
+      console.log(`⚠️ Cache MISS for [${collectionName}/${key}] - Generating...`);
+      const data = await generateFn();
+
+      // Save to cache asynchronously (don't block response)
+      docRef.set({
+        data: data,
+        cachedAt: new Date(), // Using JS Date for simplicity
+        lastAccessed: new Date()
+      }).catch(err => console.error(`Failed to write to cache [${collectionName}/${key}]:`, err));
+
+      return data;
+    } catch (error) {
+      console.error(`Cache error for [${collectionName}/${key}]:`, error);
+      // Fallback: just generate and return without caching if cache fails
+      return await generateFn();
     }
   }
 }
 
-// Singleton instance
-const cacheInstance = new CacheService();
-
-// Auto-cleanup every hour
-setInterval(() => {
-  cacheInstance.cleanup();
-  console.log(`🧹 Cache cleaned. Current size: ${cacheInstance.size()}`);
-}, 60 * 60 * 1000);
-
-module.exports = cacheInstance;
+module.exports = new CacheService();
