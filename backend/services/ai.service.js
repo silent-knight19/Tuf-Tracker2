@@ -308,6 +308,7 @@ Return ONLY a valid JSON object with this exact structure:
     "-2^31 <= x <= 2^31 - 1",
     "Other constraint here"
   ],
+  "functionSignature": "public int solve(int x)",
   "followUp": "Optional follow-up question or null if none"
 }
 
