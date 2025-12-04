@@ -342,23 +342,13 @@ router.post('/generate-description-preview', async (req, res) => {
       return res.status(400).json({ error: 'Title is required' });
     }
 
-    // Generate description using AI
-    const descriptionJson = await aiService.generateProblemDescription(
+    const description = await aiService.generateProblemDescription(
       title,
       platform || 'LeetCode',
       difficulty || 'Medium',
       topics || [],
       patterns || []
     );
-
-    // Parse and validate JSON
-    let description;
-    try {
-      description = JSON.parse(descriptionJson);
-    } catch (parseError) {
-      console.error('Failed to parse AI description:', parseError);
-      return res.status(500).json({ error: 'Invalid AI response format' });
-    }
 
     res.json({ description });
   } catch (error) {
@@ -392,22 +382,13 @@ router.post('/:id/generate-description', verifyToken, async (req, res) => {
     }
 
     // Generate description using AI
-    const descriptionJson = await aiService.generateProblemDescription(
+    const description = await aiService.generateProblemDescription(
       problem.title,
       problem.platform || 'LeetCode',
       problem.difficulty || 'Medium',
       problem.topics || [],
       problem.patterns || []
     );
-
-    // Parse and validate JSON
-    let description;
-    try {
-      description = JSON.parse(descriptionJson);
-    } catch (parseError) {
-      console.error('Failed to parse AI description:', parseError);
-      return res.status(500).json({ error: 'Invalid AI response format' });
-    }
 
     // Update or create problem with description
     if (shouldSave) {

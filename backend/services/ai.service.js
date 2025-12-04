@@ -332,7 +332,7 @@ IMPORTANT:
       if (cleanedText.startsWith('```')) cleanedText = cleanedText.slice(3);
       if (cleanedText.endsWith('```')) cleanedText = cleanedText.slice(0, -3);
 
-      return cleanedText.trim();
+      return JSON.parse(cleanedText.trim());
     } catch (error) {
       console.error('Error generating problem description:', error);
       throw new Error('Failed to generate problem description. Please try again.');
@@ -533,56 +533,7 @@ JSON Structure:
       throw new Error('Failed to generate problem help');
     }
   }
-  // Generate problem description based on title
-  async generateProblemDescription(title) {
-    try {
-      await rateLimiter.checkAndWait();
 
-      const prompt = `
-Generate a detailed problem description for the coding problem: "${title}"
-
-Return ONLY a valid JSON object with this structure:
-{
-  "description": "Detailed problem statement",
-  "functionSignature": "public int[] twoSum(int[] nums, int target)",
-  "examples": [
-    {
-      "input": "nums = [2,7,11,15], target = 9",
-      "output": "[0,1]",
-      "explanation": "nums[0] + nums[1] = 2 + 7 = 9"
-    }
-  ],
-  "constraints": [
-    "2 <= nums.length <= 104",
-    "-109 <= nums[i] <= 109"
-  ]
-}
-
-CRITICAL RULES:
-1. Include "functionSignature" field with the EXACT Java method signature (e.g., "public int[] twoSum(int[] nums, int target)")
-2. Make sure the function signature matches common LeetCode conventions
-3. Examples should show inputs in the format: "paramName = value, paramName2 = value2"
-4. ONLY return valid JSON - no extra text, no markdown, no code blocks
-5. Ensure all fields are present
-
-Focus on creating a clear, LeetCode-style problem with proper Java signature.
-`;
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-
-      let cleanedText = text.trim();
-      if (cleanedText.startsWith('```json')) cleanedText = cleanedText.slice(7);
-      if (cleanedText.startsWith('```')) cleanedText = cleanedText.slice(3);
-      if (cleanedText.endsWith('```')) cleanedText = cleanedText.slice(0, -3);
-
-      return JSON.parse(cleanedText.trim());
-    } catch (error) {
-      console.error('Error generating problem description:', error);
-      throw new Error('Failed to generate problem description');
-    }
-  }
   // Generate a company-specific problem
   async generateCompanyProblem(company, topic, pattern, difficulty) {
     try {
