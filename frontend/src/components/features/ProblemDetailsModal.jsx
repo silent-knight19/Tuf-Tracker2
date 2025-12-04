@@ -65,7 +65,16 @@ function ProblemDetailsModal({ problem, isOpen, onClose }) {
         if (cleanJson.startsWith('```')) cleanJson = cleanJson.slice(3);
         if (cleanJson.endsWith('```')) cleanJson = cleanJson.slice(0, -3);
         
-        const parsed = JSON.parse(cleanJson);
+        let parsed = JSON.parse(cleanJson);
+        
+        // Handle double-stringified JSON
+        if (typeof parsed === 'string') {
+          try {
+            parsed = JSON.parse(parsed);
+          } catch (e) {
+            console.warn("Failed to parse double-stringified JSON", e);
+          }
+        }
         
         // Map JSON fields to sections
         if (parsed.understanding) sections.understanding = parsed.understanding;
@@ -98,6 +107,46 @@ function ProblemDetailsModal({ problem, isOpen, onClose }) {
         return sections;
       }
     } catch (e) {
+      // Try to extract JSON using regex if direct parsing failed
+      try {
+        const jsonMatch = markdown.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          
+          // Map JSON fields to sections
+          if (parsed.understanding) sections.understanding = parsed.understanding;
+          if (parsed.takeaways) sections.takeaways = parsed.takeaways;
+          
+          if (parsed.bruteForce) {
+            sections.bruteForce = {
+              explanation: parsed.bruteForce.explanation || '',
+              code: parsed.bruteForce.code || '',
+              complexity: parsed.bruteForce.complexity || ''
+            };
+          }
+          
+          if (parsed.better) {
+            sections.better = {
+              explanation: parsed.better.explanation || '',
+              code: parsed.better.code || '',
+              complexity: parsed.better.complexity || ''
+            };
+          }
+          
+          if (parsed.optimal) {
+            sections.optimal = {
+              explanation: parsed.optimal.explanation || '',
+              code: parsed.optimal.code || '',
+              complexity: parsed.optimal.complexity || ''
+            };
+          }
+          
+          return sections;
+        }
+      } catch (e2) {
+        // console.log('Failed to parse extracted JSON', e2);
+      }
+
       // JSON parsing failed, fall back to Regex (Old Markdown Format)
       // console.log('Falling back to markdown parsing', e);
     }

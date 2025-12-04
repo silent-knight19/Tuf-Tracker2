@@ -180,6 +180,7 @@ function ProblemViewPage() {
   };
 
   const parseAINotes = (notesData) => {
+    // console.log('parseAINotes input:', typeof notesData, notesData);
     if (!notesData) return null;
 
     // If it's already an object (from JSON response), return it
@@ -196,15 +197,38 @@ function ProblemViewPage() {
         if (cleanJson.startsWith('```')) cleanJson = cleanJson.slice(3);
         if (cleanJson.endsWith('```')) cleanJson = cleanJson.slice(0, -3);
 
-        const parsed = JSON.parse(cleanJson);
+        let parsed = JSON.parse(cleanJson);
+        
+        // Handle double-stringified JSON
+        if (typeof parsed === 'string') {
+          try {
+            parsed = JSON.parse(parsed);
+          } catch (e) {
+            console.warn("Failed to parse double-stringified JSON", e);
+          }
+        }
         
         // Return parsed object if it has the expected structure
         if (parsed.understanding || parsed.bruteForce || parsed.optimal) {
           return parsed;
         }
-      } catch {
+      } catch (e) {
+        // Try to extract JSON using regex if direct parsing failed
+        try {
+          const jsonMatch = notesData.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            if (parsed.understanding || parsed.bruteForce || parsed.optimal) {
+              return parsed;
+            }
+          }
+        } catch (e2) {
+          console.warn("Failed to parse extracted JSON", e2);
+        }
+
         // If JSON parse fails, fall back to raw display (legacy support)
-        console.warn("Failed to parse AI notes JSON, treating as raw markdown");
+        console.warn("Failed to parse AI notes JSON, treating as raw markdown", e);
+        console.log("Failed JSON string:", notesData);
       }
     }
 
