@@ -81,11 +81,13 @@ function RevisionDashboardPage() {
             headers: { Authorization: `Bearer ${token}` }
           });
           
-          // Step 3: Navigate to AI Interview Page with generated data
-          navigate('/interview/ai', { state: { problem: aiResponse.data } });
+          // Step 3: Open in new tab using localStorage
+          const localId = Date.now().toString();
+          localStorage.setItem(`ai_problem_${localId}`, JSON.stringify(aiResponse.data));
+          window.open(`/interview/ai?localId=${localId}`, '_blank');
         } else {
-          // Standard mode
-          navigate(`/interview/${response.data.sessionIds[0]}`);
+          // Standard mode - Open in new tab
+          window.open(`/interview/${response.data.sessionIds[0]}`, '_blank');
         }
         setShowPracticeModal(false);
       } else {
@@ -112,7 +114,11 @@ function RevisionDashboardPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      navigate('/interview/ai', { state: { problem: aiResponse.data } });
+      // Open in new tab using localStorage
+      const localId = Date.now().toString();
+      localStorage.setItem(`ai_problem_${localId}`, JSON.stringify(aiResponse.data));
+      window.open(`/interview/ai?localId=${localId}`, '_blank');
+      
       setShowPatternModal(false);
     } catch (error) {
       console.error('Failed to generate pattern problem:', error);
@@ -141,7 +147,11 @@ function RevisionDashboardPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      navigate('/interview/ai', { state: { problem: aiResponse.data } });
+      // Open in new tab using localStorage
+      const localId = Date.now().toString();
+      localStorage.setItem(`ai_problem_${localId}`, JSON.stringify(aiResponse.data));
+      window.open(`/interview/ai?localId=${localId}`, '_blank');
+      
       setShowCompanyModal(false);
     } catch (error) {
       console.error('Failed to generate company problem:', error);

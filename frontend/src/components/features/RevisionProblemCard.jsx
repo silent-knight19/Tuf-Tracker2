@@ -48,7 +48,7 @@ function RevisionProblemCard({ revision }) {
 
   const handleStartReview = (e) => {
     e.stopPropagation();
-    navigate(`/revision/${revision.id}/review`);
+    window.open(`/revision/${revision.id}/review`, '_blank');
   };
 
   return (
@@ -135,9 +135,9 @@ function RevisionProblemCard({ revision }) {
 
           <div className="flex gap-3 justify-end">
             <button
-              onClick={(e) => {
+                onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/revision/${revision.id}`);
+                window.open(`/revision/${revision.id}`, '_blank');
               }}
               className="text-sm text-dark-400 hover:text-white transition-colors"
             >

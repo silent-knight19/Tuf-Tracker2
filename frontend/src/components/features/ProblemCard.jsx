@@ -19,14 +19,14 @@ function ProblemCard({ problem }) {
   const handleViewRevision = (e) => {
     e.stopPropagation();
     if (revision) {
-      navigate(`/revision/${revision.id}`);
+      window.open(`/revision/${revision.id}`, '_blank');
     }
   };
 
   return (
     <div 
       className="card card-hover cursor-pointer"
-      onClick={() => navigate(`/problem/${problem.id}`)}
+      onClick={() => window.open(`/problem/${problem.id}`, '_blank')}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">

@@ -9,7 +9,26 @@ import CodePanel from '../components/features/code/CodePanel';
 function AIInterviewPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { problem } = location.state || {};
+  const [problem, setProblem] = useState(location.state?.problem || null);
+
+  // Load problem from localStorage if ID is present in URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const localId = params.get('localId');
+    
+    if (localId && !problem) {
+      try {
+        const storedData = localStorage.getItem(`ai_problem_${localId}`);
+        if (storedData) {
+          setProblem(JSON.parse(storedData));
+          // Optional: Clear storage after loading to keep it clean
+          // localStorage.removeItem(`ai_problem_${localId}`);
+        }
+      } catch (err) {
+        console.error('Failed to load problem from storage:', err);
+      }
+    }
+  }, [location.search, problem]);
 
   // AI Assist State
   const [helpData, setHelpData] = useState(null);
