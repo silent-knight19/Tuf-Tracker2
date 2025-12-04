@@ -2,7 +2,7 @@ import { Building2, Calendar, Repeat, CheckCircle2 } from 'lucide-react';
 import { useRevisionStore } from '../../stores/revisionStore';
 import { useNavigate } from 'react-router-dom';
 
-function ProblemCard({ problem }) {
+function ProblemCard({ problem, onClick }) {
   const navigate = useNavigate();
   const { addToRevisionQueue } = useRevisionStore();
   // Use selector to ensure reactivity when revisions change
@@ -23,10 +23,18 @@ function ProblemCard({ problem }) {
     }
   };
 
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    } else {
+      window.open(`/problem/${problem.id}`, '_blank');
+    }
+  };
+
   return (
     <div 
       className="card card-hover cursor-pointer"
-      onClick={() => window.open(`/problem/${problem.id}`, '_blank')}
+      onClick={handleClick}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">

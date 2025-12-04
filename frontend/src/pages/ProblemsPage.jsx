@@ -152,18 +152,22 @@ function ProblemsPage() {
               return (
                 <div 
                   key={index} 
-                  onClick={() => {
-                    if (trackedProblem) {
-                      // Navigate to tracked problem
-                      navigate(`/problem/${trackedProblem.id}`);
-                    } else {
-                      // Pass problem data via state for view-only mode
-                      navigate(`/problem/view`, { state: { problemData: problem } });
-                    }
-                  }} 
                   className="cursor-pointer"
                 >
-                  <ProblemCard problem={mergedProblem} />
+                  <ProblemCard 
+                    problem={mergedProblem} 
+                    onClick={() => {
+                      if (trackedProblem) {
+                        // Navigate to tracked problem in new tab
+                        window.open(`/problem/${trackedProblem.id}`, '_blank');
+                      } else {
+                        // Pass problem data via localStorage for view-only mode in new tab
+                        const localId = Date.now().toString();
+                        localStorage.setItem(`view_problem_${localId}`, JSON.stringify(problem));
+                        window.open(`/problem/view?localId=${localId}`, '_blank');
+                      }
+                    }}
+                  />
                 </div>
               );
             })
@@ -179,7 +183,7 @@ function ProblemsPage() {
             problems
               .filter(p => p.status !== 'ViewOnly')
               .map((problem) => (
-                <div key={problem.id} onClick={() => navigate(`/problem/${problem.id}`)} className="cursor-pointer">
+                <div key={problem.id} className="cursor-pointer">
                   <ProblemCard problem={problem} />
                 </div>
               ))

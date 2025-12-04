@@ -54,6 +54,23 @@ function ProblemViewPage() {
       return;
     }
 
+    // Check for localId in URL (new tab view-only mode)
+    const params = new URLSearchParams(location.search);
+    const localId = params.get('localId');
+    if (localId) {
+      try {
+        const storedData = localStorage.getItem(`view_problem_${localId}`);
+        if (storedData) {
+          setProblem(JSON.parse(storedData));
+          setIsViewOnly(true);
+          setNotFound(false);
+          return;
+        }
+      } catch (e) {
+        console.error('Failed to load problem from storage', e);
+      }
+    }
+
     // Otherwise, find problem by ID from store
     if (id && problems.length > 0) {
       const foundProblem = problems.find(p => p.id === id);
@@ -210,7 +227,17 @@ function ProblemViewPage() {
         
         // Return parsed object if it has the expected structure
         if (parsed.understanding || parsed.bruteForce || parsed.optimal) {
-          return parsed;
+          // Helper to recursively replace \n
+          const replaceNewlines = (obj) => {
+            if (typeof obj === 'string') return obj.replace(/\\n/g, '\n');
+            if (typeof obj === 'object' && obj !== null) {
+              Object.keys(obj).forEach(key => {
+                obj[key] = replaceNewlines(obj[key]);
+              });
+            }
+            return obj;
+          };
+          return replaceNewlines(parsed);
         }
       } catch (e) {
         // Try to extract JSON using regex if direct parsing failed
@@ -219,7 +246,17 @@ function ProblemViewPage() {
           if (jsonMatch) {
             const parsed = JSON.parse(jsonMatch[0]);
             if (parsed.understanding || parsed.bruteForce || parsed.optimal) {
-              return parsed;
+              // Helper to recursively replace \n
+              const replaceNewlines = (obj) => {
+                if (typeof obj === 'string') return obj.replace(/\\n/g, '\n');
+                if (typeof obj === 'object' && obj !== null) {
+                  Object.keys(obj).forEach(key => {
+                    obj[key] = replaceNewlines(obj[key]);
+                  });
+                }
+                return obj;
+              };
+              return replaceNewlines(parsed);
             }
           }
         } catch (e2) {

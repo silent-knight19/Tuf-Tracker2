@@ -77,30 +77,30 @@ function ProblemDetailsModal({ problem, isOpen, onClose }) {
         }
         
         // Map JSON fields to sections
-        if (parsed.understanding) sections.understanding = parsed.understanding;
-        if (parsed.takeaways) sections.takeaways = parsed.takeaways;
+        if (parsed.understanding) sections.understanding = parsed.understanding.replace(/\\n/g, '\n');
+        if (parsed.takeaways) sections.takeaways = parsed.takeaways.replace(/\\n/g, '\n');
         
         if (parsed.bruteForce) {
           sections.bruteForce = {
-            explanation: parsed.bruteForce.explanation || '',
-            code: parsed.bruteForce.code || '',
-            complexity: parsed.bruteForce.complexity || ''
+            explanation: (parsed.bruteForce.explanation || '').replace(/\\n/g, '\n'),
+            code: (parsed.bruteForce.code || '').replace(/\\n/g, '\n'),
+            complexity: (parsed.bruteForce.complexity || '').replace(/\\n/g, '\n')
           };
         }
       
       if (parsed.better) {
         sections.better = {
-          explanation: parsed.better.explanation || '',
-          code: parsed.better.code || '',
-          complexity: parsed.better.complexity || ''
+          explanation: (parsed.better.explanation || '').replace(/\\n/g, '\n'),
+          code: (parsed.better.code || '').replace(/\\n/g, '\n'),
+          complexity: (parsed.better.complexity || '').replace(/\\n/g, '\n')
         };
       }
       
         if (parsed.optimal) {
           sections.optimal = {
-            explanation: parsed.optimal.explanation || '',
-            code: parsed.optimal.code || '',
-            complexity: parsed.optimal.complexity || ''
+            explanation: (parsed.optimal.explanation || '').replace(/\\n/g, '\n'),
+            code: (parsed.optimal.code || '').replace(/\\n/g, '\n'),
+            complexity: (parsed.optimal.complexity || '').replace(/\\n/g, '\n')
           };
         }
         
@@ -114,30 +114,30 @@ function ProblemDetailsModal({ problem, isOpen, onClose }) {
           const parsed = JSON.parse(jsonMatch[0]);
           
           // Map JSON fields to sections
-          if (parsed.understanding) sections.understanding = parsed.understanding;
-          if (parsed.takeaways) sections.takeaways = parsed.takeaways;
+          if (parsed.understanding) sections.understanding = parsed.understanding.replace(/\\n/g, '\n');
+          if (parsed.takeaways) sections.takeaways = parsed.takeaways.replace(/\\n/g, '\n');
           
           if (parsed.bruteForce) {
             sections.bruteForce = {
-              explanation: parsed.bruteForce.explanation || '',
-              code: parsed.bruteForce.code || '',
-              complexity: parsed.bruteForce.complexity || ''
+              explanation: (parsed.bruteForce.explanation || '').replace(/\\n/g, '\n'),
+              code: (parsed.bruteForce.code || '').replace(/\\n/g, '\n'),
+              complexity: (parsed.bruteForce.complexity || '').replace(/\\n/g, '\n')
             };
           }
           
           if (parsed.better) {
             sections.better = {
-              explanation: parsed.better.explanation || '',
-              code: parsed.better.code || '',
-              complexity: parsed.better.complexity || ''
+              explanation: (parsed.better.explanation || '').replace(/\\n/g, '\n'),
+              code: (parsed.better.code || '').replace(/\\n/g, '\n'),
+              complexity: (parsed.better.complexity || '').replace(/\\n/g, '\n')
             };
           }
           
           if (parsed.optimal) {
             sections.optimal = {
-              explanation: parsed.optimal.explanation || '',
-              code: parsed.optimal.code || '',
-              complexity: parsed.optimal.complexity || ''
+              explanation: (parsed.optimal.explanation || '').replace(/\\n/g, '\n'),
+              code: (parsed.optimal.code || '').replace(/\\n/g, '\n'),
+              complexity: (parsed.optimal.complexity || '').replace(/\\n/g, '\n')
             };
           }
           
