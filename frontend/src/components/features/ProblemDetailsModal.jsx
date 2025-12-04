@@ -43,6 +43,11 @@ function ProblemDetailsModal({ problem, isOpen, onClose }) {
   const parseAINotes = (markdown) => {
     if (!markdown) return null;
 
+    // If it's already an object (from JSON response), return it
+    if (typeof markdown === 'object' && (markdown.understanding || markdown.bruteForce || markdown.optimal)) {
+      return markdown;
+    }
+
     const sections = {
       understanding: '',
       bruteForce: { explanation: '', code: '', complexity: '' },
@@ -53,25 +58,26 @@ function ProblemDetailsModal({ problem, isOpen, onClose }) {
 
     // 1. Try parsing as JSON first (New Format)
     try {
-      // Clean up any potential markdown code blocks if they exist in the stored note
-      let cleanJson = markdown.trim();
-      if (cleanJson.startsWith('```json')) cleanJson = cleanJson.slice(7);
-      if (cleanJson.startsWith('```')) cleanJson = cleanJson.slice(3);
-      if (cleanJson.endsWith('```')) cleanJson = cleanJson.slice(0, -3);
-      
-      const parsed = JSON.parse(cleanJson);
-      
-      // Map JSON fields to sections
-      if (parsed.understanding) sections.understanding = parsed.understanding;
-      if (parsed.takeaways) sections.takeaways = parsed.takeaways;
-      
-      if (parsed.bruteForce) {
-        sections.bruteForce = {
-          explanation: parsed.bruteForce.explanation || '',
-          code: parsed.bruteForce.code || '',
-          complexity: parsed.bruteForce.complexity || ''
-        };
-      }
+      if (typeof markdown === 'string') {
+        // Clean up any potential markdown code blocks if they exist in the stored note
+        let cleanJson = markdown.trim();
+        if (cleanJson.startsWith('```json')) cleanJson = cleanJson.slice(7);
+        if (cleanJson.startsWith('```')) cleanJson = cleanJson.slice(3);
+        if (cleanJson.endsWith('```')) cleanJson = cleanJson.slice(0, -3);
+        
+        const parsed = JSON.parse(cleanJson);
+        
+        // Map JSON fields to sections
+        if (parsed.understanding) sections.understanding = parsed.understanding;
+        if (parsed.takeaways) sections.takeaways = parsed.takeaways;
+        
+        if (parsed.bruteForce) {
+          sections.bruteForce = {
+            explanation: parsed.bruteForce.explanation || '',
+            code: parsed.bruteForce.code || '',
+            complexity: parsed.bruteForce.complexity || ''
+          };
+        }
       
       if (parsed.better) {
         sections.better = {
@@ -81,15 +87,16 @@ function ProblemDetailsModal({ problem, isOpen, onClose }) {
         };
       }
       
-      if (parsed.optimal) {
-        sections.optimal = {
-          explanation: parsed.optimal.explanation || '',
-          code: parsed.optimal.code || '',
-          complexity: parsed.optimal.complexity || ''
-        };
+        if (parsed.optimal) {
+          sections.optimal = {
+            explanation: parsed.optimal.explanation || '',
+            code: parsed.optimal.code || '',
+            complexity: parsed.optimal.complexity || ''
+          };
+        }
+        
+        return sections;
       }
-      
-      return sections;
     } catch (e) {
       // JSON parsing failed, fall back to Regex (Old Markdown Format)
       // console.log('Falling back to markdown parsing', e);
