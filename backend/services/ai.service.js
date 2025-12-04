@@ -243,7 +243,7 @@ ABSOLUTE RULES FOR CONTENT FORMATTING:
 2. You MUST use \n for newlines within strings.
 3. Do NOT use actual line breaks inside string values, as this invalidates JSON.
 4. NO markdown backticks anywhere in the code - just plain Java
-5. NO markdown formatting (no **, ###, `, etc.) in explanations
+5. NO markdown formatting (no **, ###, \`, etc.) in explanations
 6. Write explanations like you're talking to a friend - natural paragraphs
 7. Code must be clean Java with proper indentation using spaces
 8. Use "null" for better approach if not applicable
