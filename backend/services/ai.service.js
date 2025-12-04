@@ -274,7 +274,13 @@ The JSON structure is ONLY for parsing - the content inside should read like nat
       if (cleanedText.startsWith('```')) cleanedText = cleanedText.slice(3);
       if (cleanedText.endsWith('```')) cleanedText = cleanedText.slice(0, -3);
 
-      return cleanedText.trim();
+      try {
+        const parsedData = JSON.parse(cleanedText.trim());
+        return parsedData;
+      } catch (e) {
+        console.error('Failed to parse AI response:', cleanedText);
+        throw new Error('AI response was not valid JSON');
+      }
     } catch (error) {
       console.error('Error generating study notes:', error);
       if (error.response) {

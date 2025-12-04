@@ -292,7 +292,7 @@ router.post('/:id/generate-notes', verifyToken, async (req, res) => {
     }
 
     const aiService = require('../services/ai.service');
-    const cacheKey = `notes_v2_${cacheService.normalizeKey(problem.title)}`;
+    const cacheKey = `notes_v3_${cacheService.normalizeKey(problem.title)}`;
     
     const notes = await cacheService.getCachedOrGenerate(
       'ai_cache_notes',
@@ -326,7 +326,7 @@ router.post('/generate-notes-preview', async (req, res) => {
     }
 
     const aiService = require('../services/ai.service');
-    const cacheKey = `notes_v2_${cacheService.normalizeKey(title)}`;
+    const cacheKey = `notes_v3_${cacheService.normalizeKey(title)}`;
 
     const notes = await cacheService.getCachedOrGenerate(
       'ai_cache_notes',
