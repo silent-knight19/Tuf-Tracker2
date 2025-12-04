@@ -190,8 +190,16 @@ function ProblemViewPage() {
     // Try to parse if it's a JSON string
     if (typeof notesData === 'string') {
       try {
-        const parsed = JSON.parse(notesData);
-        if (parsed.understanding) {
+        // Clean up any potential markdown code blocks
+        let cleanJson = notesData.trim();
+        if (cleanJson.startsWith('```json')) cleanJson = cleanJson.slice(7);
+        if (cleanJson.startsWith('```')) cleanJson = cleanJson.slice(3);
+        if (cleanJson.endsWith('```')) cleanJson = cleanJson.slice(0, -3);
+
+        const parsed = JSON.parse(cleanJson);
+        
+        // Return parsed object if it has the expected structure
+        if (parsed.understanding || parsed.bruteForce || parsed.optimal) {
           return parsed;
         }
       } catch {
