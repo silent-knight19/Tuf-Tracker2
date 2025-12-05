@@ -42,10 +42,24 @@ class CodeRunnerService {
       );
       
       if (compileResult.exitCode !== 0) {
+        // Detailed logging for debugging
+        const logContent = `
+=== COMPILATION FAILED ===
+Timestamp: ${new Date().toISOString()}
+Exit Code: ${compileResult.exitCode}
+Error: ${compileResult.stderr}
+Output: ${compileResult.stdout}
+
+--- SOURCE CODE (Main.java) ---
+${finalSource}
+-------------------------------
+`;
+        await fs.writeFile(path.join(process.cwd(), 'debug_compilation.log'), logContent, { flag: 'a' });
+
         // Compilation failed
         return {
           stdout: compileResult.stdout,
-          stderr: compileResult.stderr || 'Compilation failed',
+          stderr: compileResult.stderr || 'Compilation failed (check server logs)',
           exitCode: compileResult.exitCode,
           timedOut: false
         };
