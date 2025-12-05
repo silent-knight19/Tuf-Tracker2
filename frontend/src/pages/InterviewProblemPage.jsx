@@ -133,7 +133,7 @@ function InterviewProblemPage() {
       return null;
     }
 
-    const methodName = inferMethodName(problemTitle);
+    const methodName = getMethodName(problemTitle, description?.functionSignature);
     
     const tests = examples.map(example => {
       // Parse the example input and output
@@ -189,7 +189,7 @@ function InterviewProblemPage() {
   // Helper function to convert edge cases to JSON test format
   const convertEdgeCasesToJsonFormat = (edgeCases, problem) => {
     // Try to infer method name from problem title or use a default
-    const methodName = inferMethodName(problem.problemTitle);
+    const methodName = getMethodName(problem.problemTitle, description?.functionSignature);
     
     const tests = edgeCases.map(edgeCase => {
       // Parse input string to extract arguments
@@ -208,8 +208,22 @@ function InterviewProblemPage() {
     }, null, 2);
   };
 
-  // Infer method name from problem title
-  const inferMethodName = (title) => {
+  // Extract method name from function signature or infer from title
+  const getMethodName = (title, functionSignature) => {
+    // 1. Try to extract from function signature
+    if (functionSignature) {
+      const match = functionSignature.match(/\s+([a-zA-Z0-9_]+)\s*\(/);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+
+    // 2. Fallback: infer from title
+    return inferMethodNameFromTitle(title);
+  };
+
+  // Infer method name from problem title (Fallback)
+  const inferMethodNameFromTitle = (title) => {
     if (!title) return 'solve';
     
     // Common LeetCode problem title patterns
