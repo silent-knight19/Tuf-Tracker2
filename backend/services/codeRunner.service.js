@@ -100,13 +100,18 @@ class CodeRunnerService {
       .replace(/\r/g, '\\r')        // Escape carriage returns
       .replace(/\t/g, '\\t');       // Escape tabs
     
+    // Strip 'public' from class Solution to avoid "class Solution is public, should be declared in a file named Solution.java"
+    // Since we wrap it in Main.java, only Main can be public.
+    const sanitizedSolutionCode = solutionCode.replace(/public\s+class\s+Solution/g, 'class Solution');
+
     const wrapper = `
 import java.util.*;
 import java.lang.reflect.*;
 
-${solutionCode}
+${sanitizedSolutionCode}
 
 public class Main {
+
     public static void main(String[] args) {
         try {
             String jsonInput = "${jsonEscaped}";
