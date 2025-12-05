@@ -12,21 +12,53 @@ function AIInterviewPage() {
   const [problem, setProblem] = useState(location.state?.problem || null);
 
   // Load problem from localStorage if ID is present in URL
+  // Load problem from localStorage if ID is present in URL
+  const [loadingProblem, setLoadingProblem] = useState(false);
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const localId = params.get('localId');
     
     if (localId && !problem) {
-      try {
-        const storedData = localStorage.getItem(`ai_problem_${localId}`);
-        if (storedData) {
-          setProblem(JSON.parse(storedData));
-          // Optional: Clear storage after loading to keep it clean
-          // localStorage.removeItem(`ai_problem_${localId}`);
+      const checkStorage = () => {
+        try {
+          const storedData = localStorage.getItem(`ai_problem_${localId}`);
+          if (storedData) {
+            setProblem(JSON.parse(storedData));
+            // localStorage.removeItem(`ai_problem_${localId}`); // Optional clean up
+            return true;
+          }
+        } catch (err) {
+          console.error('Failed to load problem from storage:', err);
         }
-      } catch (err) {
-        console.error('Failed to load problem from storage:', err);
-      }
+        return false;
+      };
+
+      // Check immediately
+      if (checkStorage()) return;
+
+      // If not found, start polling
+      setLoadingProblem(true);
+      const intervalId = setInterval(() => {
+        if (checkStorage()) {
+          clearInterval(intervalId);
+          setLoadingProblem(false);
+        }
+      }, 500);
+
+      // Timeout after 60 seconds
+      const timeoutId = setTimeout(() => {
+        clearInterval(intervalId);
+        setLoadingProblem(false);
+        if (!problem) {
+          console.error('Timed out waiting for problem data');
+        }
+      }, 60000);
+
+      return () => {
+        clearInterval(intervalId);
+        clearTimeout(timeoutId);
+      };
     }
   }, [location.search, problem]);
 
@@ -220,6 +252,16 @@ function AIInterviewPage() {
     }
     return [input];
   };
+
+  if (loadingProblem) {
+    return (
+      <div className="min-h-screen bg-dark-950 flex flex-col items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-orange mb-4"></div>
+        <h2 className="text-xl font-bold text-white mb-2">Generating Interview Problem...</h2>
+        <p className="text-dark-400">Our AI is crafting a unique challenge for you.</p>
+      </div>
+    );
+  }
 
   if (!problem) {
     return (

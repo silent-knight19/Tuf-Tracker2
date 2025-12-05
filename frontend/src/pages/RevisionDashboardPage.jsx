@@ -57,6 +57,14 @@ function RevisionDashboardPage() {
   };
 
   const handleStartPractice = async () => {
+    // For AI mode, open tab immediately to avoid popup blockers
+    let newTab = null;
+    const localId = Date.now().toString();
+    
+    if (practiceMode === 'ai') {
+      newTab = window.open(`/interview/ai?localId=${localId}`, '_blank');
+    }
+
     try {
       setPracticeLoading(true);
       const token = await auth.currentUser.getIdToken();
@@ -75,26 +83,33 @@ function RevisionDashboardPage() {
         if (practiceMode === 'ai') {
           // Step 2: Generate similar problem using AI
           const baseProblemId = response.data.sessionIds[0];
-          const aiResponse = await api.post('/ai/similar-problem', {
-            problemId: baseProblemId
-          }, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
           
-          // Step 3: Open in new tab using localStorage
-          const localId = Date.now().toString();
-          localStorage.setItem(`ai_problem_${localId}`, JSON.stringify(aiResponse.data));
-          window.open(`/interview/ai?localId=${localId}`, '_blank');
+          try {
+            const aiResponse = await api.post('/ai/similar-problem', {
+              problemId: baseProblemId
+            }, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            // Step 3: Save to localStorage for the new tab to pick up
+            localStorage.setItem(`ai_problem_${localId}`, JSON.stringify(aiResponse.data));
+          } catch (aiError) {
+            // If AI generation fails, close the tab we opened
+            if (newTab) newTab.close();
+            throw aiError;
+          }
         } else {
           // Standard mode - Open in new tab
           window.open(`/interview/${response.data.sessionIds[0]}`, '_blank');
         }
         setShowPracticeModal(false);
       } else {
+        if (newTab) newTab.close();
         alert('No solved problems found to practice!');
       }
     } catch (error) {
       console.error('Failed to start practice session:', error);
+      if (newTab) newTab.close();
       alert('Failed to start practice session');
     } finally {
       setPracticeLoading(false);
@@ -102,6 +117,10 @@ function RevisionDashboardPage() {
   };
 
   const handlePatternPractice = async () => {
+    // Open tab immediately to avoid popup blockers
+    const localId = Date.now().toString();
+    const newTab = window.open(`/interview/ai?localId=${localId}`, '_blank');
+
     try {
       setPracticeLoading(true);
       const token = await auth.currentUser.getIdToken();
@@ -114,14 +133,13 @@ function RevisionDashboardPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      // Open in new tab using localStorage
-      const localId = Date.now().toString();
+      // Save to localStorage for the new tab to pick up
       localStorage.setItem(`ai_problem_${localId}`, JSON.stringify(aiResponse.data));
-      window.open(`/interview/ai?localId=${localId}`, '_blank');
       
       setShowPatternModal(false);
     } catch (error) {
       console.error('Failed to generate pattern problem:', error);
+      if (newTab) newTab.close();
       alert('Failed to generate problem');
     } finally {
       setPracticeLoading(false);
@@ -133,6 +151,10 @@ function RevisionDashboardPage() {
       alert('Please enter a company name');
       return;
     }
+
+    // Open tab immediately to avoid popup blockers
+    const localId = Date.now().toString();
+    const newTab = window.open(`/interview/ai?localId=${localId}`, '_blank');
 
     try {
       setPracticeLoading(true);
@@ -147,14 +169,13 @@ function RevisionDashboardPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      // Open in new tab using localStorage
-      const localId = Date.now().toString();
+      // Save to localStorage for the new tab to pick up
       localStorage.setItem(`ai_problem_${localId}`, JSON.stringify(aiResponse.data));
-      window.open(`/interview/ai?localId=${localId}`, '_blank');
       
       setShowCompanyModal(false);
     } catch (error) {
       console.error('Failed to generate company problem:', error);
+      if (newTab) newTab.close();
       alert('Failed to generate problem');
     } finally {
       setPracticeLoading(false);
