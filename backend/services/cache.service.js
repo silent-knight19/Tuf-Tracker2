@@ -25,16 +25,27 @@ class CacheService {
 
       if (doc.exists) {
         console.log(`✅ Cache HIT for [${collectionName}/${key}]`);
-        return doc.data().data; // We store actual data in a 'data' field
+        // Check if data is stringified (legacy support possibility)
+        const cachedData = doc.data().data;
+        try {
+           // Attempt to parse if it looks like a string, otherwise return as is
+           if (typeof cachedData === 'string') {
+             return JSON.parse(cachedData);
+           }
+           return cachedData;
+        } catch (e) {
+           return cachedData;
+        }
       }
 
       console.log(`⚠️ Cache MISS for [${collectionName}/${key}] - Generating...`);
       const data = await generateFn();
 
       // Save to cache asynchronously (don't block response)
+      // JSON.stringify to handle nested arrays/objects that Firestore might reject
       docRef.set({
-        data: data,
-        cachedAt: new Date(), // Using JS Date for simplicity
+        data: JSON.stringify(data),
+        cachedAt: new Date(), 
         lastAccessed: new Date()
       }).catch(err => console.error(`Failed to write to cache [${collectionName}/${key}]:`, err));
 

@@ -42,19 +42,14 @@ class CodeRunnerService {
       );
       
       if (compileResult.exitCode !== 0) {
-        // Detailed logging for debugging
-        const logContent = `
-=== COMPILATION FAILED ===
-Timestamp: ${new Date().toISOString()}
-Exit Code: ${compileResult.exitCode}
-Error: ${compileResult.stderr}
-Output: ${compileResult.stdout}
-
---- SOURCE CODE (Main.java) ---
-${finalSource}
--------------------------------
-`;
-        await fs.writeFile(path.join(process.cwd(), 'debug_compilation.log'), logContent, { flag: 'a' });
+        // Detailed logging for debugging (visible in Render logs)
+        console.error('\n=== COMPILATION FAILED ===');
+        console.error(`Timestamp: ${new Date().toISOString()}`);
+        console.error(`Exit Code: ${compileResult.exitCode}`);
+        console.error(`Error: ${compileResult.stderr}`);
+        console.error('--- SOURCE CODE (Main.java) ---');
+        console.error(finalSource);
+        console.error('-------------------------------\n');
 
         // Compilation failed
         return {
