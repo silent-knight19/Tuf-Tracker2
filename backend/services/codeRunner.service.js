@@ -52,9 +52,14 @@ class CodeRunnerService {
         console.error('-------------------------------\n');
 
         // Compilation failed
+        // Clean up the error message to be more user-friendly
+        const cleanError = compileResult.stderr
+          .replace(new RegExp(tempDir, 'g'), '') // Remove temp paths
+          .replace(/\/Main\.java/g, 'Line');     // Simplify filenames
+
         return {
           stdout: compileResult.stdout,
-          stderr: compileResult.stderr || 'Compilation failed (check server logs)',
+          stderr: cleanError, // Return the actual compiler error
           exitCode: compileResult.exitCode,
           timedOut: false
         };
