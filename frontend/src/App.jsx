@@ -10,6 +10,7 @@ const ProblemViewPage = lazy(() => import('./pages/ProblemViewPage'));
 const RevisionProblemDetailPage = lazy(() => import('./pages/RevisionProblemDetailPage'));
 const InterviewProblemPage = lazy(() => import('./pages/InterviewProblemPage'));
 const AIInterviewPage = lazy(() => import('./pages/AIInterviewPage'));
+const SolveProblemPage = lazy(() => import('./pages/SolveProblemPage'));
 
 // Loading spinner component
 const PageLoader = () => (
@@ -60,6 +61,10 @@ function App() {
           <Route 
             path="/interview/:id" 
             element={user ? <InterviewProblemPage /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/solve/:id" 
+            element={user ? <SolveProblemPage /> : <Navigate to="/login" />} 
           />
           <Route 
             path="/*" 

@@ -607,42 +607,48 @@ Return ONLY a valid JSON object with this structure:
     try {
       await rateLimiter.checkAndWait();
 
-      // Simplified prompt but comprehensive edge cases
-      const prompt = `Generate 5-8 comprehensive edge test cases for: "${title}"
+      // Build context from provided information
+      const descriptionText = description ? `\nProblem Description: ${typeof description === 'string' ? description : description.description || ''}` : '';
+      const constraintsText = constraints?.length > 0 ? `\nConstraints:\n${constraints.map(c => `- ${c}`).join('\n')}` : '';
+      const examplesText = examples?.length > 0 ? `\nExamples:\n${examples.map((ex, i) => `Example ${i+1}: Input: ${JSON.stringify(ex.input)}, Output: ${JSON.stringify(ex.output)}`).join('\n')}` : '';
 
-${functionSignature ? `Function signature: ${functionSignature}` : ''}
+      // Quality 25 edge case generation prompt
+      const prompt = `You are an expert test engineer. Generate 25 HIGH-QUALITY test cases.
 
-Return ONLY valid JSON (no other text):
+Problem: "${title}"
+${functionSignature ? `Function: ${functionSignature}` : ''}
+${descriptionText}
+${constraintsText}
+${examplesText}
+
+Generate EXACTLY 25 test cases covering:
+- **BOUNDARY (4 tests):** Min/max constraints, edge of valid ranges
+- **EMPTY/MINIMAL (3 tests):** Empty input, single element, minimal valid input  
+- **CORNER CASES (5 tests):** Cases that break naive solutions
+- **ALGORITHM-SPECIFIC (5 tests):** Test core logic paths
+- **SPECIAL VALUES (4 tests):** Zero, negative, duplicates, special patterns
+- **TYPICAL (4 tests):** Standard inputs users would provide
+
+Return ONLY valid JSON:
 [
-  {
-    "name": "descriptive test name",
-    "input": [arg1, arg2],
-    "expectedOutput": "expected output",
-    "explanation": "why this edge case is important"
-  }
+  {"name": "test_name", "input": [args], "expectedOutput": result, "explanation": "why", "category": "boundary|edge|corner|typical"}
 ]
 
-Focus on:
-- Boundary conditions (min/max values, empty inputs)
-- Special cases (zero, negative, null)
-- Large inputs (performance testing)
-- Corner cases that break naive solutions
-
-Rules:
-- Input MUST be a JSON array with all function arguments IN ORDER
-- Keep explanations under 60 characters
-- Avoid special characters in strings (use simple quotes)
-- No trailing commas
-- Ensure valid JSON syntax
+RULES:
+- EXACTLY 25 tests, all RELEVANT to "${title}"
+- Input must match function signature parameter types
+- expectedOutput must be CORRECT (calculate carefully!)
+- Short explanations (under 30 chars)
+- Valid JSON only, no markdown
 `;
 
-      console.log('Generating edge cases for:', title);
+      console.log('Generating 25 quality edge cases for:', title);
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
 
+      console.log('Raw AI response length:', text.length);
       console.log('Raw AI response (first 500 chars):', text.substring(0, 500));
-      console.log('Raw AI response (last 200 chars):', text.substring(Math.max(0, text.length - 200)));
 
       let cleanedText = text.trim();
       
@@ -660,16 +666,66 @@ Rules:
         cleanedText = cleanedText.substring(jsonStart, jsonEnd + 1);
       }
 
-      console.log('Cleaned text to parse:', cleanedText.substring(0, 300));
+      // Fix common JSON issues
+      cleanedText = cleanedText.replace(/,\s*]/g, ']').replace(/,\s*}/g, '}');
 
       const parsed = JSON.parse(cleanedText);
       console.log('Successfully parsed', parsed.length, 'edge cases');
+      
+      // Log warning if we didn't get enough test cases
+      if (parsed.length < 15) {
+        console.warn(`Warning: Only generated ${parsed.length} edge cases, expected 25`);
+      } else {
+        console.log(`Successfully generated ${parsed.length} quality edge cases!`);
+      }
+      
       return parsed;
       
     } catch (error) {
       console.error('Error generating edge cases:', error.message);
-      console.error('Stack:', error.stack);
-      throw new Error('Failed to generate edge cases');
+      console.log('Retrying with simpler prompt...');
+      
+      // Retry with a much simpler prompt for fewer test cases
+      try {
+        const simplePrompt = `Generate 20 test cases for: "${title}"
+${functionSignature ? `Function: ${functionSignature}` : ''}
+Description: ${description ? (typeof description === 'string' ? description : description.description || '') : ''}
+
+Return ONLY a JSON array:
+[{"name":"test_name","input":[args],"expectedOutput":result,"explanation":"why","category":"boundary|edge|typical"}]
+
+Rules: Input must be array of args, expectedOutput must be correct, no markdown`;
+
+        const retryResult = await model.generateContent(simplePrompt);
+        const retryText = retryResult.response.text().trim();
+        
+        let cleanedRetry = retryText;
+        if (cleanedRetry.startsWith('```json')) cleanedRetry = cleanedRetry.slice(7);
+        else if (cleanedRetry.startsWith('```')) cleanedRetry = cleanedRetry.slice(3);
+        if (cleanedRetry.endsWith('```')) cleanedRetry = cleanedRetry.slice(0, -3);
+        cleanedRetry = cleanedRetry.trim();
+        
+        const jsonStart = cleanedRetry.indexOf('[');
+        const jsonEnd = cleanedRetry.lastIndexOf(']');
+        if (jsonStart !== -1 && jsonEnd !== -1) {
+          cleanedRetry = cleanedRetry.substring(jsonStart, jsonEnd + 1);
+        }
+        
+        cleanedRetry = cleanedRetry.replace(/,\s*]/g, ']').replace(/,\s*}/g, '}');
+        const retryParsed = JSON.parse(cleanedRetry);
+        console.log('Retry succeeded! Generated', retryParsed.length, 'edge cases');
+        return retryParsed;
+      } catch (retryError) {
+        console.error('Retry also failed:', retryError.message);
+        console.log('Returning fallback edge cases');
+        return [
+          { name: "empty_input", input: [], expectedOutput: null, explanation: "Test empty input", category: "boundary" },
+          { name: "single_element", input: [[1]], expectedOutput: null, explanation: "Single element test", category: "edge" },
+          { name: "two_elements", input: [[1, 2]], expectedOutput: null, explanation: "Two elements test", category: "edge" },
+          { name: "simple_case", input: [[1, 2, 3]], expectedOutput: null, explanation: "Simple test case", category: "typical" },
+          { name: "negative_numbers", input: [[-1, -2, -3]], expectedOutput: null, explanation: "Negative numbers", category: "special" }
+        ];
+      }
     }
   }
 }

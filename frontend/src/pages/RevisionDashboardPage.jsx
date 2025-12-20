@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRevisionStore } from '../stores/revisionStore';
 import { useAuthStore } from '../stores/authStore';
-import { Zap, Target, Dice3, ChevronDown, ChevronUp, PartyPopper, Briefcase, Play, X, Building } from 'lucide-react';
+import { Zap, Target, Dice3, ChevronDown, ChevronUp, PartyPopper, Briefcase, Play, X, Building, Code } from 'lucide-react';
 import RevisionProblemCard from '../components/features/RevisionProblemCard';
 import DashboardHeader from '../components/features/revision/DashboardHeader';
 import PracticeModeCard from '../components/features/revision/PracticeModeCard';
 import PatternProgressList from '../components/features/revision/PatternProgressList';
+import SolveProblemsSection from '../components/features/revision/SolveProblemsSection';
 import SearchableSelect from '../components/ui/SearchableSelect';
 import api from '../utils/api';
 import { auth } from '../config/firebase';
@@ -15,7 +16,7 @@ import { DSA_PATTERNS, DSA_TOPICS } from '../utils/dsaConstants';
 function RevisionDashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { dueToday, overdue, upcoming, counts, loading, fetchDueToday } = useRevisionStore();
+  const { dueToday, overdue, upcoming, counts, loading, fetchDueToday, fetchRevisions, revisions } = useRevisionStore();
   const [expandedSections, setExpandedSections] = useState({ day_7: true });
   
   // Practice Modal State
@@ -33,9 +34,12 @@ function RevisionDashboardPage() {
   // Company Focus Modal State
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState('');
-
-  // Derived state for dropdowns
-  const { revisions } = useRevisionStore();
+  
+  // Upcoming Modal State
+  const [showUpcoming, setShowUpcoming] = useState(false);
+  
+  // Solve Problems Modal State
+  const [showSolveProblems, setShowSolveProblems] = useState(false);
   
   // Combine user's solved patterns/topics with standard lists
   const uniquePatterns = [...new Set([
@@ -50,7 +54,8 @@ function RevisionDashboardPage() {
 
   useEffect(() => {
     fetchDueToday();
-  }, [fetchDueToday]);
+    fetchRevisions();
+  }, [fetchDueToday, fetchRevisions]);
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -295,7 +300,10 @@ function RevisionDashboardPage() {
                   <RevisionProblemCard key={revision.id} revision={revision} />
                 ))}
                 {upcoming.length > 5 && (
-                  <button className="text-sm text-dark-400 hover:text-white w-full text-center py-2">
+                  <button 
+                    onClick={() => setShowUpcoming(true)}
+                    className="text-sm text-dark-400 hover:text-white w-full text-center py-2"
+                  >
                     View all {upcoming.length} upcoming
                   </button>
                 )}
@@ -304,6 +312,8 @@ function RevisionDashboardPage() {
               <p className="text-dark-400 text-base">No upcoming reviews scheduled.</p>
             )}
           </div>
+
+
 
         </div>
 
@@ -338,6 +348,15 @@ function RevisionDashboardPage() {
               color="green"
               count="Custom"
               onClick={() => setShowPracticeModal(true)}
+            />
+
+            <PracticeModeCard 
+              title="Solve Problems"
+              subtitle="Practice your saved problems"
+              icon={Code}
+              color="orange"
+              count={`${revisions.length}`}
+              onClick={() => setShowSolveProblems(true)}
             />
           </div>
 
@@ -585,6 +604,45 @@ function RevisionDashboardPage() {
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upcoming Modal */}
+      {showUpcoming && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-dark-900 border border-dark-800 rounded-xl p-6 w-full max-w-2xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center mb-4 shrink-0">
+              <h3 className="text-xl font-bold text-white">📅 All Upcoming Reviews ({upcoming.length})</h3>
+              <button onClick={() => setShowUpcoming(false)} className="text-dark-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-2 overflow-y-auto flex-1 pr-2">
+              {upcoming.map(revision => (
+                <RevisionProblemCard key={revision.id} revision={revision} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Solve Problems Modal */}
+      {showSolveProblems && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-dark-900 border border-dark-800 rounded-xl p-6 w-full max-w-2xl shadow-2xl max-h-[85vh] overflow-hidden">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                <Code className="w-5 h-5 text-brand-orange" /> Solve Problems
+              </h3>
+              <button onClick={() => setShowSolveProblems(false)} className="text-dark-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="overflow-y-auto max-h-[70vh]">
+              <SolveProblemsSection />
             </div>
           </div>
         </div>

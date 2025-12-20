@@ -22,13 +22,13 @@ function CodeEditor({ value, onChange, language = 'java', readOnly = false }) {
       enabled: true
     },
     padding: {
-      top: 16,
-      bottom: 16
+      top: 8,
+      bottom: 8
     }
   };
 
   return (
-    <div className="h-full w-full border border-dark-800 rounded-lg overflow-hidden">
+    <div className="h-full w-full overflow-hidden">
       <Editor
         height="100%"
         language={language}
