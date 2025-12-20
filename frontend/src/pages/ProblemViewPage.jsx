@@ -184,9 +184,8 @@ function ProblemViewPage() {
         // For saved problems, generate and save notes
         const generatedNotes = await generateNotes(problem.id);
         await updateProblem(problem.id, { aiNotes: generatedNotes });
-        // Refresh problem data
-        const updatedProblem = problems.find(p => p.id === id);
-        setProblem(updatedProblem);
+        // Update local state directly with generated notes
+        setProblem(prev => ({ ...prev, aiNotes: generatedNotes }));
       }
     } catch (error) {
       console.error('Failed to generate notes:', error);

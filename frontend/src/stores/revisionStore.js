@@ -22,6 +22,8 @@ export const useRevisionStore = create((set, get) => ({
   },
   loading: false,
   error: null,
+  lastFetchTime: null,
+  CACHE_DURATION: 60000, // 1 minute cache
 
   // Actions
   fetchRevisions: async () => {
@@ -34,7 +36,15 @@ export const useRevisionStore = create((set, get) => ({
     }
   },
 
-  fetchDueToday: async () => {
+  fetchDueToday: async (forceRefresh = false) => {
+    const state = get();
+    const now = Date.now();
+    
+    // Skip if cached data is fresh (unless forced)
+    if (!forceRefresh && state.lastFetchTime && (now - state.lastFetchTime) < state.CACHE_DURATION) {
+      return;
+    }
+    
     set({ loading: true, error: null });
     try {
       const response = await api.get('/revisions/due-today');
@@ -43,6 +53,7 @@ export const useRevisionStore = create((set, get) => ({
         overdue: response.data.overdue,
         upcoming: response.data.upcoming,
         counts: response.data.counts,
+        lastFetchTime: now,
         loading: false
       });
     } catch (error) {

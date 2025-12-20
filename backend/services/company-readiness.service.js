@@ -9,8 +9,8 @@ class CompanyReadinessService {
     this.loaded = false;
   }
 
-  async loadData() {
-    if (this.loaded) return;
+  async loadData(force = false) {
+    if (this.loaded && !force) return;
 
     try {
       const companyTagsPath = path.join(__dirname, '../data/company-tags.json');

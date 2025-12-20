@@ -111,6 +111,43 @@ class ProblemAnalyzerService {
     if (!this.companyTags?.companies) return [];
     return Object.keys(this.companyTags.companies);
   }
+
+  // Update company database with new problem
+  async updateCompanyDatabase(title, companies) {
+    if (!companies || companies.length === 0) return;
+
+    await this.loadPreloadedData();
+    let hasUpdates = false;
+    
+    // Normalize problem title to ensure consistency
+    const problemTitle = title.trim();
+
+    companies.forEach(companyName => {
+      // Create company if it doesn't exist (optional, but good for robustness)
+      if (!this.companyTags.companies[companyName]) {
+        // We only add if it's a known company structure, or we can't infer difficulty/name properly
+        // For now, only update EXISTING companies to preserve structure
+        return;
+      }
+
+      const companyData = this.companyTags.companies[companyName];
+      if (!companyData.problems.includes(problemTitle)) {
+        companyData.problems.push(problemTitle);
+        hasUpdates = true;
+        console.log(`📝 Added "${problemTitle}" to ${companyName}`);
+      }
+    });
+
+    if (hasUpdates) {
+      try {
+        const companyTagsPath = path.join(__dirname, '../data/company-tags.json');
+        await fs.writeFile(companyTagsPath, JSON.stringify(this.companyTags, null, 2), 'utf-8');
+        console.log('✅ Company tags database updated successfully');
+      } catch (error) {
+        console.error('❌ Failed to update company tags database:', error);
+      }
+    }
+  }
 }
 
 module.exports = new ProblemAnalyzerService();

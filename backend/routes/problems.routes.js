@@ -7,6 +7,7 @@ const revisionService = require('../services/revision.service');
 const spacedRepetitionService = require('../services/spaced-repetition.service');
 const aiService = require('../services/ai.service');
 const cacheService = require('../services/cache.service');
+const companyReadiness = require('../services/company-readiness.service');
 
 // GET /api/problems - Get all problems for a user
 router.get('/', verifyToken, async (req, res) => {
@@ -120,6 +121,17 @@ router.post('/', verifyToken, async (req, res) => {
     } catch (err) {
       console.error('Failed to auto-add to revision queue:', err);
       // Don't fail the request, just log
+    }
+
+    // Update company database if needed (dynamic learning)
+    if (analysis.companies && analysis.companies.length > 0) {
+      try {
+        await problemAnalyzer.updateCompanyDatabase(analysis.title, analysis.companies);
+        // Force reload of company data for UI consistency
+        await companyReadiness.loadData(true);
+      } catch (err) {
+        console.error('Failed to update company database:', err);
+      }
     }
 
     res.status(201).json({

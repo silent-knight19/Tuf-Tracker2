@@ -19,6 +19,7 @@ Provide a JSON response with the following fields:
   "difficulty": "Easy" | "Medium" | "Hard",
   "topics": ["topic1", "topic2", ...], // Array of relevant topics (e.g., Array, String, Tree, Graph, etc.)
   "patterns": ["pattern1", "pattern2", ...], // Array of algorithmic patterns (e.g., Two Pointers, Sliding Window, DFS, BFS, DP, etc.)
+  "companies": ["company1", "company2", ...], // Array of major tech companies known to ask this problem
   "platform": "${platform}",
   "platformUrl": "${url || 'N/A'}"
 }
@@ -27,6 +28,7 @@ IMPORTANT:
 - Difficulty must be exactly one of: Easy, Medium, Hard
 - Topics should be standard CS terms: Array, String, Hash Table, Linked List, Tree, Graph, Stack, Queue, Heap, Dynamic Programming, etc.
 - Patterns MUST be chosen from this strict list: Two Pointers, Sliding Window, Fast & Slow Pointers, Prefix Sum, Kadane Pattern, Cyclic Sort, Hash Map / Hash Set, Binary Search, Binary Search on Answer, DFS, BFS, Tree BFS, Tree DFS, Graph Traversal, Topological Sort, Union Find, 0/1 Knapsack DP, Unbounded Knapsack DP, Subsequence DP, Partition DP / Subset DP, Grid DP, Subsets, Permutations, Combination Sum Variants, Monotonic Stack, Stack, Min Heap / Max Heap, Two Heaps Pattern, Linked List Patterns, Trie + String Matching.
+- Companies: Include major tech companies known to ask this problem in interviews (e.g., Google, Amazon, Meta, Microsoft, Apple, Netflix, Bloomberg, Uber, LinkedIn, Adobe, etc.). If this is a well-known LeetCode problem, you likely know which companies ask it. If unsure, provide your best educated guess based on the problem type and difficulty, or return an empty array [].
 - Return ONLY valid JSON, no markdown or extra text.
 `;
 

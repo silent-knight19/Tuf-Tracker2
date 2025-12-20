@@ -16,6 +16,22 @@ function ProblemCard({ problem, onClick }) {
     Hard: 'badge-hard',
   };
 
+  // Helper to convert Firestore timestamp or ISO string to Date
+  const parseFirestoreDate = (date) => {
+    if (!date) return null;
+    // Handle Firestore Timestamp object (serialized as _seconds/_nanoseconds)
+    if (date._seconds) {
+      return new Date(date._seconds * 1000);
+    }
+    // Handle toDate() method (Firestore Timestamp client-side)
+    if (date.toDate) {
+      return date.toDate();
+    }
+    // Handle ISO string or Date object
+    const parsed = new Date(date);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  };
+
   const handleViewRevision = (e) => {
     e.stopPropagation();
     if (revision) {
@@ -76,9 +92,9 @@ function ProblemCard({ problem, onClick }) {
       <div className="mt-4 pt-4 border-t border-dark-800 flex items-center justify-between text-sm text-dark-400">
         <div className="flex items-center gap-4">
           <span>{problem.platform}</span>
-          {problem.solvedAt && (
+          {problem.solvedAt && parseFirestoreDate(problem.solvedAt) && (
             <span>
-              Solved {new Date(problem.solvedAt).toLocaleDateString()}
+              Solved {parseFirestoreDate(problem.solvedAt).toLocaleDateString()}
             </span>
           )}
         </div>

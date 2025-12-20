@@ -172,7 +172,7 @@ function AIInterviewPage() {
 
   // Helper function to convert edge cases to JSON test format
   const convertEdgeCasesToJsonFormat = (edgeCases, problem) => {
-    const methodName = inferMethodName(problem.title);
+    const methodName = getMethodName(problem.title, problem.functionSignature);
     
     const tests = edgeCases.map(edgeCase => {
       const args = parseInputToArgs(edgeCase.input);
@@ -190,8 +190,22 @@ function AIInterviewPage() {
     }, null, 2);
   };
 
-  // Infer method name from problem title
-  const inferMethodName = (title) => {
+  // Extract method name from function signature or infer from title
+  const getMethodName = (title, functionSignature) => {
+    // 1. Try to extract from function signature
+    if (functionSignature) {
+      const match = functionSignature.match(/\s+([a-zA-Z0-9_]+)\s*\(/);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+
+    // 2. Fallback: infer from title
+    return inferMethodNameFromTitle(title);
+  };
+
+  // Infer method name from problem title (Fallback)
+  const inferMethodNameFromTitle = (title) => {
     if (!title) return 'solve';
     
     const commonMethods = {

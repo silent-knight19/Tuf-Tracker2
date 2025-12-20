@@ -93,15 +93,15 @@ function CompaniesPage() {
             <div className="flex items-start justify-between mb-4">
               <div className="w-12 h-12 rounded-lg bg-dark-800 flex items-center justify-center group-hover:bg-brand-orange/10 transition-colors overflow-hidden">
                 <img 
-                  src={`https://logo.clearbit.com/${company.name.toLowerCase().replace(/\s+/g, '')}.com`}
+                  src={`https://www.google.com/s2/favicons?domain=${company.name.toLowerCase().replace(/\s+/g, '')}.com&sz=128`}
                   alt={`${company.name} logo`}
                   className="w-8 h-8 object-contain"
                   onError={(e) => {
                     e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'block';
+                    e.target.parentNode.querySelector('.fallback-icon').style.display = 'block';
                   }}
                 />
-                <Building2 className="w-6 h-6 text-dark-400 group-hover:text-brand-orange transition-colors hidden" />
+                <Building2 className="fallback-icon w-6 h-6 text-dark-400 group-hover:text-brand-orange transition-colors hidden" />
               </div>
               <span className={`badge ${
                 company.difficulty === 'Hard' ? 'badge-hard' :
@@ -133,15 +133,15 @@ function CompaniesPage() {
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-brand-orange/10 flex items-center justify-center overflow-hidden">
                   <img 
-                    src={`https://logo.clearbit.com/${readinessData.company.toLowerCase().replace(/\s+/g, '')}.com`}
+                    src={`https://www.google.com/s2/favicons?domain=${readinessData.company.toLowerCase().replace(/\s+/g, '')}.com&sz=128`}
                     alt={`${readinessData.company} logo`}
                     className="w-8 h-8 object-contain"
                     onError={(e) => {
                       e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'block';
+                      e.target.parentNode.querySelector('.fallback-icon').style.display = 'block';
                     }}
                   />
-                  <Building2 className="w-6 h-6 text-brand-orange hidden" />
+                  <Building2 className="fallback-icon w-6 h-6 text-brand-orange hidden" />
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-white">{readinessData.company}</h2>
