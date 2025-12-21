@@ -16,7 +16,22 @@ router.get('/overview', verifyToken, async (req, res) => {
       problems.push(doc.data());
     });
 
+    // Debug logging
+    console.log('Analytics Overview - Total problems:', problems.length);
+    const solvedProblems = problems.filter(p => p.status === 'Solved' || p.status === 'Completed' || p.solvedAt);
+    console.log('Analytics Overview - Solved problems:', solvedProblems.length);
+    if (solvedProblems.length > 0) {
+      console.log('Sample solved problem dates:', solvedProblems.slice(0, 3).map(p => ({
+        title: p.title,
+        status: p.status,
+        solvedAt: p.solvedAt,
+        updatedAt: p.updatedAt,
+        createdAt: p.createdAt
+      })));
+    }
+
     const stats = analyticsService.calculateOverallStats(problems);
+    console.log('Analytics Overview - Stats:', stats);
 
     res.json(stats);
   } catch (error) {

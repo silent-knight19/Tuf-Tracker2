@@ -57,15 +57,40 @@ class AnalyticsService {
   }
 
   // Generate heatmap data (activity calendar)
+  // Helper to check if a problem is considered solved
+  isSolvedProblem(problem) {
+    // A problem is solved if it has status 'Solved'/'Completed' OR has a solvedAt date
+    return problem.status === 'Solved' || problem.status === 'Completed' || problem.solvedAt;
+  }
+
   generateHeatmapData(problems) {
     const heatmap = {};
     
     problems.forEach(problem => {
-      if (problem.solvedAt) {
-        const date = new Date(problem.solvedAt._seconds ? problem.solvedAt._seconds * 1000 : problem.solvedAt);
-        const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+      // Only count solved problems
+      if (!this.isSolvedProblem(problem)) return;
+      
+      // Check solvedAt first, then updatedAt, then createdAt
+      const dateField = problem.solvedAt || problem.updatedAt || problem.createdAt;
+      if (dateField) {
+        let date;
+        // Handle Firestore timestamp with _seconds
+        if (dateField._seconds) {
+          date = new Date(dateField._seconds * 1000);
+        } 
+        // Handle Firestore timestamp with seconds
+        else if (dateField.seconds) {
+          date = new Date(dateField.seconds * 1000);
+        } 
+        // Handle ISO string or Date
+        else {
+          date = new Date(dateField);
+        }
         
-        heatmap[dateKey] = (heatmap[dateKey] || 0) + 1;
+        if (!isNaN(date.getTime())) {
+          const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+          heatmap[dateKey] = (heatmap[dateKey] || 0) + 1;
+        }
       }
     });
 
@@ -79,14 +104,32 @@ class AnalyticsService {
     const timeline = [];
     const now = new Date();
     
+    // Helper to extract date from various formats
+    const getDateFromField = (dateField) => {
+      if (!dateField) return null;
+      let date;
+      if (dateField._seconds) {
+        date = new Date(dateField._seconds * 1000);
+      } else if (dateField.seconds) {
+        date = new Date(dateField.seconds * 1000);
+      } else {
+        date = new Date(dateField);
+      }
+      return isNaN(date.getTime()) ? null : date;
+    };
+    
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(now);
       date.setDate(date.getDate() - i);
       const dateKey = date.toISOString().split('T')[0];
       
       const problemsOnDate = problems.filter(p => {
-        if (!p.solvedAt) return false;
-        const solvedDate = new Date(p.solvedAt._seconds ? p.solvedAt._seconds * 1000 : p.solvedAt);
+        // Only count solved problems
+        if (!this.isSolvedProblem(p)) return false;
+        
+        const solvedDate = getDateFromField(p.solvedAt || p.updatedAt || p.createdAt);
+        if (!solvedDate) return false;
+        
         return solvedDate.toISOString().split('T')[0] === dateKey;
       });
 
@@ -107,10 +150,13 @@ class AnalyticsService {
     const total = problems.length;
     const difficultyDist = this.calculateDifficultyDistribution(problems);
     
-    // Calculate streaks
+    // Calculate streaks and heatmap
     const heatmapData = this.generateHeatmapData(problems);
     const currentStreak = this.calculateCurrentStreak(heatmapData);
     const longestStreak = this.calculateLongestStreak(heatmapData);
+
+    // Calculate total active days (unique days with any solved problem)
+    const totalActiveDays = this.calculateTotalActiveDays(problems);
 
     // Calculate topic and pattern diversity
     const topics = new Set();
@@ -128,10 +174,42 @@ class AnalyticsService {
       hardCount: difficultyDist.Hard,
       currentStreak,
       longestStreak,
+      totalActiveDays,
       topicsCovered: topics.size,
       patternsMastered: patterns.size,
       averagePerDay: this.calculateAveragePerDay(problems)
     };
+  }
+
+  // Calculate total unique active days
+  calculateTotalActiveDays(problems) {
+    if (problems.length === 0) return 0;
+
+    const activeDates = new Set();
+    
+    problems.forEach(problem => {
+      // Check solvedAt first, then updatedAt, then createdAt
+      const dateField = problem.solvedAt || problem.updatedAt || problem.createdAt;
+      if (dateField) {
+        let date;
+        if (dateField._seconds) {
+          date = new Date(dateField._seconds * 1000);
+        } else if (dateField.seconds) {
+          date = new Date(dateField.seconds * 1000);
+        } else {
+          date = new Date(dateField);
+        }
+        
+        if (!isNaN(date.getTime())) {
+          // Only count if problem is solved
+          if (this.isSolvedProblem(problem)) {
+            activeDates.add(date.toISOString().split('T')[0]);
+          }
+        }
+      }
+    });
+
+    return activeDates.size;
   }
 
   calculateCurrentStreak(heatmapData) {

@@ -180,8 +180,37 @@ function ProblemsPage() {
               <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>Add Your First Problem</button>
             </div>
           ) : (
-            problems
-              .filter(p => p.status !== 'ViewOnly')
+            // Debug log for date sorting
+            (() => {
+              const filtered = problems.filter(p => p.status !== 'ViewOnly');
+              console.log('Problems before sorting:', filtered.map(p => ({
+                title: p.title,
+                solvedAt: p.solvedAt,
+                updatedAt: p.updatedAt,
+                createdAt: p.createdAt
+              })));
+              return filtered;
+            })()
+              .sort((a, b) => {
+                // Sort by solvedAt/updatedAt/createdAt in descending order (newest first)
+                const getTime = (problem) => {
+                  // Priority: solvedAt > updatedAt > createdAt
+                  const dateField = problem.solvedAt || problem.updatedAt || problem.createdAt;
+                  if (!dateField) return 0;
+                  
+                  // Handle Firestore Timestamp with _seconds (serialized from backend)
+                  if (dateField._seconds) return dateField._seconds * 1000;
+                  // Handle Firestore Timestamp with seconds
+                  if (dateField.seconds) return dateField.seconds * 1000;
+                  // Handle toDate() method (Firestore Timestamp client-side)
+                  if (dateField.toDate) return dateField.toDate().getTime();
+                  // Handle ISO string or Date object
+                  const date = new Date(dateField);
+                  return isNaN(date.getTime()) ? 0 : date.getTime();
+                };
+                
+                return getTime(b) - getTime(a); // Descending order (newest first)
+              })
               .map((problem) => (
                 <div key={problem.id} className="cursor-pointer">
                   <ProblemCard problem={problem} />
