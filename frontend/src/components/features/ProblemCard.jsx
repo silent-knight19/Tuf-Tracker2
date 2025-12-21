@@ -94,7 +94,7 @@ function ProblemCard({ problem, onClick }) {
           <span>{problem.platform}</span>
           {problem.solvedAt && parseFirestoreDate(problem.solvedAt) && (
             <span>
-              Solved {parseFirestoreDate(problem.solvedAt).toLocaleDateString()}
+              Solved {parseFirestoreDate(problem.solvedAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })}
             </span>
           )}
         </div>
