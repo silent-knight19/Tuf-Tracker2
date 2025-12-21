@@ -612,8 +612,8 @@ Return ONLY a valid JSON object with this structure:
       const constraintsText = constraints?.length > 0 ? `\nConstraints:\n${constraints.map(c => `- ${c}`).join('\n')}` : '';
       const examplesText = examples?.length > 0 ? `\nExamples:\n${examples.map((ex, i) => `Example ${i+1}: Input: ${JSON.stringify(ex.input)}, Output: ${JSON.stringify(ex.output)}`).join('\n')}` : '';
 
-      // Quality 25 edge case generation prompt
-      const prompt = `You are an expert test engineer. Generate 25 HIGH-QUALITY test cases.
+      // Quality 25 edge case generation prompt - more emphatic about count
+      const prompt = `You are an expert test engineer. You MUST generate EXACTLY 25 test cases. Not 15, not 20, but EXACTLY 25.
 
 Problem: "${title}"
 ${functionSignature ? `Function: ${functionSignature}` : ''}
@@ -621,25 +621,26 @@ ${descriptionText}
 ${constraintsText}
 ${examplesText}
 
-Generate EXACTLY 25 test cases covering:
-- **BOUNDARY (4 tests):** Min/max constraints, edge of valid ranges
-- **EMPTY/MINIMAL (3 tests):** Empty input, single element, minimal valid input  
-- **CORNER CASES (5 tests):** Cases that break naive solutions
-- **ALGORITHM-SPECIFIC (5 tests):** Test core logic paths
-- **SPECIAL VALUES (4 tests):** Zero, negative, duplicates, special patterns
-- **TYPICAL (4 tests):** Standard inputs users would provide
+You MUST generate ALL 25 test cases covering these categories:
+1. BOUNDARY (5 tests): Min/max constraints, edge of valid ranges
+2. EMPTY/MINIMAL (4 tests): Empty input, single element, minimal valid input  
+3. CORNER CASES (5 tests): Cases that break naive solutions
+4. ALGORITHM-SPECIFIC (5 tests): Test core logic paths
+5. SPECIAL VALUES (3 tests): Zero, negative, duplicates, special patterns
+6. TYPICAL (3 tests): Standard inputs users would provide
 
-Return ONLY valid JSON:
+Return ONLY valid JSON array with EXACTLY 25 objects:
 [
   {"name": "test_name", "input": [args], "expectedOutput": result, "explanation": "why", "category": "boundary|edge|corner|typical"}
 ]
 
-RULES:
-- EXACTLY 25 tests, all RELEVANT to "${title}"
+CRITICAL RULES:
+- You MUST output EXACTLY 25 test cases - count them!
 - Input must match function signature parameter types
 - expectedOutput must be CORRECT (calculate carefully!)
 - Short explanations (under 30 chars)
 - Valid JSON only, no markdown
+- DO NOT STOP EARLY - generate all 25!
 `;
 
       console.log('Generating 25 quality edge cases for:', title);
@@ -669,16 +670,48 @@ RULES:
       // Fix common JSON issues
       cleanedText = cleanedText.replace(/,\s*]/g, ']').replace(/,\s*}/g, '}');
 
-      const parsed = JSON.parse(cleanedText);
-      console.log('Successfully parsed', parsed.length, 'edge cases');
+      let parsed = JSON.parse(cleanedText);
+      console.log('First attempt generated', parsed.length, 'edge cases');
       
-      // Log warning if we didn't get enough test cases
-      if (parsed.length < 15) {
-        console.warn(`Warning: Only generated ${parsed.length} edge cases, expected 25`);
-      } else {
-        console.log(`Successfully generated ${parsed.length} quality edge cases!`);
+      // If we got fewer than 20, try to generate more to supplement
+      if (parsed.length < 20) {
+        console.log('Generating additional edge cases to reach 25...');
+        const remaining = 25 - parsed.length;
+        const supplementPrompt = `Generate ${remaining} MORE test cases for: "${title}"
+${functionSignature ? `Function: ${functionSignature}` : ''}
+Description: ${typeof description === 'string' ? description : description?.description || ''}
+
+These should be DIFFERENT from existing tests. Focus on edge cases and corner cases.
+Return ONLY a JSON array with ${remaining} test cases:
+[{"name": "test_name", "input": [args], "expectedOutput": result, "explanation": "why", "category": "boundary|edge|corner|typical"}]`;
+
+        try {
+          await rateLimiter.checkAndWait();
+          const supplementResult = await model.generateContent(supplementPrompt);
+          let supplementText = supplementResult.response.text().trim();
+          
+          // Clean markdown
+          if (supplementText.startsWith('```json')) supplementText = supplementText.slice(7);
+          if (supplementText.startsWith('```')) supplementText = supplementText.slice(3);
+          if (supplementText.endsWith('```')) supplementText = supplementText.slice(0, -3);
+          supplementText = supplementText.trim();
+          
+          const suppJsonStart = supplementText.indexOf('[');
+          const suppJsonEnd = supplementText.lastIndexOf(']');
+          if (suppJsonStart !== -1 && suppJsonEnd !== -1) {
+            supplementText = supplementText.substring(suppJsonStart, suppJsonEnd + 1);
+          }
+          supplementText = supplementText.replace(/,\s*]/g, ']').replace(/,\s*}/g, '}');
+          
+          const supplementParsed = JSON.parse(supplementText);
+          parsed = [...parsed, ...supplementParsed];
+          console.log('After supplementing, total edge cases:', parsed.length);
+        } catch (suppError) {
+          console.warn('Failed to generate supplemental edge cases:', suppError.message);
+        }
       }
       
+      console.log(`Successfully generated ${parsed.length} quality edge cases!`);
       return parsed;
       
     } catch (error) {

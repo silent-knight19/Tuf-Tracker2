@@ -196,7 +196,13 @@ function SolveProblemPage() {
   };
 
   const convertEdgeCasesToJsonFormat = (edgeCases, problem) => {
+    // At this point, description should be loaded (we only generate edge cases after description loads)
+    // Use description.functionSignature directly if available
     const methodName = getMethodName(problem.problemTitle, description?.functionSignature);
+    
+    console.log('Converting edge cases to JSON format...');
+    console.log('Method name extracted:', methodName);
+    console.log('Function signature:', description?.functionSignature);
     
     const tests = edgeCases.map(edgeCase => {
       const args = parseInputToArgs(edgeCase.input);
@@ -208,10 +214,13 @@ function SolveProblemPage() {
       };
     });
 
-    return JSON.stringify({
+    const jsonResult = JSON.stringify({
       method: methodName,
       tests: tests
     }, null, 2);
+    
+    console.log('Generated JSON input (first 500 chars):', jsonResult.substring(0, 500));
+    return jsonResult;
   };
 
   const getMethodName = (title, functionSignature) => {

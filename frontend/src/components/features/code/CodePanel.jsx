@@ -5,6 +5,7 @@ import CodeEditor from './CodeEditor';
 import ConsolePanel from './ConsolePanel';
 import InputPanel from './InputPanel';
 import EdgeCasesPanel from './EdgeCasesPanel';
+import Timer from './Timer';
 
 const DEFAULT_JAVA_TEMPLATE = `import java.util.*;
 
@@ -34,6 +35,20 @@ function CodePanel({ problemId, onRunCode, edgeCases, onGenerateEdgeCases, isGen
   const [editorHeight, setEditorHeight] = useState(60); // percentage
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
+
+  // Update code when functionSignature is received (after AI fetches description)
+  useEffect(() => {
+    if (functionSignature) {
+      // Only update if code hasn't been modified by user (still matches default or empty template)
+      const isUsingDefaultTemplate = code === DEFAULT_JAVA_TEMPLATE || 
+        code === `import java.util.*;\n\nclass Solution {\n    // Write your solution method here\n    public int[] twoSum(int[] nums, int target) {\n        // Your code here\n        return new int[]{};\n    }\n}`;
+      
+      if (isUsingDefaultTemplate) {
+        const newCode = `import java.util.*;\n\nclass Solution {\n    ${functionSignature} {\n        // Write your code here\n        \n    }\n}`;
+        setCode(newCode);
+      }
+    }
+  }, [functionSignature]);
 
   // Auto-populate stdin when edge cases are generated
   useEffect(() => {
@@ -132,11 +147,16 @@ function CodePanel({ problemId, onRunCode, edgeCases, onGenerateEdgeCases, isGen
     <div ref={containerRef} className="h-full flex flex-col bg-dark-900 border border-dark-800 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-dark-800 bg-dark-900 shrink-0">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-semibold text-dark-400">Language:</span>
-          <div className="px-2 py-1 bg-dark-800 rounded text-xs font-medium text-white border border-dark-700">
-            Java
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold text-dark-400">Language:</span>
+            <div className="px-2 py-1 bg-dark-800 rounded text-xs font-medium text-white border border-dark-700">
+              Java
+            </div>
           </div>
+          
+          {/* Timer */}
+          <Timer autoStart={true} />
         </div>
 
         <div className="flex items-center gap-2">
@@ -223,7 +243,7 @@ function CodePanel({ problemId, onRunCode, edgeCases, onGenerateEdgeCases, isGen
             />
           )}
           {activeTab === 'input' && (
-            <InputPanel stdin={stdin} setStdin={setStdin} />
+            <InputPanel value={stdin} onChange={setStdin} />
           )}
           {activeTab === 'edgecases' && (
             <EdgeCasesPanel
