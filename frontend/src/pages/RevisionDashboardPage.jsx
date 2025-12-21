@@ -17,7 +17,9 @@ function RevisionDashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { dueToday, overdue, upcoming, counts, loading, fetchDueToday, fetchRevisions, revisions } = useRevisionStore();
-  const [expandedSections, setExpandedSections] = useState({ day_7: true });
+  const [expandedSections, setExpandedSections] = useState({ 
+    day_2: true, day_7: true, day_14: true, day_30: true, month_2: true, month_3: true, monthly: true 
+  });
   
   // Practice Modal State
   const [showPracticeModal, setShowPracticeModal] = useState(false);
@@ -248,43 +250,13 @@ function RevisionDashboardPage() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {/* Render sections dynamically */}
-                {Object.entries(dueToday).map(([key, items]) => {
-                  if (!items || items.length === 0) return null;
-                  
-                  const labels = {
-                    day_2: 'Day 2/3 Review',
-                    day_7: 'Day 7 Review',
-                    day_14: 'Day 14 Review',
-                    day_30: 'Day 30 Review',
-                    month_2: 'Week 2 Review',
-                    month_3: 'Month 3 Check',
-                    monthly: 'Monthly Mastery'
-                  };
-
-                  return (
-                    <div key={key}>
-                      <button
-                        onClick={() => toggleSection(key)}
-                        className="flex items-center justify-between w-full text-left mb-2 hover:text-brand-orange transition-colors group"
-                      >
-                        <span className="text-base font-medium text-dark-300 group-hover:text-brand-orange transition-colors">
-                          {labels[key] || key} ({items.length})
-                        </span>
-                        {expandedSections[key] ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                      </button>
-                      
-                      {expandedSections[key] && (
-                        <div className="space-y-2 animate-fadeIn">
-                          {items.map(revision => (
-                            <RevisionProblemCard key={revision.id} revision={revision} />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+              <div className="space-y-3">
+                {/* Use RevisionProblemCard like the upcoming section */}
+                {Object.entries(dueToday).flatMap(([key, items]) => 
+                  (items || []).map(revision => (
+                    <RevisionProblemCard key={revision.id} revision={revision} />
+                  ))
+                )}
               </div>
             )}
           </div>

@@ -178,14 +178,29 @@ export const useRevisionStore = create((set, get) => ({
     try {
       await api.delete(`/revisions/${revisionId}`);
 
-      // Remove from state
+      // Remove from all state arrays immediately
       set(state => ({
         revisions: state.revisions.filter(r => r.id !== revisionId),
+        upcoming: state.upcoming.filter(r => r.id !== revisionId),
+        overdue: state.overdue.filter(r => r.id !== revisionId),
+        dueToday: {
+          day_2: state.dueToday.day_2.filter(r => r.id !== revisionId),
+          day_7: state.dueToday.day_7.filter(r => r.id !== revisionId),
+          day_14: state.dueToday.day_14.filter(r => r.id !== revisionId),
+          day_30: state.dueToday.day_30.filter(r => r.id !== revisionId),
+          month_2: state.dueToday.month_2.filter(r => r.id !== revisionId),
+          month_3: state.dueToday.month_3.filter(r => r.id !== revisionId),
+          monthly: state.dueToday.monthly.filter(r => r.id !== revisionId)
+        },
+        counts: {
+          ...state.counts,
+          upcoming: state.upcoming.filter(r => r.id !== revisionId).length
+        },
         loading: false
       }));
 
-      // Refresh due today
-      get().fetchDueToday();
+      // Force refresh to sync with backend
+      get().fetchDueToday(true);
     } catch (error) {
       set({ error: error.message, loading: false });
       throw error;

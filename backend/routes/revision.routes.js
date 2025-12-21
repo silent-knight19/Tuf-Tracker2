@@ -86,7 +86,19 @@ router.get('/due-today', verifyToken, async (req, res) => {
     // Sort overdue by days overdue (most urgent first)
     overdue.sort((a, b) => b.overdueDays - a.overdueDays);
 
+    // Deduplicate upcoming by problemTitle (keep first occurrence)
+    const seenTitles = new Set();
+    const uniqueUpcoming = upcoming.filter(r => {
+      const title = r.problemTitle || r.id;
+      if (seenTitles.has(title)) {
+        return false;
+      }
+      seenTitles.add(title);
+      return true;
+    });
+
     // Group dueToday by phase
+    const recognizedPhases = ['day_2', 'day_7', 'day_14', 'day_30'];
     const groupedDueToday = {
       day_2: dueToday.filter(r => r.phase === 'day_2'),
       day_7: dueToday.filter(r => r.phase === 'day_7'),
@@ -94,17 +106,18 @@ router.get('/due-today', verifyToken, async (req, res) => {
       day_30: dueToday.filter(r => r.phase === 'day_30'),
       month_2: dueToday.filter(r => r.phase?.startsWith('month_2')),
       month_3: dueToday.filter(r => r.phase?.startsWith('month_3')),
-      monthly: dueToday.filter(r => ['month_4_monthly', 'month_5_monthly', 'month_6_monthly'].includes(r.phase))
+      monthly: dueToday.filter(r => ['month_4_monthly', 'month_5_monthly', 'month_6_monthly'].includes(r.phase)),
+      other: dueToday.filter(r => !r.phase || (!recognizedPhases.includes(r.phase) && !r.phase?.startsWith('month')))
     };
 
     res.json({
       dueToday: groupedDueToday,
       overdue,
-      upcoming: upcoming.slice(0, 20), // Limit to next 20
+      upcoming: uniqueUpcoming.slice(0, 20), // Limit to next 20
       counts: {
         dueToday: dueToday.length,
         overdue: overdue.length,
-        upcoming: upcoming.length
+        upcoming: uniqueUpcoming.length
       }
     });
   } catch (error) {

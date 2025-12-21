@@ -685,9 +685,9 @@ RULES:
       console.error('Error generating edge cases:', error.message);
       console.log('Retrying with simpler prompt...');
       
-      // Retry with a much simpler prompt for fewer test cases
+      // Retry with a simpler prompt for edge cases
       try {
-        const simplePrompt = `Generate 20 test cases for: "${title}"
+        const simplePrompt = `Generate 25 test cases for: "${title}"
 ${functionSignature ? `Function: ${functionSignature}` : ''}
 Description: ${description ? (typeof description === 'string' ? description : description.description || '') : ''}
 
