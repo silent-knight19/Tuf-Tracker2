@@ -25,7 +25,7 @@ function BackendHealthCheck({ children }) {
     const checkHealth = async () => {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 120s timeout (2 minutes for cold starts)
         
         const response = await fetch(`${BACKEND_BASE_URL}/health`, {
           signal: controller.signal
