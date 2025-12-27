@@ -9,6 +9,7 @@ import PracticeModeCard from '../components/features/revision/PracticeModeCard';
 import PatternProgressList from '../components/features/revision/PatternProgressList';
 import SolveProblemsSection from '../components/features/revision/SolveProblemsSection';
 import SearchableSelect from '../components/ui/SearchableSelect';
+import CodeHighlighter from '../components/ui/CodeHighlighter';
 import api from '../utils/api';
 import { auth } from '../config/firebase';
 import { DSA_PATTERNS, DSA_TOPICS } from '../utils/dsaConstants';
@@ -16,7 +17,7 @@ import { DSA_PATTERNS, DSA_TOPICS } from '../utils/dsaConstants';
 function RevisionDashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { dueToday, overdue, upcoming, counts, loading, fetchDueToday, fetchRevisions, revisions } = useRevisionStore();
+  const { dueToday, overdue, upcoming, counts, loading, fetchDueToday, fetchRevisions, revisions, removeFromQueue } = useRevisionStore();
   const [expandedSections, setExpandedSections] = useState({ 
     day_2: true, day_7: true, day_14: true, day_30: true, month_2: true, month_3: true, monthly: true 
   });
@@ -40,8 +41,13 @@ function RevisionDashboardPage() {
   // Upcoming Modal State
   const [showUpcoming, setShowUpcoming] = useState(false);
   
+  // Overdue Modal State
+  const [showOverdue, setShowOverdue] = useState(false);
+  const [clearingOverdue, setClearingOverdue] = useState(false);
+  
   // Solve Problems Modal State
   const [showSolveProblems, setShowSolveProblems] = useState(false);
+  
   
   // Combine user's solved patterns/topics with standard lists
   const uniquePatterns = [...new Set([
@@ -189,6 +195,28 @@ function RevisionDashboardPage() {
     }
   };
 
+  const handleClearAllOverdue = async () => {
+    if (!window.confirm(`Are you sure you want to remove all ${overdue.length} overdue problems from your revision queue?`)) {
+      return;
+    }
+    
+    setClearingOverdue(true);
+    try {
+      // Remove all overdue items
+      for (const revision of overdue) {
+        await removeFromQueue(revision.id);
+      }
+    } catch (error) {
+      console.error('Failed to clear overdue items:', error);
+      alert('Failed to clear some overdue items');
+    } finally {
+      setClearingOverdue(false);
+      setShowOverdue(false);
+    }
+  };
+
+
+
   if (loading && counts.dueToday === 0) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -214,8 +242,12 @@ function RevisionDashboardPage() {
                 <h3 className="text-xl font-semibold text-red-400 flex items-center gap-2">
                   ⚠️ {overdue.length} Overdue
                 </h3>
-                <button className="text-sm text-dark-400 hover:text-white transition-colors">
-                  Clear All
+                <button 
+                  onClick={handleClearAllOverdue}
+                  disabled={clearingOverdue}
+                  className="text-sm text-dark-400 hover:text-red-400 transition-colors disabled:opacity-50"
+                >
+                  {clearingOverdue ? 'Clearing...' : 'Clear All'}
                 </button>
               </div>
               <div className="space-y-3">
@@ -223,7 +255,10 @@ function RevisionDashboardPage() {
                   <RevisionProblemCard key={revision.id} revision={revision} />
                 ))}
                 {overdue.length > 3 && (
-                  <button className="text-base text-brand-orange hover:underline">
+                  <button 
+                    onClick={() => setShowOverdue(true)}
+                    className="text-base text-brand-orange hover:underline"
+                  >
                     See all {overdue.length} overdue problems →
                   </button>
                 )}
@@ -330,6 +365,8 @@ function RevisionDashboardPage() {
               count={`${revisions.length}`}
               onClick={() => setShowSolveProblems(true)}
             />
+
+
           </div>
 
         </div>
@@ -601,6 +638,35 @@ function RevisionDashboardPage() {
         </div>
       )}
 
+      {/* Overdue Modal */}
+      {showOverdue && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-dark-900 border border-red-500/30 rounded-xl p-6 w-full max-w-2xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center mb-4 shrink-0">
+              <h3 className="text-xl font-bold text-red-400">⚠️ All Overdue Problems ({overdue.length})</h3>
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={handleClearAllOverdue}
+                  disabled={clearingOverdue}
+                  className="text-sm text-dark-400 hover:text-red-400 transition-colors disabled:opacity-50"
+                >
+                  {clearingOverdue ? 'Clearing...' : 'Clear All'}
+                </button>
+                <button onClick={() => setShowOverdue(false)} className="text-dark-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="space-y-2 overflow-y-auto flex-1 pr-2">
+              {overdue.map(revision => (
+                <RevisionProblemCard key={revision.id} revision={revision} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Solve Problems Modal */}
       {showSolveProblems && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -619,6 +685,10 @@ function RevisionDashboardPage() {
           </div>
         </div>
       )}
+
+
+
+
     </div>
   );
 }

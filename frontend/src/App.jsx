@@ -1,6 +1,7 @@
 import { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
+import BackendHealthCheck from './components/layout/BackendHealthCheck';
 import './index.css';
 
 // Lazy load all pages for code splitting
@@ -35,44 +36,46 @@ function App() {
   }
 
   return (
-    <Router>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route 
-            path="/login" 
-            element={user ? <Navigate to="/" /> : <LoginPage />} 
-          />
-          <Route 
-            path="/problem/:id" 
-            element={user ? <ProblemViewPage /> : <Navigate to="/login" />} 
-          />
-          <Route 
-            path="/revision/:id" 
-            element={user ? <RevisionProblemDetailPage /> : <Navigate to="/login" />} 
-          />
-          <Route 
-            path="/revision/:id/review" 
-            element={user ? <RevisionProblemDetailPage autoOpenReview={true} /> : <Navigate to="/login" />} 
-          />
-          <Route 
-            path="/interview/ai" 
-            element={user ? <AIInterviewPage /> : <Navigate to="/login" />} 
-          />
-          <Route 
-            path="/interview/:id" 
-            element={user ? <InterviewProblemPage /> : <Navigate to="/login" />} 
-          />
-          <Route 
-            path="/solve/:id" 
-            element={user ? <SolveProblemPage /> : <Navigate to="/login" />} 
-          />
-          <Route 
-            path="/*" 
-            element={user ? <DashboardPage /> : <Navigate to="/login" />} 
-          />
-        </Routes>
-      </Suspense>
-    </Router>
+    <BackendHealthCheck>
+      <Router>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route 
+              path="/login" 
+              element={user ? <Navigate to="/" /> : <LoginPage />} 
+            />
+            <Route 
+              path="/problem/:id" 
+              element={user ? <ProblemViewPage /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/revision/:id" 
+              element={user ? <RevisionProblemDetailPage /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/revision/:id/review" 
+              element={user ? <RevisionProblemDetailPage autoOpenReview={true} /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/interview/ai" 
+              element={user ? <AIInterviewPage /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/interview/:id" 
+              element={user ? <InterviewProblemPage /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/solve/:id" 
+              element={user ? <SolveProblemPage /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/*" 
+              element={user ? <DashboardPage /> : <Navigate to="/login" />} 
+            />
+          </Routes>
+        </Suspense>
+      </Router>
+    </BackendHealthCheck>
   );
 }
 

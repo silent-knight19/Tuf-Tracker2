@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
-import { LayoutDashboard, BarChart2, Building2, RotateCw, LogOut } from 'lucide-react';
+import { LayoutDashboard, BarChart2, Building2, RotateCw, LogOut, BookOpen } from 'lucide-react';
 
 function Sidebar({ open }) {
   const location = useLocation();
@@ -11,6 +11,7 @@ function Sidebar({ open }) {
     { name: 'Analytics', path: '/analytics', icon: BarChart2 },
     { name: 'Companies', path: '/companies', icon: Building2 },
     { name: 'Revision', path: '/revision', icon: RotateCw },
+    { name: 'Learn', path: '/learn', icon: BookOpen },
   ];
 
   const isActive = (path) => location.pathname === path;

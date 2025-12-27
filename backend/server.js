@@ -40,9 +40,13 @@ app.use(express.urlencoded({ extended: true }));
 // });
 // app.use('/api/', limiter);
 
-// Health check
+// Health check - used for cold start detection and keep-alive pings
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime() // seconds since server started
+  });
 });
 
 // API Routes

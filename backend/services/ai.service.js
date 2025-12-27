@@ -761,6 +761,153 @@ Rules: Input must be array of args, expectedOutput must be correct, no markdown`
       }
     }
   }
+  // Generate comprehensive learning notes for a pattern/topic
+  async generateLearningNotes(pattern, topic) {
+    try {
+      await rateLimiter.checkAndWait();
+
+      const subject = pattern && topic 
+        ? `the "${pattern}" pattern applied to "${topic}" problems`
+        : pattern 
+          ? `the "${pattern}" pattern`
+          : `"${topic}" problems`;
+
+      const prompt = `
+You are an expert DSA tutor creating comprehensive study notes for: ${subject}.
+
+Create detailed, well-structured learning notes that a student can use to MASTER this concept.
+
+Return a valid JSON object with this structure:
+{
+  "title": "Title for these notes",
+  "overview": "A thorough, beginner-friendly explanation (3-4 paragraphs) covering:
+    - What this pattern/topic is and the core idea behind it
+    - Why it's important and where it originated
+    - Real-world scenarios and analogies
+    - How it differs from similar approaches",
+  "whenToUse": [
+    "VERY COMPREHENSIVE list of 8-10 signals/hints that indicate you should use this pattern. Include:",
+    "- Problem keywords and phrases to look for",
+    "- Data structure hints (sorted array, linked list, etc.)",
+    "- Constraint patterns (O(n) time required, O(1) space, etc.)",
+    "- Problem types (finding pairs, subarrays, palindromes, etc.)",
+    "- Interview hints and tech company patterns",
+    "- When NOT to use this pattern"
+  ],
+  "coreApproach": {
+    "intuition": "2-3 paragraphs explaining the INTUITION behind why this pattern works. Use analogies.",
+    "steps": [
+      "Step 1: Detailed explanation of the first step with reasoning",
+      "Step 2: What to do next and WHY",
+      "Step 3: Continue with 5-7 detailed steps total",
+      "Step 4: Include edge case handling steps",
+      "Step 5: Termination conditions and final checks"
+    ],
+    "pseudocode": "Detailed pseudocode with comments explaining each part",
+    "edgeCases": ["Edge case 1 and how to handle it", "Edge case 2", "Edge case 3"]
+  },
+  "complexity": {
+    "time": "Typical time complexity with DETAILED explanation of why",
+    "space": "Typical space complexity with explanation",
+    "bestCase": "Best case scenario",
+    "worstCase": "Worst case scenario"
+  },
+  "exampleProblems": [
+    {
+      "name": "Easy LeetCode Problem Name",
+      "difficulty": "Easy",
+      "companies": [],
+      "description": "Detailed problem description",
+      "intuition": "Why this pattern applies here",
+      "approach": "Step-by-step approach explanation",
+      "code": "Java code with DETAILED MULTI-LINE COMMENTS on every 2-3 lines explaining what's happening and WHY. Comments should be teaching-style, not one-liners. Example:
+// Initialize two pointers at the start and end of the array
+// We use this technique because the array is sorted, so we can
+// leverage the ordering to find our target sum efficiently
+int left = 0;
+int right = arr.length - 1;
+
+// Continue until pointers meet in the middle
+// This ensures we check all possible pairs without duplicates
+while (left < right) {
+    // Calculate current sum to compare with target
+    // This is the core of two-pointer: we can decide which
+    // pointer to move based on whether sum is too big or small
+    int sum = arr[left] + arr[right];
+    ...
+}"
+    },
+    {
+      "name": "Medium LeetCode Problem (Company: Google/Amazon/Meta)",
+      "difficulty": "Medium",
+      "companies": ["Google", "Amazon"],
+      "description": "Detailed problem description",
+      "intuition": "Why this pattern applies",
+      "approach": "Step-by-step approach",
+      "code": "Java code with DETAILED teaching-style comments explaining every step"
+    },
+    {
+      "name": "Hard LeetCode Problem (Company: Google/Meta/Apple)",
+      "difficulty": "Hard",
+      "companies": ["Google", "Meta"],
+      "description": "Detailed problem description",
+      "intuition": "Why this pattern applies",
+      "approach": "Step-by-step approach",
+      "code": "Java code with DETAILED teaching-style comments"
+    }
+  ],
+  "commonMistakes": [
+    "Mistake 1: Detailed description of what goes wrong and exactly how to avoid it",
+    "Mistake 2: Another common pitfall with fix",
+    "Mistake 3: Edge case people miss",
+    "Mistake 4: Performance trap"
+  ],
+  "proTips": [
+    "Tip 1: Expert optimization advice",
+    "Tip 2: Interview-specific insight",
+    "Tip 3: How FAANG companies expect you to solve this",
+    "Tip 4: Memory trick or mental model",
+    "Tip 5: Debugging technique"
+  ],
+  "relatedPatterns": ["Related Pattern 1", "Related Pattern 2", "Related Pattern 3"],
+  "practiceProblems": [
+    {"name": "LeetCode Problem Name", "difficulty": "Easy", "companies": ["Amazon"]},
+    {"name": "Problem 2", "difficulty": "Easy", "companies": []},
+    {"name": "Problem 3", "difficulty": "Medium", "companies": ["Google", "Meta"]},
+    {"name": "Problem 4", "difficulty": "Medium", "companies": ["Microsoft"]},
+    {"name": "Problem 5", "difficulty": "Hard", "companies": ["Google", "Apple"]}
+  ]
+}
+
+CRITICAL REQUIREMENTS:
+1. Return ONLY valid JSON, no markdown wrapping
+2. MUST include exactly 3 example problems: 1 Easy, 1 Medium, 1 Hard
+3. Medium and Hard examples MUST include real company tags (Google, Amazon, Meta, Microsoft, Apple, Netflix, etc.)
+4. Code comments MUST be detailed and teaching-style (2-3 lines explaining WHY, not just WHAT)
+5. Code should be clean Java WITHOUT markdown backticks
+6. "whenToUse" MUST have 8-10 comprehensive signals including data structure hints
+7. "coreApproach" MUST include intuition, detailed steps, pseudocode, AND edge cases
+8. Make explanations crystal clear and conversational
+9. Use proper JSON escaping for special characters
+10. Code and pseudocode should use \\n for newlines
+`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      // Clean markdown code blocks
+      let cleanedText = text.trim();
+      if (cleanedText.startsWith('```json')) cleanedText = cleanedText.slice(7);
+      if (cleanedText.startsWith('```')) cleanedText = cleanedText.slice(3);
+      if (cleanedText.endsWith('```')) cleanedText = cleanedText.slice(0, -3);
+
+      return JSON.parse(cleanedText.trim());
+    } catch (error) {
+      console.error('Error generating learning notes:', error);
+      throw new Error('Failed to generate learning notes: ' + error.message);
+    }
+  }
 }
 
 module.exports = new AIService();

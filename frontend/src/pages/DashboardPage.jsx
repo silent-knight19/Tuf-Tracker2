@@ -7,6 +7,7 @@ import CompaniesPage from './CompaniesPage';
 import RevisionDashboardPage from './RevisionDashboardPage';
 import RevisionProblemDetailPage from './RevisionProblemDetailPage';
 import ProblemViewPage from './ProblemViewPage';
+import LearnPage from './LearnPage';
 import { useProblemStore } from '../stores/problemStore';
 import { Flame, Menu } from 'lucide-react';
 
@@ -137,6 +138,7 @@ function DashboardPage() {
             <Route path="/revision/:id/review" element={<RevisionProblemDetailPage autoOpenReview={true} />} />
             <Route path="/problem/view" element={<ProblemViewPage />} />
             <Route path="/problem/:id" element={<ProblemViewPage />} />
+            <Route path="/learn" element={<LearnPage />} />
           </Routes>
         </main>
       </div>

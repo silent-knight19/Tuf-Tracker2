@@ -181,4 +181,36 @@ router.post('/edge-cases', verifyToken, async (req, res) => { // Changed to veri
   }
 });
 
+// POST /api/ai/learning-notes
+// Generate comprehensive learning notes for a pattern/topic
+router.post('/learning-notes', verifyToken, async (req, res) => {
+  try {
+    const { pattern, topic } = req.body;
+
+    if (!pattern && !topic) {
+      return res.status(400).json({ error: 'At least one of pattern or topic is required' });
+    }
+
+    // Create cache key based on pattern and topic
+    const cacheKeyParts = [];
+    if (pattern) cacheKeyParts.push(`p_${cacheService.normalizeKey(pattern)}`);
+    if (topic) cacheKeyParts.push(`t_${cacheService.normalizeKey(topic)}`);
+    const cacheKey = `learn_${cacheKeyParts.join('_')}`;
+
+    const learningNotes = await cacheService.getCachedOrGenerate(
+      'ai_cache_learning',
+      cacheKey,
+      async () => {
+        return await aiService.generateLearningNotes(pattern, topic);
+      }
+    );
+
+    res.json(learningNotes);
+
+  } catch (error) {
+    console.error('Error generating learning notes:', error);
+    res.status(500).json({ error: 'Failed to generate learning notes', details: error.message });
+  }
+});
+
 module.exports = router;
