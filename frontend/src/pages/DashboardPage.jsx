@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Sidebar from '../components/layout/Sidebar';
 import ProblemsPage from './ProblemsPage';
@@ -10,10 +10,13 @@ import ProblemViewPage from './ProblemViewPage';
 import LearnPage from './LearnPage';
 import { useProblemStore } from '../stores/problemStore';
 import { Flame, Menu } from 'lucide-react';
+import { useAutoHideHeader } from '../hooks/useAutoHideHeader';
 
 function DashboardPage() {
   const { fetchProblems, problems } = useProblemStore();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const mainContentRef = useRef(null);
+  const headerVisible = useAutoHideHeader(mainContentRef);
 
   useEffect(() => {
     fetchProblems();
@@ -109,8 +112,10 @@ function DashboardPage() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar */}
-        <header className="h-14 border-b border-dark-800 flex items-center justify-between px-6 bg-dark-900">
+        {/* Top Bar - Fixed position for proper auto-hide */}
+        <header className={`fixed top-0 right-0 left-0 h-14 z-30 border-b border-dark-800 flex items-center justify-between px-6 bg-dark-900/95 backdrop-blur-sm transition-transform duration-300 ease-in-out ${
+          headerVisible ? 'translate-y-0' : '-translate-y-full'
+        }`} style={{ left: sidebarOpen ? '16rem' : '0' }}>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="text-dark-400 hover:text-dark-100"
@@ -125,8 +130,8 @@ function DashboardPage() {
           </div>
         </header>
 
-        {/* Content Area */}
-        <main className="flex-1 overflow-y-auto">
+        {/* Content Area - dynamic padding based on header visibility */}
+        <main ref={mainContentRef} className={`flex-1 overflow-y-auto transition-[padding] duration-300 ${headerVisible ? 'pt-14' : 'pt-0'}`}>
           <Routes>
             <Route path="/" element={<ProblemsPage />} />
             <Route path="/problems" element={<ProblemsPage />} />

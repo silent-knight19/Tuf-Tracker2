@@ -10,6 +10,7 @@ import { auth } from '../config/firebase';
 function LearnPage() {
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
+
   
   // Selection State
   const [learnPattern, setLearnPattern] = useState('');

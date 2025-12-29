@@ -1,8 +1,10 @@
 import { ChevronLeft, ExternalLink, Sprout, CheckCircle, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAutoHideHeader } from '../../../hooks/useAutoHideHeader';
 
 function RevisionHeader({ revision }) {
   const navigate = useNavigate();
+  const headerVisible = useAutoHideHeader();
 
   const StatusIcon = {
     fresh: Sprout,
@@ -17,7 +19,9 @@ function RevisionHeader({ revision }) {
   }[revision.bucket] || 'Fresh';
 
   return (
-    <div className="sticky top-0 z-20 bg-dark-950/80 backdrop-blur-md border-b border-dark-800 px-6 py-4 flex items-center justify-between transition-all duration-300">
+    <div className={`sticky top-0 z-20 bg-dark-950/80 backdrop-blur-md border-b border-dark-800 px-6 py-4 flex items-center justify-between transition-all duration-300 ${
+      headerVisible ? 'translate-y-0' : '-translate-y-full'
+    }`}>
       <div className="flex items-center gap-4">
         <button 
           onClick={() => navigate('/revision')}
