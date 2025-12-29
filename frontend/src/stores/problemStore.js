@@ -27,6 +27,31 @@ export const useProblemStore = create((set, get) => ({
     }
   },
 
+  // Fetch a single problem
+  fetchProblem: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await api.get(`/problems/${id}`);
+      set((state) => {
+        const index = state.problems.findIndex(p => p.id === id);
+        if (index !== -1) {
+          // Update existing problem
+          const newProblems = [...state.problems];
+          newProblems[index] = { ...newProblems[index], ...response.data };
+          return { problems: newProblems, loading: false };
+        } else {
+          // Add new problem to list
+          return { problems: [...state.problems, response.data], loading: false };
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching problem:', error);
+      set({ error: error.message, loading: false });
+      throw error;
+    }
+  },
+
   // Add a new problem
   addProblem: async (problemData) => {
     set({ loading: true, error: null });

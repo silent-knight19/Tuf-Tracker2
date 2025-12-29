@@ -14,6 +14,7 @@ router.get('/', verifyToken, async (req, res) => {
   try {
     const { topic, pattern, difficulty, company } = req.query;
     
+    // Create query
     let query = db.collection('problems').where('userId', '==', req.user.uid);
 
     if (topic) {
@@ -26,11 +27,34 @@ router.get('/', verifyToken, async (req, res) => {
       query = query.where('companies', 'array-contains', company);
     }
 
+    // Explicitly select fields if using an SDK that supports it, 
+    // or just map after fetching (Firestore SDK doesn't support 'select' in client libraries usually, 
+    // but we should optimized what we send back to client)
     const snapshot = await query.get();
+    
     const problems = [];
-
+    
     snapshot.forEach(doc => {
-      problems.push({ id: doc.id, ...doc.data() });
+      const data = doc.data();
+      // Optimization: Only send summary data to list view
+      // This drastically reduces payload size by ignoring 'description', 'notes', 'approach', 'code', 'aiNotes'
+      problems.push({
+        id: doc.id,
+        title: data.title,
+        platform: data.platform,
+        platformUrl: data.platformUrl, // Needed for "View on LeetCode" link
+        difficulty: data.difficulty,
+        status: data.status,
+        topics: data.topics,
+        patterns: data.patterns,
+        companies: data.companies,
+        revisionDates: data.revisionDates,
+        nextRevision: data.nextRevision,
+        solvedAt: data.solvedAt,
+        createdAt: data.createdAt, // Needed for sorting
+        updatedAt: data.updatedAt,
+        isAIGenerated: data.isAIGenerated
+      });
     });
 
     // Filter by pattern (client-side since Firestore doesn't support multiple array-contains)

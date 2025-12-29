@@ -20,7 +20,7 @@ function ProblemViewPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { problems, updateProblem, generateNotes, generateDescription, fetchProblems, addProblem, loading } = useProblemStore();
+  const { problems, updateProblem, generateNotes, generateDescription, fetchProblems, fetchProblem, addProblem, loading } = useProblemStore();
   const [problem, setProblem] = useState(null);
   const [isViewOnly, setIsViewOnly] = useState(false);
 
@@ -35,6 +35,9 @@ function ProblemViewPage() {
   const [leftWidth, setLeftWidth] = useState(50); // Percentage
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
+  
+  // Track which problems have had full details fetched (prevents infinite loops)
+  const fetchedDetailsRef = useRef(new Set());
 
   // Ensure problems are loaded
   useEffect(() => {
@@ -72,30 +75,28 @@ function ProblemViewPage() {
     }
 
     // Otherwise, find problem by ID from store
-    if (id && problems.length > 0) {
+    if (id) {
       const foundProblem = problems.find(p => p.id === id);
+      
       if (foundProblem) {
         setProblem(foundProblem);
         setNotes(foundProblem.notes || '');
         setIsViewOnly(false);
         setNotFound(false);
         
-        // Auto-generate description if missing
-        if (!foundProblem.description && !isGenerating && id && id !== 'undefined') {
-          setIsGenerating(true);
-          generateDescription(id)
-            .then((description) => {
-              setProblem(prev => ({ ...prev, description }));
-            })
-            .catch((error) => {
-              console.error('Failed to auto-generate description:', error);
-            })
-            .finally(() => {
-              setIsGenerating(false);
-            });
+        // If description is missing AND we haven't already fetched full details, fetch them
+        // The ref prevents infinite loops when the store updates
+        if ((!foundProblem.description || !foundProblem.code) && !fetchedDetailsRef.current.has(id)) {
+          fetchedDetailsRef.current.add(id); // Mark as fetching/fetched BEFORE the call
+          fetchProblem(id).catch(err => console.error("Failed to fetch full problem details:", err));
         }
       } else {
-        setNotFound(true);
+        // If not found in store at all, try fetching it (only once)
+        if (!fetchedDetailsRef.current.has(id)) {
+          fetchedDetailsRef.current.add(id);
+          fetchProblem(id)
+            .catch(() => setNotFound(true));
+        }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

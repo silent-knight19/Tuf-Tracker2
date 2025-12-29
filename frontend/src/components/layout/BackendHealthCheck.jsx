@@ -4,8 +4,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const BACKEND_BASE_URL = API_URL.replace('/api', '');
 
 /**
- * BackendHealthCheck - Detects cold starts and shows user-friendly messaging
- * instead of leaving users confused with a long-loading spinner.
+ * BackendHealthCheck - NON-BLOCKING version
+ * Allows the app to load immediately while checking backend status in the background.
+ * Shows a subtle indicator if the backend is waking up or unavailable.
  */
 function BackendHealthCheck({ children }) {
   const [status, setStatus] = useState('checking'); // 'checking' | 'waking' | 'ready' | 'error'
@@ -25,7 +26,7 @@ function BackendHealthCheck({ children }) {
     const checkHealth = async () => {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 120000); // 120s timeout (2 minutes for cold starts)
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 120s timeout
         
         const response = await fetch(`${BACKEND_BASE_URL}/health`, {
           signal: controller.signal
@@ -76,59 +77,47 @@ function BackendHealthCheck({ children }) {
     };
   }, []);
 
-  // Show cold start message if taking too long
-  if (status === 'checking' || status === 'waking') {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-dark-950">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-orange mx-auto mb-4"></div>
-          {status === 'waking' && (
-            <>
-              <h2 className="text-xl font-semibold text-dark-100 mb-2">
-                Waking up server...
-              </h2>
-              <p className="text-dark-400 text-sm mb-2">
-                This happens when the server has been idle. Please wait.
-              </p>
-              <p className="text-dark-500 text-xs">
-                {elapsedSeconds > 0 && `${elapsedSeconds}s elapsed`}
-              </p>
-              {elapsedSeconds > 30 && (
-                <p className="text-brand-orange text-xs mt-2">
-                  Almost there, this can take up to 60 seconds...
-                </p>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    );
-  }
+  // RENDER UI status indicators (non-blocking)
 
-  // Show error state
+  // Connection Error Banner
   if (status === 'error') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-dark-950">
-        <div className="text-center max-w-md px-4">
-          <div className="text-red-500 text-5xl mb-4">⚠️</div>
-          <h2 className="text-xl font-semibold text-dark-100 mb-2">
-            Connection Failed
-          </h2>
-          <p className="text-dark-400 text-sm mb-4">
-            Unable to connect to the server. Please check your internet connection and try again.
-          </p>
-          <button
+      <>
+        <div className="bg-red-500/10 border-b border-red-500/20 text-red-400 px-4 py-2 flex items-center justify-center gap-2 text-sm">
+          <span>⚠️ Connection to server failed. Some features may not work.</span>
+          <button 
             onClick={() => window.location.reload()}
-            className="bg-brand-orange hover:bg-brand-orange/90 text-white px-4 py-2 rounded-lg transition-colors"
+            className="underline hover:text-red-300"
           >
             Retry
           </button>
         </div>
-      </div>
+        {children}
+      </>
     );
   }
 
-  // Backend is ready - render the app
+  // Waking Up Banner (only show after 2s delay)
+  if (status === 'waking') {
+    return (
+      <>
+        {children}
+        <div className="fixed bottom-4 right-4 z-50 bg-dark-800 border border-brand-orange/30 shadow-lg rounded-lg p-4 max-w-sm animate-in slide-in-from-bottom-5 duration-300">
+          <div className="flex items-center gap-3">
+            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-brand-orange"></div>
+            <div>
+              <h3 className="text-sm font-medium text-dark-100">Connecting to server...</h3>
+              <p className="text-xs text-dark-400">
+                Waking up free tier server ({elapsedSeconds}s)
+              </p>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // Ready or Checking (just show app)
   return children;
 }
 
