@@ -53,15 +53,15 @@ function RevisionProblemCard({ revision }) {
 
   return (
     <div 
-      className={`group relative bg-dark-900/40 backdrop-blur-3xl border rounded-[2.5rem] p-8 transition-all duration-500 ease-out hover:scale-[2] hover:-translate-y-24 hover:rotate-1 hover:z-[100] cursor-pointer overflow-hidden ${
+      className={`group relative bg-dark-900/40 backdrop-blur-3xl border rounded-[2.5rem] p-8 transition-all duration-500 ease-out hover:scale-[1.1] hover:-translate-y-1 hover:rotate-0 hover:z-[100] cursor-pointer overflow-hidden ${
         revision.overdueDays > 0 
-          ? 'border-red-500/30 hover:border-red-500 hover:shadow-[0_120px_300px_-20px_rgba(239,68,68,0.6)]' 
-          : 'border-dark-800 hover:border-brand-orange hover:shadow-[0_120px_300px_-20px_rgba(249,115,22,0.5)]'
+          ? 'border-red-500/30 hover:border-red-500 hover:shadow-[0_0_30px_rgba(239,68,68,0.5)]' 
+          : 'border-dark-800 hover:border-brand-orange hover:shadow-[0_0_30px_rgba(249,115,22,0.5)]'
       }`}
       onClick={() => setIsExpanded(!isExpanded)}
     >
       {/* Background Accent */}
-      <div className={`absolute top-0 right-0 w-32 h-32 blur-3xl opacity-0 group-hover:opacity-10 transition-opacity ${
+      <div className={`absolute top-0 right-0 w-32 h-32 blur-3xl opacity-0 group-hover:opacity-25 transition-opacity ${
         revision.overdueDays > 0 ? 'bg-red-500' : 'bg-brand-orange'
       }`} />
 

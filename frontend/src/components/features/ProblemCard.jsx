@@ -55,11 +55,11 @@ function ProblemCard({ problem, onClick }) {
 
   return (
     <div 
-      className="group bg-dark-900/60 backdrop-blur-md border border-dark-800 rounded-2xl p-6 transition-all duration-300 hover:border-brand-orange/40 hover:shadow-2xl hover:shadow-brand-orange/5 hover:-translate-y-1 relative overflow-hidden"
+      className="group bg-dark-900/60 backdrop-blur-md border border-dark-800 rounded-2xl p-6 transition-all duration-500 ease-out hover:scale-[1.1] hover:border-brand-orange hover:shadow-[0_0_30px_rgba(249,115,22,0.5)] hover:-translate-y-1 relative overflow-hidden"
       onClick={handleClick}
     >
       {/* Accent Glow */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-brand-orange/5 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="absolute top-0 right-0 w-32 h-32 bg-brand-orange blur-3xl opacity-0 group-hover:opacity-25 transition-opacity" />
       
       <div className="flex flex-col h-full relative z-10">
         <div className="flex items-start justify-between gap-4 mb-4">
