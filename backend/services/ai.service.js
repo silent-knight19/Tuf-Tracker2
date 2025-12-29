@@ -6,31 +6,47 @@ class AIService {
     try {
       await rateLimiter.checkAndWait();
 
-      const prompt = `
-Analyze the following DSA problem and provide structured information:
+      // Gemma 3 Optimized Prompt
+      const prompt = `You are a senior competitive programming expert who analyzes DSA problems.
 
-Title: ${title}
+TASK: Analyze this problem and extract structured metadata.
+
+Problem Title: "${title}"
 Platform: ${platform}
 URL: ${url || 'N/A'}
 
-Provide a JSON response with the following fields:
+OUTPUT FORMAT - Return a JSON object with these exact fields:
 {
   "title": "exact problem title",
   "difficulty": "Easy" | "Medium" | "Hard",
-  "topics": ["topic1", "topic2", ...], // Array of relevant topics (e.g., Array, String, Tree, Graph, etc.)
-  "patterns": ["pattern1", "pattern2", ...], // Array of algorithmic patterns (e.g., Two Pointers, Sliding Window, DFS, BFS, DP, etc.)
-  "companies": ["company1", "company2", ...], // Array of major tech companies known to ask this problem
+  "topics": ["Array", "String", "Tree", etc.],
+  "patterns": ["Two Pointers", "Sliding Window", "DFS", etc.],
+  "companies": ["Google", "Amazon", "Meta", etc.],
   "platform": "${platform}",
   "platformUrl": "${url || 'N/A'}"
 }
 
-IMPORTANT:
-- Difficulty must be exactly one of: Easy, Medium, Hard
-- Topics should be standard CS terms: Array, String, Hash Table, Linked List, Tree, Graph, Stack, Queue, Heap, Dynamic Programming, etc.
-- Patterns MUST be chosen from this strict list: Two Pointers, Sliding Window, Fast & Slow Pointers, Prefix Sum, Kadane Pattern, Cyclic Sort, Hash Map / Hash Set, Binary Search, Binary Search on Answer, DFS, BFS, Tree BFS, Tree DFS, Graph Traversal, Topological Sort, Union Find, 0/1 Knapsack DP, Unbounded Knapsack DP, Subsequence DP, Partition DP / Subset DP, Grid DP, Subsets, Permutations, Combination Sum Variants, Monotonic Stack, Stack, Min Heap / Max Heap, Two Heaps Pattern, Linked List Patterns, Trie + String Matching.
-- Companies: Include major tech companies known to ask this problem in interviews (e.g., Google, Amazon, Meta, Microsoft, Apple, Netflix, Bloomberg, Uber, LinkedIn, Adobe, etc.). If this is a well-known LeetCode problem, you likely know which companies ask it. If unsure, provide your best educated guess based on the problem type and difficulty, or return an empty array [].
-- Return ONLY valid JSON, no markdown or extra text.
-`;
+EXAMPLE:
+{
+  "title": "Two Sum",
+  "difficulty": "Easy",
+  "topics": ["Array", "Hash Table"],
+  "patterns": ["Hash Map / Hash Set"],
+  "companies": ["Google", "Amazon", "Meta", "Apple", "Microsoft"],
+  "platform": "LeetCode",
+  "platformUrl": "https://leetcode.com/problems/two-sum"
+}
+
+ALLOWED PATTERNS (choose from this list only):
+Two Pointers, Sliding Window, Fast & Slow Pointers, Prefix Sum, Kadane Pattern, Cyclic Sort, Hash Map / Hash Set, Binary Search, Binary Search on Answer, DFS, BFS, Tree BFS, Tree DFS, Graph Traversal, Topological Sort, Union Find, 0/1 Knapsack DP, Unbounded Knapsack DP, Subsequence DP, Partition DP / Subset DP, Grid DP, Subsets, Permutations, Combination Sum Variants, Monotonic Stack, Stack, Min Heap / Max Heap, Two Heaps Pattern, Linked List Patterns, Trie + String Matching
+
+RULES:
+1. Return ONLY valid JSON - no markdown, no extra text
+2. Use standard CS topic names for topics
+3. Include known companies that ask this problem
+4. Start response with { and end with }
+
+{`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -81,19 +97,33 @@ IMPORTANT:
     try {
       await rateLimiter.checkAndWait();
 
-      const prompt = `
-Summarize the following problem-solving notes into key takeaways:
+      // Gemma 3 Optimized Prompt
+      const prompt = `You are a concise technical writer summarizing problem-solving notes.
 
+TASK: Extract key takeaways from these notes in bullet point format.
+
+NOTES:
 ${notes}
 
-Provide a concise summary (max 3-4 bullet points) highlighting:
-1. Main approach/algorithm used
-2. Key insights or tricks
-3. Time/space complexity if mentioned
-4. Common mistakes to avoid
+OUTPUT FORMAT:
+• Main approach used
+• Key insight or trick
+• Complexity (if mentioned)
+• Common pitfall to avoid
 
-Format as bullet points with • symbol.
-`;
+EXAMPLE OUTPUT:
+• Used two pointers from both ends of sorted array
+• Key insight: leverage sorted property to avoid nested loops
+• O(n) time, O(1) space
+• Don't forget to handle duplicates
+
+RULES:
+1. Maximum 4 bullet points
+2. Use • symbol for bullets
+3. Be concise - one line per point
+4. Skip if not mentioned in notes
+
+•`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -125,34 +155,39 @@ Format as bullet points with • symbol.
         }
       });
 
-      const prompt = `
-Analyze this problem-solving history and identify weaknesses:
+      // Gemma 3 Optimized Prompt
+      const prompt = `You are a DSA coach analyzing a student's practice history to identify gaps.
 
-Topics solved:
-${Object.entries(topicCounts).map(([topic, count]) => `- ${topic}: ${count}`).join('\n')}
+TASK: Identify weak areas based on this practice data.
 
-Patterns used:
-${Object.entries(patternCounts).map(([pattern, count]) => `- ${pattern}: ${count}`).join('\n')}
+PRACTICE DATA:
+Topics solved: ${Object.entries(topicCounts).map(([topic, count]) => `${topic}(${count})`).join(', ') || 'None'}
+Patterns used: ${Object.entries(patternCounts).map(([pattern, count]) => `${pattern}(${count})`).join(', ') || 'None'}
+Difficulty: Easy=${difficultyStats.Easy}, Medium=${difficultyStats.Medium}, Hard=${difficultyStats.Hard}
 
-Difficulty distribution:
-- Easy: ${difficultyStats.Easy}
-- Medium: ${difficultyStats.Medium}
-- Hard: ${difficultyStats.Hard}
-
-Provide:
-1. Top 3 weak topics (under-practiced)
-2. Top 3 weak patterns (under-practiced)
-3. Recommended focus areas
-4. Difficulty distribution analysis
-
-Format as JSON:
+OUTPUT FORMAT - JSON object:
 {
   "weakTopics": ["topic1", "topic2", "topic3"],
   "weakPatterns": ["pattern1", "pattern2", "pattern3"],
-  "recommendations": ["rec1", "rec2", "rec3"],
-  "difficultyAdvice": "string"
+  "recommendations": ["action1", "action2", "action3"],
+  "difficultyAdvice": "One sentence advice"
 }
-`;
+
+EXAMPLE:
+{
+  "weakTopics": ["Graph", "Tree", "Dynamic Programming"],
+  "weakPatterns": ["DFS", "BFS", "Grid DP"],
+  "recommendations": ["Practice more graph traversal problems", "Focus on tree recursion", "Start with easy DP problems"],
+  "difficultyAdvice": "Good Medium practice, but increase Hard problems to 20%"
+}
+
+RULES:
+1. Identify topics/patterns with ZERO or LOW counts as weak
+2. Provide 3 actionable recommendations
+3. Return ONLY valid JSON
+4. Start with { and end with }
+
+{`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -180,18 +215,34 @@ Format as JSON:
     try {
       await rateLimiter.checkAndWait();
 
-      const prompt = `
-Given a problem "${problemTitle}" with topics [${topics.join(', ')}] and patterns [${patterns.join(', ')}], suggest 5 related problems that use similar concepts.
+      // Gemma 3 Optimized Prompt
+      const prompt = `You are a LeetCode problem curator suggesting practice problems.
 
-Return as JSON array:
+TASK: Suggest 5 related problems similar to "${problemTitle}".
+
+CONTEXT:
+- Topics: ${topics.join(', ') || 'General'}
+- Patterns: ${patterns.join(', ') || 'General'}
+
+OUTPUT FORMAT - JSON array with 5 objects:
 [
-  {
-    "title": "Problem Title",
-    "reason": "Why it's related",
-    "difficulty": "Easy|Medium|Hard"
-  }
+  {"title": "Problem Name", "reason": "Brief similarity explanation", "difficulty": "Easy|Medium|Hard"}
 ]
-`;
+
+EXAMPLE:
+[
+  {"title": "3Sum", "reason": "Uses same two-pointer approach", "difficulty": "Medium"},
+  {"title": "Container With Most Water", "reason": "Similar array traversal pattern", "difficulty": "Medium"}
+]
+
+RULES:
+1. Suggest real LeetCode problems only
+2. Mix difficulties (1-2 Easy, 2-3 Medium, 1 Hard)
+3. Keep reasons under 10 words
+4. Return ONLY valid JSON array
+5. Start with [ and end with ]
+
+[`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -214,57 +265,47 @@ Return as JSON array:
     try {
       await rateLimiter.checkAndWait();
 
-      const prompt = `
-You are an expert DSA tutor providing a comprehensive study guide for "${title}" (${difficulty}) on ${platform}.
+      // Gemma 3 Optimized Prompt
+      const prompt = `You are an expert DSA tutor creating study notes for "${title}" (${difficulty}).
 
-CRITICAL: Return a valid JSON object, but the CONTENT inside must be clean and natural like ChatGPT responses.
+TASK: Create comprehensive study guide with solutions at different optimization levels.
 
+OUTPUT FORMAT - JSON object:
 {
-  "understanding": "Natural conversational explanation here",
+  "understanding": "Clear explanation of what the problem asks (2-3 sentences)",
   "bruteForce": {
-    "explanation": "Natural conversational explanation",
-    "code": "Clean Java code WITHOUT any backticks or markdown",
-    "complexity": "Complexity analysis as natural text"
+    "explanation": "Why this naive approach works",
+    "code": "Clean Java code (no markdown)",
+    "complexity": "O(n²) Time | O(1) Space"
   },
   "better": {
-    "explanation": "Natural explanation or null",
-    "code": "Clean Java code or null",
-    "complexity": "Complexity analysis or null"
+    "explanation": "Optimization insight or null",
+    "code": "Improved Java code or null",
+    "complexity": "O(n log n) Time | O(n) Space or null"
   },
   "optimal": {
-    "explanation": "Natural conversational explanation with detailed walkthrough",
-    "code": "Clean Java code WITHOUT any backticks",
-    "complexity": "Complexity analysis"
+    "explanation": "Key insight that makes this optimal",
+    "code": "Best Java solution (no markdown)",
+    "complexity": "O(n) Time | O(1) Space"
   },
-  "takeaways": "Natural bullet points with dashes or asterisks"
+  "takeaways": "- Key insight 1\\n- Key insight 2\\n- Common mistake to avoid"
 }
 
-ABSOLUTE RULES FOR CONTENT FORMATTING:
+CODE RULES:
+1. Use class Solution { public returnType methodName(...) { } } format
+2. 4-space indentation, proper Java syntax
+3. NO markdown backticks - pure Java only
+4. Use \\n for newlines in strings
 
-1. You MUST use proper JSON escaping for special characters.
-2. You MUST use \n for newlines within strings.
-3. Do NOT use actual line breaks inside string values, as this invalidates JSON.
-4. NO markdown backticks anywhere in the code - just plain Java
-5. NO markdown formatting (no **, ###, \`, etc.) in explanations
-6. Write explanations like you're talking to a friend - natural paragraphs
-7. Code must be clean Java with proper indentation using spaces
-8. Use "null" for better approach if not applicable
+CONTENT RULES:
+1. Write naturally like explaining to a friend
+2. Keep explanations clear and jargon-free
+3. Use null for "better" if problem has only brute→optimal path
+4. Escape special characters properly for valid JSON
 
-CODE FORMATTING (CRITICAL):
-- Standard Java structure: public class Solution { ... }
-- 4 spaces for indentation
-- Proper spacing around operators and braces
-- NO markdown, NO backticks, NO language tags
-- Just pure, clean, runnable Java code
+Start response with { and end with }
 
-EXPLANATION STYLE:
-- Write in conversational ChatGPT tone
-- Use natural paragraphs and line breaks (escaped as \n)
-- Be friendly and clear
-- Avoid technical jargon unless necessary
-
-The JSON structure is ONLY for parsing - the content inside should read like natural ChatGPT output.
-`;
+{`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -297,38 +338,35 @@ The JSON structure is ONLY for parsing - the content inside should read like nat
     try {
       await rateLimiter.checkAndWait();
 
-      const prompt = `
-You are creating a LeetCode-style problem description for "${title}" (${difficulty}).
+      // Gemma 3 Optimized Prompt
+      const prompt = `You are a LeetCode problem author creating problem descriptions.
 
-Return ONLY a valid JSON object with this exact structure:
+TASK: Create a complete problem description for "${title}" (${difficulty}).
 
+OUTPUT FORMAT - JSON object:
 {
-  "statement": "The problem statement in plain text. Use natural language without markdown formatting.",
+  "description": "Clear problem statement (2-3 sentences)",
   "examples": [
-    {
-      "input": "x = 121",
-      "output": "true",
-      "explanation": "Brief explanation of why this output is correct"
-    }
+    {"input": "nums = [2,7,11,15], target = 9", "output": "[0,1]", "explanation": "nums[0] + nums[1] = 9"}
   ],
-  "constraints": [
-    "-2^31 <= x <= 2^31 - 1",
-    "Other constraint here"
-  ],
-  "functionSignature": "public int solve(int x)",
-  "followUp": "Optional follow-up question or null if none"
+  "constraints": ["2 <= nums.length <= 10^4", "-10^9 <= nums[i] <= 10^9"],
+  "functionSignature": "public int[] twoSum(int[] nums, int target)",
+  "followUp": "Can you solve it in O(n) time?" or null
 }
 
-IMPORTANT:
-- Create 2-3 realistic examples with input, output, and explanation
-- Include 2-4 relevant constraints based on the problem type
-- Use plain text only - NO markdown formatting, NO bold, NO code backticks in the JSON strings
-- The statement should be clear and concise (1-2 sentences)
-- Make it feel like an actual LeetCode problem
-- Ensure valid JSON with proper escaping
+CONTEXT:
 - Topics: ${topics.join(', ') || 'General'}
 - Patterns: ${patterns.join(', ') || 'General'}
-`;
+
+RULES:
+1. Create 2-3 realistic examples
+2. Include 2-4 constraints matching difficulty
+3. Function signature must be valid Java
+4. Plain text only - no markdown in strings
+5. Return ONLY valid JSON
+6. Start with { end with }
+
+{`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -351,42 +389,36 @@ IMPORTANT:
     try {
       await rateLimiter.checkAndWait();
 
-      const prompt = `
-You are an expert coding interview question creator.
-Your task is to create a BRAND NEW coding problem that tests the same core concepts as "${originalTitle}" (${difficulty}), but with a completely different story and context.
+      // Gemma 3 Optimized Prompt
+      const prompt = `You are a coding interview question designer creating variations.
 
-Input Context:
-- Original Problem: ${originalTitle}
-- Difficulty: ${difficulty}
-- Core Topics: ${topics.join(', ')}
-- Core Patterns: ${patterns.join(', ')}
+TASK: Create a NEW problem testing the same concepts as "${originalTitle}" but with different context.
 
-Instructions:
-1. Create a unique problem title (do not use "${originalTitle}" or similar names).
-2. Write a clear problem statement with a new scenario (e.g., if original was about arrays, make this about sensor data or stock prices, but keeping the underlying logic similar).
-3. Provide 2-3 examples with input/output.
-4. List constraints appropriate for the difficulty.
-5. Do NOT mention the original problem name in the output.
+CONTEXT:
+- Original: ${originalTitle} (${difficulty})
+- Topics: ${topics.join(', ') || 'General'}
+- Patterns: ${patterns.join(', ') || 'General'}
 
-Return ONLY a valid JSON object with this structure:
+OUTPUT FORMAT - JSON object:
 {
-  "title": "New Problem Title",
+  "title": "Creative New Problem Title",
   "difficulty": "${difficulty}",
-  "description": "Full problem description in markdown format. Use code blocks for examples if needed.",
-  "examples": [
-    {
-      "input": "x = [1, 2, 3]",
-      "output": "6",
-      "explanation": "Explanation here"
-    }
-  ],
-  "constraints": [
-    "1 <= n <= 10^5",
-    "Time complexity should be O(n)"
-  ],
-  "hints": ["Hint 1", "Hint 2"]
+  "description": "Clear problem statement with new scenario",
+  "functionSignature": "public returnType methodName(params)",
+  "examples": [{"input": "param = value", "output": "result", "explanation": "why"}],
+  "constraints": ["constraint1", "constraint2"],
+  "hints": ["Think about...", "Consider using..."]
 }
-`;
+
+RULES:
+1. DIFFERENT scenario/story from original (e.g., arrays→sensor data)
+2. SAME underlying algorithm/pattern
+3. Do NOT mention the original problem name
+4. 2-3 examples, 2-4 constraints, 2 hints
+5. Valid Java function signature
+6. Return ONLY JSON - start with { end with }
+
+{`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -409,50 +441,48 @@ Return ONLY a valid JSON object with this structure:
     try {
       await rateLimiter.checkAndWait();
 
-      const prompt = `
-You are an expert coding interview question creator.
-Your task is to create a BRAND NEW coding problem based on the following criteria:
+      // Gemma 3 Optimized Prompt
+      const prompt = `You are a competitive programming problem author.
 
-Criteria:
+TASK: Create a BRAND NEW coding problem based on these criteria.
+
+CRITERIA:
 - Pattern: ${pattern || 'Any'}
 - Topic: ${topic || 'Any'}
 - Difficulty: ${difficulty}
 
-Instructions:
-1. Create a unique problem title.
-2. The problem MUST strictly use the "${pattern}" pattern (if specified) and involve the "${topic}" topic (if specified).
-3. Write a clear problem statement with a realistic scenario.
-4. Provide 2-3 examples with input/output.
-5. List constraints appropriate for the ${difficulty} difficulty.
-6. Ensure the problem is NOT a direct copy of a famous LeetCode problem, but a variation or a new application of the pattern.
-
-CRITICAL: You MUST return ONLY valid JSON. No extra text before or after. No markdown formatting.
-
-Return this exact structure:
+OUTPUT FORMAT - JSON object:
 {
-  "title": "New Problem Title",
+  "title": "Creative Problem Title",
   "difficulty": "${difficulty}",
-  "description": "Full problem description in markdown format. Use code blocks for examples if needed.",
+  "description": "Clear problem statement with realistic scenario",
   "functionSignature": "public int solve(int[] nums)",
   "examples": [
-    {
-      "input": "nums = [1, 2, 3]",
-      "output": "6",
-      "explanation": "Explanation here"
-    }
+    {"input": "nums = [1,2,3]", "output": "6", "explanation": "Sum of all elements"}
   ],
-  "constraints": [
-    "1 <= n <= 10^5",
-    "Time complexity should be O(n)"
-  ],
-  "hints": ["Hint 1", "Hint 2"]
+  "constraints": ["1 <= nums.length <= 10^5", "-10^4 <= nums[i] <= 10^4"],
+  "hints": ["Hint about approach", "Hint about optimization"]
 }
 
-CRITICAL RULES:
-1. Include "functionSignature" field with the EXACT Java method signature.
-2. Examples should show inputs in the format: "paramName = value".
-3. ONLY return valid JSON.
-`;
+EXAMPLE (for Two Pointers + Array + Medium):
+{
+  "title": "Container With Most Water",
+  "difficulty": "Medium",
+  "description": "Given n non-negative integers representing heights, find two lines that together with the x-axis form a container that holds the most water.",
+  "functionSignature": "public int maxArea(int[] height)",
+  "examples": [{"input": "height = [1,8,6,2,5,4,8,3,7]", "output": "49", "explanation": "Lines at indices 1 and 8"}],
+  "constraints": ["2 <= height.length <= 10^5", "0 <= height[i] <= 10^4"],
+  "hints": ["Start from both ends", "Move the shorter line inward"]
+}
+
+RULES:
+1. MUST use the specified pattern ${pattern ? `(${pattern})` : ''}
+2. NOT a direct copy of famous LeetCode problems
+3. Realistic scenario that makes sense
+4. Valid Java function signature
+5. Return ONLY JSON - start with { end with }
+
+{`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -483,6 +513,10 @@ CRITICAL RULES:
           throw new Error('AI response missing required fields');
         }
         
+        // Add the pattern and topic to the response so it's available for solutions
+        parsed.pattern = pattern || null;
+        parsed.topic = topic || null;
+        
         return parsed;
       } catch (parseError) {
         console.error('JSON parse error:', parseError.message);
@@ -496,53 +530,61 @@ CRITICAL RULES:
     }
   }
   // Generate hints and solutions for a problem
-  async generateProblemHelp(title, description, difficulty) {
+  async generateProblemHelp(title, description, difficulty, pattern = null) {
     try {
       await rateLimiter.checkAndWait();
 
-      const prompt = `
-You are an expert DSA interviewer from a top tech company (Google, Meta, Amazon).
-Your task is to provide high-quality, LeetCode-style solutions for this coding problem:
+      // Build pattern-specific requirements if a pattern is specified
+      const patternRequirement = pattern 
+        ? `\n\nCRITICAL REQUIREMENT: The OPTIMAL solution MUST use the "${pattern}" pattern/technique. This is mandatory.`
+        : '';
+      const patternHint = pattern ? `\nNote: Solve using "${pattern}" approach.` : '';
 
-Title: "${title}"
-Difficulty: ${difficulty}
-Description: ${description}
+      // Gemma 3 Optimized Prompt
+      const prompt = `You are a senior FAANG interviewer creating solution guides.
 
-CRITICAL REQUIREMENTS:
-1. You MUST ALWAYS provide a complete "optimal" solution - this is mandatory and should be your best solution.
-2. The optimal solution should be what you'd expect to see in a real LeetCode editorial.
-3. Write clean, production-quality Java code with proper variable naming.
-4. Explanations should be clear and teach the core intuition.
+TASK: Provide hints and solutions for this problem.${patternRequirement}
 
-Provide the following in a valid JSON format:
+PROBLEM:
+- Title: "${title}"
+- Difficulty: ${difficulty}${patternHint}
+- Description: ${description}
 
-1. "hints": An array of 10 progressive hints. Start with very subtle conceptual hints and get progressively more specific about the algorithm/data structure.
-
-2. "solutions": An object containing solution approaches:
-   - "optimal" (REQUIRED): The most efficient solution using the best algorithm/data structure
-     - "complexity": Time and Space complexity (e.g., "O(N) Time | O(1) Space")
-     - "explanation": Clear, detailed explanation of WHY this approach works and the core intuition (2-3 paragraphs)
-     - "code": Clean Java code with helpful comments, following LeetCode style with proper class Solution and method signature
-   
-   - "better" (optional): An intermediate solution if there's a logical stepping stone (null if not applicable)
-   
-   - "brute" (optional): A naive brute force approach if it helps understand the problem (null if the problem is straightforward)
-
-IMPORTANT:
-- The "optimal" solution must ALWAYS be provided with complete code, explanation, and complexity.
-- Code should be clean Java that would compile and run on LeetCode.
-- Use standard method names like "solve", "findSolution", or problem-specific names.
-- Include a brief comment at the start of the code explaining the approach.
-
-JSON Structure:
+OUTPUT FORMAT - JSON object:
 {
-  "hints": ["Hint 1", "Hint 2", ...],
+  "hints": ["Hint 1 (subtle)", "Hint 2", "...", "Hint 10 (specific)"],
   "solutions": {
-    "optimal": { "complexity": "O(N) Time | O(1) Space", "explanation": "Detailed explanation...", "code": "class Solution { ... }" },
-    "better": { "complexity": "...", "explanation": "...", "code": "..." } or null,
-    "brute": { "complexity": "...", "explanation": "...", "code": "..." } or null
+    "optimal": {
+      "complexity": "O(n) Time | O(1) Space",
+      "explanation": "Clear explanation of approach and intuition",
+      "code": "class Solution { public int solve() { } }"
+    },
+    "better": {"complexity": "...", "explanation": "...", "code": "..."} or null,
+    "brute": {"complexity": "...", "explanation": "...", "code": "..."} or null
   }
-`;
+}
+
+EXAMPLE:
+{
+  "hints": ["Think about the data structure", "What if you preprocessed?", "Consider a hash map"],
+  "solutions": {
+    "optimal": {
+      "complexity": "O(n) Time | O(n) Space",
+      "explanation": "Use a hash map to store seen values and check for complement in O(1).",
+      "code": "class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        Map<Integer, Integer> map = new HashMap<>();\n        for (int i = 0; i < nums.length; i++) {\n            int complement = target - nums[i];\n            if (map.containsKey(complement)) {\n                return new int[]{map.get(complement), i};\n            }\n            map.put(nums[i], i);\n        }\n        return new int[]{};\n    }\n}"
+    },
+    "brute": null
+  }
+}
+
+RULES:
+1. "optimal" is REQUIRED - always provide complete solution
+2. 10 progressive hints (subtle to specific)
+3. Clean Java code without markdown backticks
+4. Use \\n for newlines in code strings
+5. Return ONLY valid JSON - start with { end with }
+
+{`;
 
       console.log('Generating problem help for:', title);
       const result = await model.generateContent(prompt);
@@ -586,44 +628,44 @@ JSON Structure:
     try {
       await rateLimiter.checkAndWait();
 
-      const prompt = `
-You are an expert technical interviewer at ${company}.
-Your task is to create a realistic coding interview problem that ${company} would actually ask.
+      // Gemma 3 Optimized Prompt
+      const prompt = `You are a technical interviewer at ${company} creating interview problems.
 
-Criteria:
-- Company: ${company} (The problem style must match this company's interview culture)
+TASK: Create a realistic ${company}-style coding interview problem.
+
+CRITERIA:
+- Company: ${company}
 - Topic: ${topic || 'Any'}
 - Pattern: ${pattern || 'Any'}
 - Difficulty: ${difficulty}
 
-Instructions:
-1. Create a unique problem title that sounds like a real ${company} interview question.
-2. The problem scenario should reflect real-world systems or challenges relevant to ${company} (e.g., if Google -> Search/Indexing/Distributed Systems context; if Amazon -> E-commerce/Logistics/Scaling; if Uber -> Maps/Routing).
-3. Write a clear problem statement.
-4. Provide 2-3 examples with input/output.
-5. List constraints appropriate for the difficulty.
-6. Ensure the problem is solvable within 45 minutes.
+COMPANY CONTEXT:
+- Google: Search, indexing, distributed systems, scale
+- Amazon: E-commerce, logistics, cloud, optimization
+- Meta: Social graphs, feeds, real-time systems
+- Microsoft: Enterprise, productivity, infrastructure
+- Uber: Maps, routing, matching, real-time
 
-Return ONLY a valid JSON object with this structure:
+OUTPUT FORMAT - JSON object:
 {
-  "title": "Problem Title",
+  "title": "${company}-Style Problem Title",
   "difficulty": "${difficulty}",
-  "description": "Full problem description in markdown format. Use code blocks for examples if needed.",
-  "examples": [
-    {
-      "input": "x = [1, 2, 3]",
-      "output": "6",
-      "explanation": "Explanation here"
-    }
-  ],
-  "constraints": [
-    "1 <= n <= 10^5",
-    "Time complexity should be O(n)"
-  ],
+  "description": "Problem with ${company}-relevant scenario",
+  "functionSignature": "public returnType methodName(params)",
+  "examples": [{"input": "param = value", "output": "result", "explanation": "why"}],
+  "constraints": ["constraint1", "constraint2"],
   "hints": ["Hint 1", "Hint 2"],
-  "companyContext": "Brief note on why this is relevant to ${company}"
+  "companyContext": "Why ${company} cares about this"
 }
-`;
+
+RULES:
+1. Scenario MUST relate to ${company}'s domain
+2. Solvable in 45 minutes
+3. 2-3 examples, 2-4 constraints
+4. Valid Java function signature
+5. Return ONLY JSON - start with { end with }
+
+{`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -651,36 +693,92 @@ Return ONLY a valid JSON object with this structure:
       const constraintsText = constraints?.length > 0 ? `\nConstraints:\n${constraints.map(c => `- ${c}`).join('\n')}` : '';
       const examplesText = examples?.length > 0 ? `\nExamples:\n${examples.map((ex, i) => `Example ${i+1}: Input: ${JSON.stringify(ex.input)}, Output: ${JSON.stringify(ex.output)}`).join('\n')}` : '';
 
-      // Quality 25 edge case generation prompt - more emphatic about count
-      const prompt = `You are an expert test engineer. You MUST generate EXACTLY 25 test cases. Not 15, not 20, but EXACTLY 25.
+      // HIGH-QUALITY EDGE CASE GENERATION WITH ANSWER VERIFICATION
+      const prompt = `You are an expert competitive programmer and test case designer.
 
-Problem: "${title}"
+PROBLEM TO TEST:
+Title: "${title}"
 ${functionSignature ? `Function: ${functionSignature}` : ''}
 ${descriptionText}
 ${constraintsText}
 ${examplesText}
 
-You MUST generate ALL 25 test cases covering these categories:
-1. BOUNDARY (5 tests): Min/max constraints, edge of valid ranges
-2. EMPTY/MINIMAL (4 tests): Empty input, single element, minimal valid input  
-3. CORNER CASES (5 tests): Cases that break naive solutions
-4. ALGORITHM-SPECIFIC (5 tests): Test core logic paths
-5. SPECIAL VALUES (3 tests): Zero, negative, duplicates, special patterns
-6. TYPICAL (3 tests): Standard inputs users would provide
+YOUR TASK: Generate 15 HIGH-QUALITY test cases that thoroughly test this problem.
 
-Return ONLY valid JSON array with EXACTLY 25 objects:
+STEP 1 - UNDERSTAND THE PROBLEM:
+- Read the problem description carefully
+- Identify the INPUT format and types
+- Identify the OUTPUT format and expected behavior
+- Note any edge cases mentioned in constraints
+
+STEP 2 - COMPUTE EXPECTED OUTPUT CORRECTLY:
+For EACH test case you generate:
+1. Write down the input
+2. MANUALLY TRACE through the algorithm step-by-step
+3. Compute the EXACT expected output
+4. VERIFY your answer makes sense
+5. If you cannot compute the answer with 100% confidence, set expectedOutput to null
+
+REQUIRED TEST CATEGORIES (generate at least 2 from each):
+
+1. BOUNDARY TESTS:
+   - Empty input ([], "", 0)
+   - Single element [x]
+   - Two elements [x, y]
+   - Maximum constraint values
+
+2. EDGE CASES:
+   - All same values [5,5,5,5]
+   - Sorted ascending [1,2,3,4,5]
+   - Sorted descending [5,4,3,2,1]
+   - Alternating pattern [1,10,1,10]
+
+3. CORNER CASES:
+   - Result is 0 or empty
+   - Result equals input
+   - Minimum valid output
+   - Maximum valid output
+
+4. STRESS TESTS:
+   - Values at constraint limits
+   - Large numbers near overflow
+   - Negative numbers if allowed
+
+OUTPUT FORMAT - JSON array:
 [
-  {"name": "test_name", "input": [args], "expectedOutput": result, "explanation": "why", "category": "boundary|edge|corner|typical"}
+  {
+    "name": "empty_input",
+    "input": [[], 10],
+    "expectedOutput": 0,
+    "explanation": "No elements to process",
+    "category": "boundary",
+    "verification": "Empty array returns 0"
+  }
 ]
 
 CRITICAL RULES:
-- You MUST output EXACTLY 25 test cases - count them!
-- Input must match function signature parameter types
-- expectedOutput must be CORRECT (calculate carefully!)
-- Short explanations (under 30 chars)
-- Valid JSON only, no markdown
-- DO NOT STOP EARLY - generate all 25!
-`;
+1. COMPUTE expectedOutput BY HAND - trace through the logic step by step
+2. If unsure of the answer, set expectedOutput to null and explain why in verification
+3. Match input format EXACTLY to the function signature
+4. Keep test cases MINIMAL but MEANINGFUL
+5. Each test should catch a DIFFERENT bug type
+6. NO duplicate or trivially similar tests
+
+BAD EXAMPLES (DO NOT DO THIS):
+- Setting expectedOutput without computing: {"input": [[1,2,3]], "expectedOutput": 6} ❌
+- Guessing the answer: {"expectedOutput": "probably 5"} ❌
+- Ignoring constraints: capacity=5 but saying 10 packages fit ❌
+
+GOOD EXAMPLES:
+- Traced computation: "1+2+3=6, within capacity 10, so output is 3 packages" ✓
+- Admitting uncertainty: {"expectedOutput": null, "verification": "Ambiguous if we can skip"} ✓
+
+Generate exactly 15 high-quality test cases. Start with [ and end with ]
+
+[`;
+
+
+
 
       console.log('Generating 25 quality edge cases for:', title);
       const result = await model.generateContent(prompt);
@@ -712,17 +810,27 @@ CRITICAL RULES:
       let parsed = JSON.parse(cleanedText);
       console.log('First attempt generated', parsed.length, 'edge cases');
       
-      // If we got fewer than 20, try to generate more to supplement
-      if (parsed.length < 20) {
-        console.log('Generating additional edge cases to reach 25...');
-        const remaining = 25 - parsed.length;
+      // If we got fewer than 10, try to generate more
+      if (parsed.length < 10) {
+        console.log('Generating additional edge cases...');
+        const remaining = 15 - parsed.length;
         const supplementPrompt = `Generate ${remaining} MORE test cases for: "${title}"
 ${functionSignature ? `Function: ${functionSignature}` : ''}
 Description: ${typeof description === 'string' ? description : description?.description || ''}
 
-These should be DIFFERENT from existing tests. Focus on edge cases and corner cases.
-Return ONLY a JSON array with ${remaining} test cases:
-[{"name": "test_name", "input": [args], "expectedOutput": result, "explanation": "why", "category": "boundary|edge|corner|typical"}]`;
+IMPORTANT: For each test case:
+1. COMPUTE the expected output step-by-step
+2. Show your work in the "verification" field
+3. If unsure, set expectedOutput to null
+
+Focus on:
+- Boundary conditions (empty, single, two elements)
+- Edge cases (all same values, sorted, reversed)
+- Corner cases (result is 0, max value, min value)
+
+Format: [{"name": "test", "input": [args], "expectedOutput": computed_value_or_null, "explanation": "what this tests", "category": "boundary|edge|corner", "verification": "how I computed the answer"}]
+
+[`;
 
         try {
           await rateLimiter.checkAndWait();
@@ -759,14 +867,26 @@ Return ONLY a JSON array with ${remaining} test cases:
       
       // Retry with a simpler prompt for edge cases
       try {
-        const simplePrompt = `Generate 25 test cases for: "${title}"
+        const simplePrompt = `Generate 10 test cases for: "${title}"
 ${functionSignature ? `Function: ${functionSignature}` : ''}
-Description: ${description ? (typeof description === 'string' ? description : description.description || '') : ''}
+${description ? `Description: ${typeof description === 'string' ? description : description.description || ''}` : ''}
 
-Return ONLY a JSON array:
-[{"name":"test_name","input":[args],"expectedOutput":result,"explanation":"why","category":"boundary|edge|typical"}]
+For EACH test case:
+1. Write the input
+2. MANUALLY compute the expected output step-by-step
+3. If you can't compute with certainty, use null
 
-Rules: Input must be array of args, expectedOutput must be correct, no markdown`;
+Required tests:
+- Empty input
+- Single element
+- Two elements
+- All same values
+- Sorted ascending
+- Sorted descending
+
+Format: [{"name": "test", "input": [args], "expectedOutput": value_or_null, "explanation": "what this tests", "verification": "computation steps"}]
+
+[`;
 
         const retryResult = await model.generateContent(simplePrompt);
         const retryText = retryResult.response.text().trim();
@@ -811,125 +931,66 @@ Rules: Input must be array of args, expectedOutput must be correct, no markdown`
           ? `the "${pattern}" pattern`
           : `"${topic}" problems`;
 
-      const prompt = `
-You are an expert DSA tutor creating comprehensive study notes for: ${subject}.
+      // Gemma 3 Optimized Prompt
+      const prompt = `You are an expert DSA tutor creating comprehensive study notes.
 
-Create detailed, well-structured learning notes that a student can use to MASTER this concept.
+TASK: Create detailed learning notes for: ${subject}
 
-Return a valid JSON object with this structure:
+OUTPUT FORMAT - JSON object:
 {
-  "title": "Title for these notes",
-  "overview": "A thorough, beginner-friendly explanation (3-4 paragraphs) covering:
-    - What this pattern/topic is and the core idea behind it
-    - Why it's important and where it originated
-    - Real-world scenarios and analogies
-    - How it differs from similar approaches",
+  "title": "Learning Notes Title",
+  "overview": "3-4 paragraph explanation: what it is, why important, real-world analogies, vs similar approaches",
   "whenToUse": [
-    "VERY COMPREHENSIVE list of 8-10 signals/hints that indicate you should use this pattern. Include:",
-    "- Problem keywords and phrases to look for",
-    "- Data structure hints (sorted array, linked list, etc.)",
-    "- Constraint patterns (O(n) time required, O(1) space, etc.)",
-    "- Problem types (finding pairs, subarrays, palindromes, etc.)",
-    "- Interview hints and tech company patterns",
-    "- When NOT to use this pattern"
+    "Signal 1: Problem keywords to look for",
+    "Signal 2: Data structure hints (sorted array, linked list)",
+    "Signal 3: Constraint patterns (O(n) time required)",
+    "Signal 4: Problem types (pairs, subarrays, palindromes)",
+    "...8-10 signals total..."
   ],
   "coreApproach": {
-    "intuition": "2-3 paragraphs explaining the INTUITION behind why this pattern works. Use analogies.",
-    "steps": [
-      "Step 1: Detailed explanation of the first step with reasoning",
-      "Step 2: What to do next and WHY",
-      "Step 3: Continue with 5-7 detailed steps total",
-      "Step 4: Include edge case handling steps",
-      "Step 5: Termination conditions and final checks"
-    ],
-    "pseudocode": "Detailed pseudocode with comments explaining each part",
-    "edgeCases": ["Edge case 1 and how to handle it", "Edge case 2", "Edge case 3"]
+    "intuition": "2-3 paragraphs explaining WHY this works with analogies",
+    "steps": ["Step 1: Do X because Y", "Step 2: Then Z", "...5-7 steps..."],
+    "pseudocode": "Pseudocode with line-by-line comments",
+    "edgeCases": ["Edge 1: how to handle", "Edge 2", "Edge 3"]
   },
   "complexity": {
-    "time": "Typical time complexity with DETAILED explanation of why",
-    "space": "Typical space complexity with explanation",
-    "bestCase": "Best case scenario",
-    "worstCase": "Worst case scenario"
+    "time": "O(n) - because we visit each element once",
+    "space": "O(1) - only using pointers",
+    "bestCase": "When...",
+    "worstCase": "When..."
   },
   "exampleProblems": [
     {
-      "name": "Easy LeetCode Problem Name",
+      "name": "Two Sum",
       "difficulty": "Easy",
-      "companies": [],
-      "description": "Detailed problem description",
-      "intuition": "Why this pattern applies here",
-      "approach": "Step-by-step approach explanation",
-      "code": "Java code with DETAILED MULTI-LINE COMMENTS on every 2-3 lines explaining what's happening and WHY. Comments should be teaching-style, not one-liners. Example:
-// Initialize two pointers at the start and end of the array
-// We use this technique because the array is sorted, so we can
-// leverage the ordering to find our target sum efficiently
-int left = 0;
-int right = arr.length - 1;
-
-// Continue until pointers meet in the middle
-// This ensures we check all possible pairs without duplicates
-while (left < right) {
-    // Calculate current sum to compare with target
-    // This is the core of two-pointer: we can decide which
-    // pointer to move based on whether sum is too big or small
-    int sum = arr[left] + arr[right];
-    ...
-}"
-    },
-    {
-      "name": "Medium LeetCode Problem (Company: Google/Amazon/Meta)",
-      "difficulty": "Medium",
       "companies": ["Google", "Amazon"],
-      "description": "Detailed problem description",
+      "description": "Given array nums and target...",
       "intuition": "Why this pattern applies",
-      "approach": "Step-by-step approach",
-      "code": "Java code with DETAILED teaching-style comments explaining every step"
-    },
-    {
-      "name": "Hard LeetCode Problem (Company: Google/Meta/Apple)",
-      "difficulty": "Hard",
-      "companies": ["Google", "Meta"],
-      "description": "Detailed problem description",
-      "intuition": "Why this pattern applies",
-      "approach": "Step-by-step approach",
-      "code": "Java code with DETAILED teaching-style comments"
+      "approach": "Step-by-step solution",
+      "code": "// Teaching-style comments explaining WHY\\n// Initialize map to store values\\nMap<Integer, Integer> map = new HashMap<>();\\n// Iterate through array\\nfor (int i = 0; i < nums.length; i++) {\\n    // Check if complement exists\\n    if (map.containsKey(target - nums[i])) {\\n        return new int[]{map.get(target - nums[i]), i};\\n    }\\n    map.put(nums[i], i);\\n}"
     }
   ],
-  "commonMistakes": [
-    "Mistake 1: Detailed description of what goes wrong and exactly how to avoid it",
-    "Mistake 2: Another common pitfall with fix",
-    "Mistake 3: Edge case people miss",
-    "Mistake 4: Performance trap"
-  ],
-  "proTips": [
-    "Tip 1: Expert optimization advice",
-    "Tip 2: Interview-specific insight",
-    "Tip 3: How FAANG companies expect you to solve this",
-    "Tip 4: Memory trick or mental model",
-    "Tip 5: Debugging technique"
-  ],
-  "relatedPatterns": ["Related Pattern 1", "Related Pattern 2", "Related Pattern 3"],
+  "commonMistakes": ["Mistake 1: Description and how to avoid", "Mistake 2", "Mistake 3", "Mistake 4"],
+  "proTips": ["Tip 1: Expert advice", "Tip 2: Interview insight", "Tip 3: FAANG expectation", "Tip 4: Memory trick", "Tip 5: Debug technique"],
+  "relatedPatterns": ["Pattern 1", "Pattern 2", "Pattern 3"],
   "practiceProblems": [
-    {"name": "LeetCode Problem Name", "difficulty": "Easy", "companies": ["Amazon"]},
-    {"name": "Problem 2", "difficulty": "Easy", "companies": []},
-    {"name": "Problem 3", "difficulty": "Medium", "companies": ["Google", "Meta"]},
-    {"name": "Problem 4", "difficulty": "Medium", "companies": ["Microsoft"]},
-    {"name": "Problem 5", "difficulty": "Hard", "companies": ["Google", "Apple"]}
+    {"name": "Problem Name", "difficulty": "Easy", "companies": ["Amazon"]},
+    {"name": "Problem 2", "difficulty": "Medium", "companies": ["Google"]},
+    {"name": "Problem 3", "difficulty": "Hard", "companies": ["Meta"]}
   ]
 }
 
-CRITICAL REQUIREMENTS:
-1. Return ONLY valid JSON, no markdown wrapping
-2. MUST include exactly 3 example problems: 1 Easy, 1 Medium, 1 Hard
-3. Medium and Hard examples MUST include real company tags (Google, Amazon, Meta, Microsoft, Apple, Netflix, etc.)
-4. Code comments MUST be detailed and teaching-style (2-3 lines explaining WHY, not just WHAT)
-5. Code should be clean Java WITHOUT markdown backticks
-6. "whenToUse" MUST have 8-10 comprehensive signals including data structure hints
-7. "coreApproach" MUST include intuition, detailed steps, pseudocode, AND edge cases
-8. Make explanations crystal clear and conversational
-9. Use proper JSON escaping for special characters
-10. Code and pseudocode should use \\n for newlines
-`;
+RULES:
+1. MUST include 3 exampleProblems: 1 Easy, 1 Medium, 1 Hard
+2. Medium/Hard must have company tags
+3. Code comments explain WHY not just WHAT
+4. Clean Java code - no markdown backticks
+5. 8-10 whenToUse signals
+6. Use \\\\n for newlines in code strings
+7. Return ONLY valid JSON - start with { end with }
+
+{`;
+
 
       const result = await model.generateContent(prompt);
       const response = await result.response;

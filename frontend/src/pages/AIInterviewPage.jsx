@@ -25,7 +25,8 @@ function AIInterviewPage() {
           const storedData = localStorage.getItem(`ai_problem_${localId}`);
           if (storedData) {
             setProblem(JSON.parse(storedData));
-            // localStorage.removeItem(`ai_problem_${localId}`); // Optional clean up
+            // Clean up localStorage after reading to prevent stale data
+            localStorage.removeItem(`ai_problem_${localId}`);
             return true;
           }
         } catch (err) {
@@ -144,7 +145,8 @@ function AIInterviewPage() {
         title: problem.title,
         description: problem.description,
         difficulty: problem.difficulty,
-        forceRefresh: forceRefresh
+        forceRefresh: forceRefresh,
+        pattern: problem.pattern || null  // Pass the pattern for pattern-specific solutions
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });

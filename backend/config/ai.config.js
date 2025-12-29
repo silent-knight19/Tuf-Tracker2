@@ -3,13 +3,12 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 const model = genAI.getGenerativeModel({ 
-  model: 'gemini-2.5-flash',
+  model: 'gemma-3-27b-it',
   generationConfig: {
     temperature: 0.7,
     topP: 0.95,
     topK: 40,
     maxOutputTokens: 8192,
-    responseMimeType: 'application/json',
   }
 });
 

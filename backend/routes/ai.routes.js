@@ -93,13 +93,15 @@ router.post('/company-problem', verifyToken, async (req, res) => {
 // Generate hints and solutions for a problem
 router.post('/problem-help', verifyToken, async (req, res) => {
   try {
-    const { title, description, difficulty, forceRefresh } = req.body;
+    const { title, description, difficulty, forceRefresh, pattern } = req.body;
 
     if (!title || !description) {
       return res.status(400).json({ error: 'Title and description are required' });
     }
 
-    const cacheKey = `help_${cacheService.normalizeKey(title)}`;
+    // Include pattern in cache key if specified
+    const patternKey = pattern ? `_${cacheService.normalizeKey(pattern)}` : '';
+    const cacheKey = `help_${cacheService.normalizeKey(title)}${patternKey}`;
 
     // If forceRefresh, delete existing cache first
     if (forceRefresh) {
@@ -119,7 +121,8 @@ router.post('/problem-help', verifyToken, async (req, res) => {
         return await aiService.generateProblemHelp(
           title,
           description,
-          difficulty || 'Medium'
+          difficulty || 'Medium',
+          pattern || null
         );
       }
     );
