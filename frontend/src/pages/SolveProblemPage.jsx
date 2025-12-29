@@ -266,7 +266,19 @@ function SolveProblemPage() {
   };
 
   const parseInputToArgs = (input) => {
-    if (Array.isArray(input)) return input;
+    // If already an array, check if it's an array of arguments or a single array argument
+    if (Array.isArray(input)) {
+      // Check if this looks like a single array argument (e.g., [1,2,3] for int[] param)
+      // vs multiple arguments (e.g., [[1,2], 5] for int[] and int params)
+      // If all elements are primitives, treat as single array argument
+      const allPrimitives = input.every(item => 
+        typeof item === 'number' || typeof item === 'string' || typeof item === 'boolean'
+      );
+      if (allPrimitives && input.length > 0) {
+        return [input]; // Wrap as single array argument
+      }
+      return input;
+    }
     if (typeof input === 'object' && input !== null) return [input];
     
     if (typeof input === 'string') {
@@ -286,13 +298,19 @@ function SolveProblemPage() {
       }
       try {
         const parsed = JSON.parse(trimmed);
-        return Array.isArray(parsed) ? parsed : [parsed];
+        // If parsed is an array, wrap it as a single argument
+        // (the array itself is the argument, not its elements)
+        if (Array.isArray(parsed)) {
+          return [parsed]; // Wrap array as single argument
+        }
+        return [parsed];
       } catch (e) {
         try { return JSON.parse(`[${trimmed}]`); } catch (e2) { return [input]; }
       }
     }
     return [input];
   };
+
 
   if (loading) {
     return (

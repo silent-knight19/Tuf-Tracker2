@@ -301,8 +301,15 @@ function InterviewProblemPage() {
 
   // Parse input string to arguments array
   const parseInputToArgs = (input) => {
-    // If input is already an array (from AI edge cases), return it directly
+    // If already an array, check if it's a single array argument
     if (Array.isArray(input)) {
+      // If all elements are primitives, treat as single array argument
+      const allPrimitives = input.every(item => 
+        typeof item === 'number' || typeof item === 'string' || typeof item === 'boolean'
+      );
+      if (allPrimitives && input.length > 0) {
+        return [input]; // Wrap as single array argument
+      }
       return input;
     }
 
@@ -347,7 +354,11 @@ function InterviewProblemPage() {
       // Try parsing as plain JSON
       try {
         const parsed = JSON.parse(trimmed);
-        return Array.isArray(parsed) ? parsed : [parsed];
+        // If parsed is an array, wrap it as a single argument
+        if (Array.isArray(parsed)) {
+          return [parsed]; // Wrap array as single argument
+        }
+        return [parsed];
       } catch (e) {
         // Try wrapping in brackets
         try {
@@ -362,6 +373,7 @@ function InterviewProblemPage() {
     // If it's already a primitive, wrap it in array
     return [input];
   };
+
 
   if (loading) {
     return (
