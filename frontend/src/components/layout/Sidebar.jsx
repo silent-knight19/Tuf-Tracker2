@@ -137,9 +137,9 @@ function Sidebar({ open }) {
           <button
             onClick={signOut}
             title="Eject Session"
-            className="p-2.5 rounded-lg bg-dark-950 border border-dark-800 hover:bg-red-500/10 hover:border-red-500/20 text-dark-500 hover:text-red-400 transition-all duration-300 active:scale-90"
+            className="group p-2.5 rounded-lg bg-dark-950 border border-dark-800 hover:bg-red-500/10 hover:border-red-500 hover:shadow-[0_0_30px_rgba(239,68,68,0.5)] text-dark-500 hover:text-red-400 transition-all duration-300 active:scale-90 hover:scale-[1.5]"
           >
-            <LogOut className="w-3.5 h-3.5" />
+            <LogOut className="w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-[2]" />
           </button>
         </div>
       </div>
