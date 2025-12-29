@@ -106,8 +106,12 @@ class CodeRunnerService {
    * @private
    */
   wrapSolutionClass(solutionCode, testCasesInput) {
+    // Check if test input is empty or invalid
+    const trimmedInput = (testCasesInput || '').trim();
+    const hasValidInput = trimmedInput.startsWith('{') && trimmedInput.includes('"method"');
+    
     // More robust JSON escaping
-    const jsonEscaped = testCasesInput
+    const jsonEscaped = trimmedInput
       .replace(/\\/g, '\\\\')      // Escape backslashes first
       .replace(/"/g, '\\"')         // Escape quotes
       .replace(/\n/g, '\\n')        // Escape newlines
@@ -129,6 +133,14 @@ public class Main {
     public static void main(String[] args) {
         try {
             String jsonInput = "${jsonEscaped}";
+            
+            // Debug: print first 100 chars of input
+            if (jsonInput.length() < 10) {
+                System.out.println("No test cases provided. Running with default test...");
+                runDefaultTest();
+                return;
+            }
+            
             runTests(jsonInput);
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
@@ -136,11 +148,34 @@ public class Main {
         }
     }
     
+    private static void runDefaultTest() throws Exception {
+        Solution solution = new Solution();
+        // Try to find and invoke the first method
+        Method[] methods = Solution.class.getDeclaredMethods();
+        for (Method m : methods) {
+            System.out.println("Available method: " + m.getName() + " with " + m.getParameterCount() + " parameter(s)");
+        }
+        System.out.println("\\nPlease provide test input in the Input tab, or wait for AI to generate edge cases.");
+    }
+    
     private static void runTests(String jsonInput) throws Exception {
+        // Validate JSON starts with {
+        jsonInput = jsonInput.trim();
+        if (!jsonInput.startsWith("{")) {
+            System.err.println("Invalid input format. Expected JSON starting with {");
+            System.err.println("Received (first 100 chars): " + jsonInput.substring(0, Math.min(100, jsonInput.length())));
+            return;
+        }
+        
         // Parse JSON manually (simple parser for our specific format)
         JSONObject testData = parseJSON(jsonInput);
         String methodName = testData.getString("method");
         JSONArray tests = testData.getArray("tests");
+        
+        if (methodName == null || tests == null) {
+            System.err.println("Invalid JSON format. Expected 'method' and 'tests' fields.");
+            return;
+        }
         
         Solution solution = new Solution();
         Method targetMethod = findMethod(solution, methodName);
@@ -148,6 +183,7 @@ public class Main {
         if (targetMethod == null) {
             System.err.println("Method '" + methodName + "' not found in Solution class");
             return;
+
         }
         
         Class<?>[] paramTypes = targetMethod.getParameterTypes();
