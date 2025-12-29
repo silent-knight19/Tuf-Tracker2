@@ -46,7 +46,7 @@ function ActivityHeatmap() {
 
   return (
     <div className="w-full flex flex-col items-center">
-      <div className="inline-block p-6 bg-dark-950/40 border border-white/[0.03] rounded-[2rem] overflow-x-auto custom-scrollbar max-w-full">
+      <div className="inline-block p-6 bg-dark-950/40 border border-white/[0.03] rounded-[2rem] overflow-x-auto no-scrollbar max-w-full">
         <div className="flex flex-col gap-3 min-w-[800px]">
           {/* Months Header */}
           <div className="flex gap-[3.5px] text-[9px] font-black text-dark-600 uppercase tracking-widest h-4 ml-2">

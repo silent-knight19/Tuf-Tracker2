@@ -10,9 +10,13 @@ const initCronJobs = () => {
     
     // Cron expression: minute hour day-of-month month day-of-week
     cron.schedule('*/14 06-23 * * *', () => {
-        console.log('⏰ Triggering keep-alive ping...');
-        
         const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+        console.log(`⏰ Triggering keep-alive ping to: ${backendUrl}`);
+
+        if (process.env.NODE_ENV === 'production' && backendUrl.includes('localhost')) {
+            console.warn('⚠️  WARNING: specific BACKEND_URL not set in production. Keep-alive ping to localhost may not prevent server sleep on free tiers (Render/Heroku).');
+        }
+        
         const isHttps = backendUrl.startsWith('https');
         const client = isHttps ? https : http;
 
