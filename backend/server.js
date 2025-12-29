@@ -71,6 +71,10 @@ app.use((err, req, res, next) => {
 
 
 
+// Initialize Cron Jobs
+const { initCronJobs } = require('./cron/cron.service');
+initCronJobs();
+
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 TufTracker Backend running on port ${PORT}`);
