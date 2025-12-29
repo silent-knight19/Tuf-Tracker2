@@ -67,7 +67,7 @@ function AIInterviewPage() {
   const [loadingHelp, setLoadingHelp] = useState(false);
   const [currentHintIndex, setCurrentHintIndex] = useState(0);
   const [showSolution, setShowSolution] = useState(false);
-  const [activeSolutionTab, setActiveSolutionTab] = useState('brute');
+  const [activeSolutionTab, setActiveSolutionTab] = useState('optimal');
 
   // Code Execution State
   const [edgeCases, setEdgeCases] = useState(null);
@@ -134,8 +134,8 @@ function AIInterviewPage() {
     };
   }, [isDraggingPanel, handlePanelMouseMove, handlePanelMouseUp]);
 
-  const handleAIAssist = async () => {
-    if (helpData?.solutions?.brute) return; // Already fetched solutions
+  const handleAIAssist = async (forceRefresh = false) => {
+    if (helpData?.solutions?.optimal && !forceRefresh) return; // Already fetched solutions
 
     try {
       setLoadingHelp(true);
@@ -143,7 +143,8 @@ function AIInterviewPage() {
       const response = await api.post('/ai/problem-help', {
         title: problem.title,
         description: problem.description,
-        difficulty: problem.difficulty
+        difficulty: problem.difficulty,
+        forceRefresh: forceRefresh
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -517,7 +518,7 @@ function AIInterviewPage() {
                     <div className="bg-dark-900 border border-dark-800 rounded-lg overflow-hidden">
                       {/* Solution Tabs */}
                       <div className="flex border-b border-dark-800">
-                        {['brute', 'better', 'optimal'].map((tab) => (
+                        {['optimal', 'better', 'brute'].map((tab) => (
                           helpData.solutions[tab] && (
                             <button
                               key={tab}
@@ -562,7 +563,23 @@ function AIInterviewPage() {
                             </div>
                           </>
                         ) : (
-                          <p className="text-dark-400 italic text-sm">No specific {activeSolutionTab} approach available.</p>
+                          <div className="text-center py-4">
+                            <p className="text-dark-400 italic text-sm mb-3">No specific {activeSolutionTab} approach available.</p>
+                            {activeSolutionTab === 'optimal' && (
+                              <button
+                                onClick={() => handleAIAssist(true)}
+                                disabled={loadingHelp}
+                                className="px-4 py-2 bg-brand-orange hover:bg-brand-orange/80 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
+                              >
+                                {loadingHelp ? (
+                                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                  <Sparkles className="w-4 h-4" />
+                                )}
+                                Regenerate Solution
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>

@@ -22,7 +22,7 @@ function InterviewProblemPage() {
   const [loadingHelp, setLoadingHelp] = useState(false);
   const [currentHintIndex, setCurrentHintIndex] = useState(0);
   const [showSolution, setShowSolution] = useState(false);
-  const [activeSolutionTab, setActiveSolutionTab] = useState('brute');
+  const [activeSolutionTab, setActiveSolutionTab] = useState('optimal');
 
   // Code Execution State
   const [edgeCases, setEdgeCases] = useState(null);
@@ -585,7 +585,7 @@ function InterviewProblemPage() {
                   <div className="bg-dark-900 border border-dark-800 rounded-lg overflow-hidden">
                     {/* Solution Tabs */}
                     <div className="flex border-b border-dark-800">
-                      {['brute', 'better', 'optimal'].map((tab) => (
+                      {['optimal', 'better', 'brute'].map((tab) => (
                         helpData.solutions[tab] && (
                           <button
                             key={tab}

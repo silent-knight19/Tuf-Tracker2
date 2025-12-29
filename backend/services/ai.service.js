@@ -501,44 +501,83 @@ CRITICAL RULES:
       await rateLimiter.checkAndWait();
 
       const prompt = `
-You are an expert DSA tutor.
-I need help with this coding problem:
+You are an expert DSA interviewer from a top tech company (Google, Meta, Amazon).
+Your task is to provide high-quality, LeetCode-style solutions for this coding problem:
+
 Title: "${title}"
 Difficulty: ${difficulty}
 Description: ${description}
 
+CRITICAL REQUIREMENTS:
+1. You MUST ALWAYS provide a complete "optimal" solution - this is mandatory and should be your best solution.
+2. The optimal solution should be what you'd expect to see in a real LeetCode editorial.
+3. Write clean, production-quality Java code with proper variable naming.
+4. Explanations should be clear and teach the core intuition.
+
 Provide the following in a valid JSON format:
+
 1. "hints": An array of 10 progressive hints. Start with very subtle conceptual hints and get progressively more specific about the algorithm/data structure.
-2. "solutions": An object containing "brute", "better", and "optimal" approaches.
-   - Each approach should have:
+
+2. "solutions": An object containing solution approaches:
+   - "optimal" (REQUIRED): The most efficient solution using the best algorithm/data structure
      - "complexity": Time and Space complexity (e.g., "O(N) Time | O(1) Space")
-     - "explanation": A clear, concise explanation of the logic.
-     - "code": Clean Java code for the solution.
+     - "explanation": Clear, detailed explanation of WHY this approach works and the core intuition (2-3 paragraphs)
+     - "code": Clean Java code with helpful comments, following LeetCode style with proper class Solution and method signature
+   
+   - "better" (optional): An intermediate solution if there's a logical stepping stone (null if not applicable)
+   
+   - "brute" (optional): A naive brute force approach if it helps understand the problem (null if the problem is straightforward)
+
+IMPORTANT:
+- The "optimal" solution must ALWAYS be provided with complete code, explanation, and complexity.
+- Code should be clean Java that would compile and run on LeetCode.
+- Use standard method names like "solve", "findSolution", or problem-specific names.
+- Include a brief comment at the start of the code explaining the approach.
 
 JSON Structure:
 {
   "hints": ["Hint 1", "Hint 2", ...],
   "solutions": {
-    "brute": { "complexity": "...", "explanation": "...", "code": "..." },
-    "better": { "complexity": "...", "explanation": "...", "code": "..." }, // Use null if no distinct better approach
-    "optimal": { "complexity": "...", "explanation": "...", "code": "..." }
+    "optimal": { "complexity": "O(N) Time | O(1) Space", "explanation": "Detailed explanation...", "code": "class Solution { ... }" },
+    "better": { "complexity": "...", "explanation": "...", "code": "..." } or null,
+    "brute": { "complexity": "...", "explanation": "...", "code": "..." } or null
   }
-}
 `;
 
+      console.log('Generating problem help for:', title);
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
+
+      console.log('Raw AI response length:', text.length);
+      console.log('Raw AI response preview:', text.substring(0, 300));
 
       let cleanedText = text.trim();
       if (cleanedText.startsWith('```json')) cleanedText = cleanedText.slice(7);
       if (cleanedText.startsWith('```')) cleanedText = cleanedText.slice(3);
       if (cleanedText.endsWith('```')) cleanedText = cleanedText.slice(0, -3);
+      cleanedText = cleanedText.trim();
 
-      return JSON.parse(cleanedText.trim());
+      // Try to find JSON object in the response
+      const jsonStart = cleanedText.indexOf('{');
+      const jsonEnd = cleanedText.lastIndexOf('}');
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+        cleanedText = cleanedText.substring(jsonStart, jsonEnd + 1);
+      }
+
+      const parsed = JSON.parse(cleanedText);
+      
+      // Validate that optimal solution exists
+      if (!parsed.solutions || !parsed.solutions.optimal) {
+        console.error('AI response missing optimal solution:', JSON.stringify(parsed.solutions, null, 2));
+        throw new Error('AI did not return optimal solution');
+      }
+      
+      console.log('Successfully parsed problem help with optimal solution');
+      return parsed;
     } catch (error) {
       console.error('Error generating problem help:', error);
-      throw new Error('Failed to generate problem help');
+      throw new Error('Failed to generate problem help: ' + error.message);
     }
   }
 

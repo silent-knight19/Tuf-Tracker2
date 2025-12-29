@@ -93,13 +93,24 @@ router.post('/company-problem', verifyToken, async (req, res) => {
 // Generate hints and solutions for a problem
 router.post('/problem-help', verifyToken, async (req, res) => {
   try {
-    const { title, description, difficulty } = req.body;
+    const { title, description, difficulty, forceRefresh } = req.body;
 
     if (!title || !description) {
       return res.status(400).json({ error: 'Title and description are required' });
     }
 
     const cacheKey = `help_${cacheService.normalizeKey(title)}`;
+
+    // If forceRefresh, delete existing cache first
+    if (forceRefresh) {
+      try {
+        const { db } = require('../config/firebase.config');
+        await db.collection('ai_cache_help').doc(cacheKey).delete();
+        console.log(`Cache cleared for: ${cacheKey}`);
+      } catch (cacheErr) {
+        console.warn('Failed to clear cache:', cacheErr);
+      }
+    }
 
     const helpData = await cacheService.getCachedOrGenerate(
       'ai_cache_help',
