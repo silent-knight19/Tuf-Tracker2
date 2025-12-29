@@ -1,9 +1,29 @@
+require('dotenv').config();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const Cerebras = require('@cerebras/cerebras_cloud_sdk');
 
+// --- CEREBRAS CONFIGURATION (Primary) ---
+const cerebrasClient = new Cerebras({
+  apiKey: process.env.CEREBRAS_API_KEY,
+});
+
+const models = {
+  cerebras: {
+    fast: 'qwen-3-235b-a22b-instruct-2507',     // User requested Qwen-3-235b
+    complex: 'qwen-3-235b-a22b-instruct-2507',  // For reasoning (Study notes, solutions)
+  },
+  gemini: {
+    general: 'gemma-3-27b-it',
+    reasoning: 'gemini-2.5-flash',
+  }
+};
+
+// --- GEMINI CONFIGURATION (Fallback) ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-const model = genAI.getGenerativeModel({ 
-  model: 'gemma-3-27b-it',
+// Main model: Gemma 3 27B for general AI tasks
+const geminiModel = genAI.getGenerativeModel({ 
+  model: models.gemini.general,
   generationConfig: {
     temperature: 0.7,
     topP: 0.95,
@@ -12,11 +32,23 @@ const model = genAI.getGenerativeModel({
   }
 });
 
+// Edge case model: Gemini 2.5 Flash for better JSON generation and reasoning
+const geminiEdgeCaseModel = genAI.getGenerativeModel({ 
+  model: models.gemini.reasoning,
+  generationConfig: {
+    temperature: 0.7,
+    topP: 0.95,
+    topK: 40,
+    maxOutputTokens: 8192,
+    responseMimeType: 'application/json',
+  }
+});
+
 // Rate limiting for AI calls
 class AIRateLimiter {
   constructor() {
     this.calls = [];
-    this.maxCallsPerMinute = 15; // Free tier limit
+    this.maxCallsPerMinute = 30; // Increased limit for Cerebras (higher throughput)
   }
 
   async checkAndWait() {
@@ -38,4 +70,10 @@ class AIRateLimiter {
 
 const rateLimiter = new AIRateLimiter();
 
-module.exports = { model, rateLimiter };
+module.exports = { 
+  cerebrasClient, 
+  models, 
+  geminiModel, 
+  geminiEdgeCaseModel, 
+  rateLimiter 
+};

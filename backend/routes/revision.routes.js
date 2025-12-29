@@ -162,17 +162,30 @@ router.get('/:id', verifyToken, async (req, res) => {
 // POST /api/revisions - Add problem to revision queue
 router.post('/', verifyToken, async (req, res) => {
   try {
-    const { problemId, coreIdea, pattern, difficulty } = req.body;
+    const { problemId, problemTitle, coreIdea, pattern, patterns, topics, difficulty } = req.body;
 
-    // Check if problem already in revision queue
-    const existing = await db.collection('revisions')
+    // Check if problem already in revision queue (by ID)
+    const existingById = await db.collection('revisions')
       .where('userId', '==', req.user.uid)
       .where('problemId', '==', problemId)
       .limit(1)
       .get();
 
-    if (!existing.empty) {
+    if (!existingById.empty) {
       return res.status(400).json({ error: 'Problem already in revision queue' });
+    }
+
+    // Check by Title (if provided) to prevent duplicates with different IDs
+    if (problemTitle) {
+      const existingByTitle = await db.collection('revisions')
+        .where('userId', '==', req.user.uid)
+        .where('problemTitle', '==', problemTitle)
+        .limit(1)
+        .get();
+
+      if (!existingByTitle.empty) {
+        return res.status(400).json({ error: 'Problem already in revision queue' });
+      }
     }
 
     const now = new Date();
@@ -181,7 +194,10 @@ router.post('/', verifyToken, async (req, res) => {
     const revisionData = {
       userId: req.user.uid,
       problemId,
+      problemTitle: problemTitle || '',
       pattern: pattern || '',
+      patterns: patterns || [],
+      topics: topics || [],
       difficulty: difficulty || 'Medium',
       coreIdea: coreIdea || '',
       algorithmSteps: [],

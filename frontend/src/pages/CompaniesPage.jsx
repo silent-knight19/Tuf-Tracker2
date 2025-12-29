@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useCompanyStore } from '../stores/companyStore';
 import { Search, Building2, X, ArrowRight, Trophy, Target, BookOpen } from 'lucide-react';
 import CircularProgress from '../components/features/CircularProgress';
+import MotivationalQuote from '../components/ui/MotivationalQuote';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -69,15 +70,18 @@ function CompaniesPage() {
         <h1 className="text-2xl font-bold text-dark-100 mb-2">Company Readiness</h1>
         <p className="text-dark-400 mb-6">Track your preparation level for top tech companies</p>
         
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" />
-          <input
-            type="text"
-            placeholder="Search companies..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-dark-900 border border-dark-800 rounded-lg pl-10 pr-4 py-2.5 text-dark-100 focus:ring-2 focus:ring-brand-orange focus:border-transparent outline-none transition-all"
-          />
+        <div className="flex flex-col md:flex-row items-center gap-8">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-400" />
+            <input
+              type="text"
+              placeholder="Search companies..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-dark-900 border border-dark-800 rounded-lg pl-10 pr-4 py-2.5 text-dark-100 focus:ring-2 focus:ring-brand-orange focus:border-transparent outline-none transition-all"
+            />
+          </div>
+          <MotivationalQuote category="Vision" variant="ghost" className="hidden lg:flex" />
         </div>
       </div>
 

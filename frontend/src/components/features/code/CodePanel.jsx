@@ -144,16 +144,19 @@ function CodePanel({ problemId, onRunCode, edgeCases, onGenerateEdgeCases, isGen
   ];
 
   return (
-    <div ref={containerRef} className="h-full flex flex-col bg-dark-900 border border-dark-800 overflow-hidden">
+    <div ref={containerRef} className="h-full flex flex-col bg-dark-950 border-l border-dark-800 overflow-hidden relative">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-dark-800 bg-dark-900 shrink-0">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-dark-800 bg-dark-950/80 backdrop-blur-md shrink-0 z-10">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-dark-400">Language:</span>
-            <div className="px-2 py-1 bg-dark-800 rounded text-xs font-medium text-white border border-dark-700">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-dark-500 uppercase tracking-wider">Language</span>
+            <div className="px-2 py-1 bg-brand-orange/10 text-brand-orange rounded text-xs font-bold border border-brand-orange/20 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-orange animate-pulse"></span>
               Java
             </div>
           </div>
+          
+          <div className="w-px h-4 bg-dark-800 mx-2"></div>
           
           {/* Timer */}
           <Timer autoStart={true} />
@@ -162,25 +165,24 @@ function CodePanel({ problemId, onRunCode, edgeCases, onGenerateEdgeCases, isGen
         <div className="flex items-center gap-2">
           <button
             onClick={handleReset}
-            className="px-2 py-1 text-xs text-dark-400 hover:text-white bg-dark-800 hover:bg-dark-700 rounded transition-colors flex items-center gap-1"
+            className="p-2 text-dark-400 hover:text-white hover:bg-dark-800 rounded-lg transition-colors group"
             title="Reset to default template"
           >
-            <RotateCcw className="w-4 h-4" />
-            Reset
+            <RotateCcw className="w-4 h-4 group-hover:-rotate-90 transition-transform duration-500" />
           </button>
           <button
             onClick={handleRunCode}
             disabled={isRunning}
-            className="px-3 py-1 bg-brand-orange hover:bg-orange-600 disabled:bg-dark-700 disabled:text-dark-500 text-white rounded font-medium text-xs transition-colors flex items-center gap-1.5 disabled:cursor-not-allowed"
+            className="px-4 py-1.5 bg-brand-orange hover:bg-orange-600 disabled:bg-dark-800 disabled:text-dark-500 text-white rounded-lg font-bold text-xs transition-all flex items-center gap-2 disabled:cursor-not-allowed shadow-lg shadow-brand-orange/20 disabled:shadow-none hover:scale-105 active:scale-95"
           >
             {isRunning ? (
               <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                 Running...
               </>
             ) : (
               <>
-                <Play className="w-4 h-4 fill-current" />
+                <Play className="w-3 h-3 fill-current" />
                 Run Code
               </>
             )}
@@ -190,7 +192,7 @@ function CodePanel({ problemId, onRunCode, edgeCases, onGenerateEdgeCases, isGen
 
       {/* Code Editor - Resizable */}
       <div 
-        className="min-h-0 overflow-hidden"
+        className="min-h-0 overflow-hidden relative"
         style={{ height: `${editorHeight}%` }}
       >
         <CodeEditor value={code} onChange={setCode} language="java" />
@@ -198,32 +200,32 @@ function CodePanel({ problemId, onRunCode, edgeCases, onGenerateEdgeCases, isGen
 
       {/* Draggable Divider */}
       <div 
-        className="h-2 bg-dark-800 border-y border-dark-700 cursor-row-resize flex items-center justify-center hover:bg-dark-700 transition-colors shrink-0 group"
+        className="h-3 bg-dark-950 border-y border-dark-800 cursor-row-resize flex items-center justify-center hover:bg-dark-900 transition-colors shrink-0 group z-10"
         onMouseDown={() => setIsDragging(true)}
       >
-        <GripHorizontal className="w-4 h-4 text-dark-500 group-hover:text-dark-300" />
+        <div className="w-12 h-1 rounded-full bg-dark-800 group-hover:bg-brand-orange/50 transition-colors"></div>
       </div>
 
       {/* Bottom Panel with Tabs - Resizable */}
       <div 
-        className="flex flex-col min-h-0 overflow-hidden"
+        className="flex flex-col min-h-0 overflow-hidden bg-dark-900/30"
         style={{ height: `${100 - editorHeight}%` }}
       >
         {/* Tab Headers */}
-        <div className="flex items-center border-b border-dark-800 bg-dark-900 shrink-0">
+        <div className="flex items-center border-b border-dark-800 bg-dark-950/50 backdrop-blur shrink-0 px-2 pt-2 gap-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-t-lg transition-all border-t border-x ${
                 activeTab === tab.id
-                  ? 'border-brand-orange text-white bg-dark-800/50'
-                  : 'border-transparent text-dark-400 hover:text-dark-200 hover:bg-dark-800/30'
+                  ? 'border-dark-800 bg-dark-900 text-white border-b-transparent translate-y-px'
+                  : 'border-transparent text-dark-500 hover:text-dark-300 hover:bg-dark-800/50'
               }`}
             >
               {tab.label}
               {tab.badge !== undefined && tab.badge > 0 && (
-                <span className="ml-2 px-1.5 py-0.5 bg-brand-orange/20 text-brand-orange text-xs rounded-full">
+                <span className="ml-2 px-1.5 py-0.5 bg-brand-orange/20 text-brand-orange text-[10px] rounded-full">
                   {tab.badge}
                 </span>
               )}
@@ -232,27 +234,29 @@ function CodePanel({ problemId, onRunCode, edgeCases, onGenerateEdgeCases, isGen
         </div>
 
         {/* Tab Content */}
-        <div className="flex-1 min-h-0 overflow-hidden">
-          {activeTab === 'console' && (
-            <ConsolePanel 
-              output={output} 
-              error={error} 
-              timedOut={timedOut} 
-              isLoading={isRunning} 
-              testCases={edgeCases}
-            />
-          )}
-          {activeTab === 'input' && (
-            <InputPanel value={stdin} onChange={setStdin} />
-          )}
-          {activeTab === 'edgecases' && (
-            <EdgeCasesPanel
-              edgeCases={edgeCases}
-              isGenerating={isGeneratingEdgeCases}
-              onGenerate={onGenerateEdgeCases}
-              onCopyInput={(input) => setStdin(input)}
-            />
-          )}
+        <div className="flex-1 min-h-0 overflow-hidden bg-dark-900 p-2">
+          <div className="h-full rounded-lg border border-dark-800 bg-dark-950/50 overflow-hidden">
+            {activeTab === 'console' && (
+              <ConsolePanel 
+                output={output} 
+                error={error} 
+                timedOut={timedOut} 
+                isLoading={isRunning} 
+                testCases={edgeCases}
+              />
+            )}
+            {activeTab === 'input' && (
+              <InputPanel value={stdin} onChange={setStdin} />
+            )}
+            {activeTab === 'edgecases' && (
+              <EdgeCasesPanel
+                edgeCases={edgeCases}
+                isGenerating={isGeneratingEdgeCases}
+                onGenerate={onGenerateEdgeCases}
+                onCopyInput={(input) => setStdin(input)}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

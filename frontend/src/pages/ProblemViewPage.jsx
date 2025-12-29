@@ -102,6 +102,41 @@ function ProblemViewPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, problems, location.state]);
 
+  // Auto-generate content if missing
+  const autoGenRef = useRef({ description: false, notes: false });
+  
+  useEffect(() => {
+    if (!problem || !id || isViewOnly) return; 
+
+    const autoGenerate = async () => {
+       // 1. Auto-generate Description if missing (and not already generating)
+       if (!problem.description && !autoGenRef.current.description) {
+         autoGenRef.current.description = true;
+         console.log('Auto-generating description...');
+         try {
+           const description = await generateDescription(problem.id);
+           setProblem(prev => ({ ...prev, description }));
+         } catch (e) {
+           console.error('Auto-gen description failed', e);
+         }
+       }
+
+       // 2. Auto-generate AI Notes if missing (and not already generating)
+       if (!problem.aiNotes && !autoGenRef.current.notes) {
+         autoGenRef.current.notes = true;
+         console.log('Auto-generating notes...');
+         try {
+            await handleGenerateNotes();
+         } catch (e) {
+           console.error('Auto-gen notes failed', e);
+         }
+       }
+    };
+
+    autoGenerate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [problem, id, isViewOnly]); // Depend on problem state so it runs after fetch
+
   // Resizable pane handlers
   const handleMouseDown = (e) => {
     e.preventDefault();
@@ -157,6 +192,9 @@ function ProblemViewPage() {
   const handleGenerateNotes = async () => {
     setIsGenerating(true);
     try {
+      // Determine if this is a regeneration (already has notes)
+      const isRegenerate = !!problem?.aiNotes;
+      
       // For view-only problems, generate notes without saving
       if (isViewOnly) {
         // Call the backend with problem data
@@ -171,7 +209,8 @@ function ProblemViewPage() {
             platformUrl: problem.platformUrl || '',
             difficulty: problem.difficulty || 'Medium',
             topics: problem.topics || [],
-            patterns: problem.patterns || []
+            patterns: problem.patterns || [],
+            forceRefresh: isRegenerate // Force fresh generation if regenerating
           })
         });
         
@@ -183,7 +222,7 @@ function ProblemViewPage() {
         setProblem(prev => ({ ...prev, aiNotes: data.notes }));
       } else {
         // For saved problems, generate and save notes
-        const generatedNotes = await generateNotes(problem.id);
+        const generatedNotes = await generateNotes(problem.id, isRegenerate);
         await updateProblem(problem.id, { aiNotes: generatedNotes });
         // Update local state directly with generated notes
         setProblem(prev => ({ ...prev, aiNotes: generatedNotes }));
@@ -429,7 +468,10 @@ function ProblemViewPage() {
                     {/* Problem Statement */}
                     <div className="text-dark-200 font-medium leading-relaxed mb-6">
                       <span dangerouslySetInnerHTML={{ 
-                        __html: problem.description.statement.replace(
+                        __html: (typeof problem.description === 'string' 
+                          ? problem.description 
+                          : problem.description?.statement || problem.description?.description || ''
+                        ).replace(
                           /`([^`]+)`/g, 
                           '<code class="text-blue-400 bg-dark-800 px-1.5 py-0.5 rounded text-sm">$1</code>'
                         )

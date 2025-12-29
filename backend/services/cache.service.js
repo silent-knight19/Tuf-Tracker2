@@ -56,6 +56,20 @@ class CacheService {
       return await generateFn();
     }
   }
+
+  /**
+   * Delete a cached item
+   * @param {string} collectionName - Firestore collection name
+   * @param {string} key - Document key to delete
+   */
+  async deleteCache(collectionName, key) {
+    try {
+      await db.collection(collectionName).doc(key).delete();
+      console.log(`🗑️ Cache DELETED for [${collectionName}/${key}]`);
+    } catch (error) {
+      console.error(`Failed to delete cache [${collectionName}/${key}]:`, error);
+    }
+  }
 }
 
 module.exports = new CacheService();

@@ -7,6 +7,7 @@ import SolvedProblemsStats from '../components/features/SolvedProblemsStats';
 import ProblemCard from '../components/features/ProblemCard';
 import AddProblemModal from '../components/features/AddProblemModal';
 import { CheckCircle2, Plus } from 'lucide-react';
+import MotivationalQuote from '../components/ui/MotivationalQuote';
 
 function ProblemsPage() {
   const navigate = useNavigate();
@@ -67,57 +68,57 @@ function ProblemsPage() {
 
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-dark-100">
-          {companyName ? `Problems asked by ${companyName}` : 'Problems'}
-        </h1>
-        {!companyName && (
-          <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
-            + Add Problem
-          </button>
-        )}
-      </div>
+    <div className="p-8 max-w-7xl mx-auto space-y-5">
+      <MotivationalQuote category="Focus" />
 
       {/* LeetCode Style Stats */}
-      <SolvedProblemsStats customProblems={companyName ? companyProblems : null} />
+      <SolvedProblemsStats 
+        customProblems={companyName ? companyProblems : null} 
+        onShowAddModal={() => setIsModalOpen(true)}
+      />
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-4 bg-dark-900 p-4 rounded-lg border border-dark-800">
-        <input
-          type="text"
-          placeholder="Search problems..."
-          className="input flex-1 min-w-[200px]"
-          onChange={(e) => setFilters({ search: e.target.value })}
-        />
+      <div className="flex flex-wrap gap-4 bg-dark-900/40 backdrop-blur-md py-3 px-6 rounded-2xl border border-dark-800 shadow-xl">
+        <div className="relative flex-1 min-w-[300px]">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2">
+            <svg className="w-5 h-5 text-dark-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+          <input
+            type="text"
+            placeholder="Filter problems by title, topic..."
+            className="w-full bg-dark-950 border border-dark-800 rounded-xl pl-12 pr-4 py-3 text-white placeholder-dark-600 focus:border-brand-orange/50 focus:outline-none transition-all"
+            onChange={(e) => setFilters({ search: e.target.value })}
+          />
+        </div>
         
-        <select 
-          className="input w-40"
-          onChange={(e) => setFilters({ difficulty: e.target.value })}
-        >
-          <option value="">Difficulty</option>
-          <option value="Easy">Easy</option>
-          <option value="Medium">Medium</option>
-          <option value="Hard">Hard</option>
-        </select>
+        <div className="flex items-center gap-3">
+          <select 
+            className="bg-dark-950 border border-dark-800 rounded-xl px-4 py-3 text-sm font-bold text-dark-200 focus:border-brand-orange/50 focus:outline-none cursor-pointer hover:bg-dark-900 transition-colors"
+            onChange={(e) => setFilters({ difficulty: e.target.value })}
+          >
+            <option value="">Difficulty</option>
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
+          </select>
 
-        <select 
-          className="input w-40"
-          onChange={(e) => setFilters({ platform: e.target.value })}
-        >
-          <option value="">Platform</option>
-          <option value="LeetCode">LeetCode</option>
-          <option value="GeeksforGeeks">GeeksforGeeks</option>
-          <option value="CodeForces">CodeForces</option>
-        </select>
+          <select 
+            className="bg-dark-950 border border-dark-800 rounded-xl px-4 py-3 text-sm font-bold text-dark-200 focus:border-brand-orange/50 focus:outline-none cursor-pointer hover:bg-dark-900 transition-colors"
+            onChange={(e) => setFilters({ platform: e.target.value })}
+          >
+            <option value="">Platform</option>
+            <option value="LeetCode">LeetCode</option>
+            <option value="GeeksforGeeks">GeeksforGeeks</option>
+            <option value="CodeForces">CodeForces</option>
+          </select>
 
-        <button 
-          className="btn btn-ghost text-dark-400 hover:text-dark-100"
-          onClick={clearFilters}
-        >
-          Clear
-        </button>
+          <button 
+            className="px-4 py-3 text-xs font-black uppercase tracking-widest text-dark-500 hover:text-white transition-colors"
+            onClick={clearFilters}
+          >
+            Reset
+          </button>
+        </div>
       </div>
 
       {/* Problem List */}

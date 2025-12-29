@@ -25,7 +25,29 @@ const initCronJobs = () => {
         });
     });
 
-    console.log('🗓️  Smart Cron initialized: Running every 14 mins (06:00-23:59)');
+    // Schedule: Every day at midnight (Server time)
+    // Task: Generate 50 new motivational quotes for the day
+    cron.schedule('0 0 * * *', async () => {
+        console.log('🗓️  CRON: Refreshing Daily Motivational Quotes...');
+        try {
+            const quoteService = require('../services/quote.service');
+            await quoteService.refreshDailyQuotes();
+        } catch (error) {
+            console.error('❌ CRON: Failed to refresh quotes:', error);
+        }
+    });
+
+    // Initial check on startup - optional but good for dev
+    setImmediate(async () => {
+        try {
+            const quoteService = require('../services/quote.service');
+            await quoteService.getDailyQuotes(); // This will trigger refresh if empty
+        } catch (error) {
+            console.error('⚠️ Initial quote sync failed');
+        }
+    });
+
+    console.log('🗓️  Smart Cron initialized: Running every 14 mins (06:00-23:59) + Daily Quotes');
 };
 
 module.exports = { initCronJobs };

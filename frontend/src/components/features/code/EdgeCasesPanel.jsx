@@ -41,7 +41,7 @@ function EdgeCasesPanel({ edgeCases, onCopyInput, isLoading }) {
             <div className="flex items-start justify-between mb-3">
               <h4 className="font-semibold text-white text-sm">{edgeCase.name}</h4>
               <button
-                onClick={() => onCopyInput(edgeCase.input)}
+                onClick={() => onCopyInput(typeof edgeCase.input === 'object' ? JSON.stringify(edgeCase.input) : edgeCase.input)}
                 className="px-2 py-1 text-xs bg-dark-800 hover:bg-dark-700 text-dark-300 hover:text-white rounded flex items-center gap-1.5 transition-colors"
                 title="Copy input to stdin"
               >
@@ -54,14 +54,14 @@ function EdgeCasesPanel({ edgeCases, onCopyInput, isLoading }) {
               <div>
                 <span className="text-dark-500 font-medium text-xs uppercase tracking-wider">Input:</span>
                 <pre className="mt-1 p-2 bg-dark-950 rounded text-dark-100 font-mono text-xs overflow-x-auto">
-                  {edgeCase.input}
+                  {typeof edgeCase.input === 'object' ? JSON.stringify(edgeCase.input, null, 2) : edgeCase.input}
                 </pre>
               </div>
 
               <div>
                 <span className="text-dark-500 font-medium text-xs uppercase tracking-wider">Expected Output:</span>
                 <pre className="mt-1 p-2 bg-dark-950 rounded text-green-400 font-mono text-xs overflow-x-auto">
-                  {edgeCase.expectedOutput}
+                  {typeof edgeCase.expectedOutput === 'object' ? JSON.stringify(edgeCase.expectedOutput, null, 2) : String(edgeCase.expectedOutput)}
                 </pre>
               </div>
 
@@ -85,8 +85,8 @@ EdgeCasesPanel.propTypes = {
   edgeCases: PropTypes.arrayOf(
     PropTypes.shape({
       name: PropTypes.string.isRequired,
-      input: PropTypes.string.isRequired,
-      expectedOutput: PropTypes.string.isRequired,
+      input: PropTypes.any.isRequired,
+      expectedOutput: PropTypes.any,
       explanation: PropTypes.string
     })
   ),

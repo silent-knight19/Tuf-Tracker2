@@ -128,10 +128,12 @@ export const useProblemStore = create((set, get) => ({
   },
 
   // Generate AI study notes for a problem
-  generateNotes: async (problemId) => {
+  generateNotes: async (problemId, forceRefresh = false) => {
     set({ loading: true, error: null });
     try {
-      const response = await api.post(`/problems/${problemId}/generate-notes`);
+      const response = await api.post(`/problems/${problemId}/generate-notes`, {
+        forceRefresh
+      });
       set({ loading: false });
       return response.data.notes;
     } catch (error) {

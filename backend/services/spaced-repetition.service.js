@@ -267,6 +267,8 @@ class SpacedRepetitionService {
       problemId,
       problemTitle: problemData.title || '',
       pattern: problemData.pattern || '',
+      patterns: problemData.patterns || [],
+      topics: problemData.topics || [],
       difficulty: problemData.difficulty || 'Medium',
       coreIdea: problemData.coreIdea || '',
       algorithmSteps: [],

@@ -90,10 +90,10 @@ router.post('/company-problem', verifyToken, async (req, res) => {
 });
 
 // POST /api/ai/problem-help
-// Generate hints and solutions for a problem
+// Generate hints, solutions, AND edge cases for a problem
 router.post('/problem-help', verifyToken, async (req, res) => {
   try {
-    const { title, description, difficulty, forceRefresh, pattern } = req.body;
+    const { title, description, difficulty, forceRefresh, pattern, examples, constraints, functionSignature } = req.body;
 
     if (!title || !description) {
       return res.status(400).json({ error: 'Title and description are required' });
@@ -101,7 +101,8 @@ router.post('/problem-help', verifyToken, async (req, res) => {
 
     // Include pattern in cache key if specified
     const patternKey = pattern ? `_${cacheService.normalizeKey(pattern)}` : '';
-    const cacheKey = `help_${cacheService.normalizeKey(title)}${patternKey}`;
+    // Use v2 prefix to invalidate old cache missing edge cases
+    const cacheKey = `help_v2_${cacheService.normalizeKey(title)}${patternKey}`;
 
     // If forceRefresh, delete existing cache first
     if (forceRefresh) {
@@ -122,7 +123,10 @@ router.post('/problem-help', verifyToken, async (req, res) => {
           title,
           description,
           difficulty || 'Medium',
-          pattern || null
+          pattern || null,
+          examples || [],
+          constraints || [],
+          functionSignature || null
         );
       }
     );

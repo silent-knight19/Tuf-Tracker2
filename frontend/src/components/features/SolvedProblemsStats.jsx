@@ -1,8 +1,9 @@
+import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { useProblemStore } from '../../stores/problemStore';
 
-function SolvedProblemsStats({ customProblems }) {
+function SolvedProblemsStats({ customProblems, onShowAddModal }) {
   const { problems: storeProblems, setFilters, filters } = useProblemStore();
   const [expandedSection, setExpandedSection] = useState('topics'); // 'topics' or 'patterns'
 
@@ -52,173 +53,210 @@ function SolvedProblemsStats({ customProblems }) {
     : data;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-      {/* Left: Progress Ring & Stats */}
-      <div className="card flex flex-col sm:flex-row items-center gap-8">
-        {/* Ring Chart */}
-        <div className="relative w-40 h-40 flex-shrink-0">
-          <ResponsiveContainer width={160} height={160}>
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={75}
-                startAngle={90}
-                endAngle={-270}
-                dataKey="value"
-                stroke="none"
-              >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#282828', border: 'none', borderRadius: '8px' }}
-                itemStyle={{ color: '#fff' }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
+      {/* Left Column: Core Stats Mastery (7 cols) */}
+      <div className="lg:col-span-12 xl:col-span-7">
+        <div className="bg-dark-900/40 backdrop-blur-xl border border-dark-800 rounded-[2rem] p-8 shadow-2xl relative overflow-hidden group">
+          {/* Decorative background glow */}
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand-orange/10 blur-[80px] rounded-full pointer-events-none group-hover:bg-brand-orange/20 transition-all duration-700" />
           
-          {/* Center Text */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <div className="text-3xl font-bold text-white">{stats.total}</div>
-            <div className="text-xs text-dark-400">{customProblems ? 'Total' : 'Solved'}</div>
-          </div>
-        </div>
 
-        {/* Stats Breakdown */}
-        <div className="flex-1 w-full space-y-4">
-          {/* Easy */}
-          <div className="group cursor-pointer" onClick={() => setFilters({ difficulty: 'Easy' })}>
-            <div className="flex items-center justify-between text-sm mb-1">
-              <span className="text-dark-300 group-hover:text-white transition-colors">Easy</span>
-              <span className="font-medium text-white">
-                {stats.easy}
-                <span className="text-dark-500 ml-1">/ {stats.total}</span>
-              </span>
-            </div>
-            <div className="w-full bg-dark-700 h-1.5 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-difficulty-easy rounded-full" 
-                style={{ width: `${stats.total ? (stats.easy / stats.total) * 100 : 0}%` }}
-              />
-            </div>
-          </div>
 
-          {/* Medium */}
-          <div className="group cursor-pointer" onClick={() => setFilters({ difficulty: 'Medium' })}>
-            <div className="flex items-center justify-between text-sm mb-1">
-              <span className="text-dark-300 group-hover:text-white transition-colors">Medium</span>
-              <span className="font-medium text-white">
-                {stats.medium}
-                <span className="text-dark-500 ml-1">/ {stats.total}</span>
-              </span>
-            </div>
-            <div className="w-full bg-dark-700 h-1.5 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-difficulty-medium rounded-full" 
-                style={{ width: `${stats.total ? (stats.medium / stats.total) * 100 : 0}%` }}
-              />
-            </div>
-          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-10 relative z-10 pt-6">
+            {/* Left Side: Chart & Action */}
+            <div className="flex flex-col items-center gap-6">
+              {/* High Fidelity Ring Chart */}
+              <div className="relative w-48 h-48 flex-shrink-0 group/chart transition-transform duration-500 hover:scale-105">
+                <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
+                  <PieChart>
+                    <Pie
+                      data={chartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={70}
+                      outerRadius={88}
+                      startAngle={90}
+                      endAngle={-270}
+                      dataKey="value"
+                      stroke="none"
+                      paddingAngle={stats.total > 0 ? 4 : 0}
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={entry.color} 
+                          className="transition-all duration-500 hover:opacity-80"
+                          style={{
+                            filter: `drop-shadow(0 0 8px ${entry.color}44)`
+                          }}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'rgba(17, 17, 17, 0.95)', 
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '12px',
+                        backdropFilter: 'blur(8px)',
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)'
+                      }}
+                      itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: '800', textTransform: 'uppercase' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                
+                {/* Center Text with enhanced typography */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <div className="text-4xl font-black text-white tracking-tighter animate-in fade-in zoom-in duration-700">
+                    {stats.total}
+                  </div>
+                  <div className="text-[10px] font-black text-dark-500 uppercase tracking-[0.2em] mt-1">
+                    {customProblems ? 'Total' : 'Solved'}
+                  </div>
+                </div>
+              </div>
 
-          {/* Hard */}
-          <div className="group cursor-pointer" onClick={() => setFilters({ difficulty: 'Hard' })}>
-            <div className="flex items-center justify-between text-sm mb-1">
-              <span className="text-dark-300 group-hover:text-white transition-colors">Hard</span>
-              <span className="font-medium text-white">
-                {stats.hard}
-                <span className="text-dark-500 ml-1">/ {stats.total}</span>
-              </span>
+              {onShowAddModal && (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onShowAddModal();
+                  }}
+                  className="px-5 py-2.5 bg-brand-orange text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-orange-600 transition-all shadow-[0_0_20px_rgba(249,115,22,0.3)] hover:shadow-[0_0_30px_rgba(249,115,22,0.5)] active:scale-95 flex items-center gap-2 group/btn"
+                >
+                  <Plus className="w-3.5 h-3.5 group-hover/btn:rotate-90 transition-transform" />
+                  Add Problem
+                </button>
+              )}
             </div>
-            <div className="w-full bg-dark-700 h-1.5 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-difficulty-hard rounded-full" 
-                style={{ width: `${stats.total ? (stats.hard / stats.total) * 100 : 0}%` }}
-              />
+
+            {/* Premium Stats Breakdown */}
+            <div className="flex-1 w-full space-y-7">
+              {[
+                { label: 'Easy', count: stats.easy, color: 'bg-[#00b8a3]', textColor: 'text-[#00b8a3]', glow: 'shadow-[#00b8a3]/20', key: 'Easy' },
+                { label: 'Medium', count: stats.medium, color: 'bg-[#ffc01e]', textColor: 'text-[#ffc01e]', glow: 'shadow-[#ffc01e]/20', key: 'Medium' },
+                { label: 'Hard', count: stats.hard, color: 'bg-[#ff375f]', textColor: 'text-[#ff375f]', glow: 'shadow-[#ff375f]/20', key: 'Hard' }
+              ].map((diff) => (
+                <div 
+                  key={diff.label}
+                  className="group/item cursor-pointer" 
+                  onClick={() => setFilters({ difficulty: diff.key })}
+                >
+                  <div className="flex items-end justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full ${diff.color} group-hover/item:scale-150 transition-transform`} />
+                      <span className="text-xs font-black text-dark-300 uppercase tracking-widest group-hover/item:text-white transition-colors">{diff.label}</span>
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-lg font-black text-white">{diff.count}</span>
+                      <span className="text-[10px] font-bold text-dark-600 uppercase">/ {stats.total}</span>
+                    </div>
+                  </div>
+                  <div className="h-2.5 bg-dark-950 rounded-full overflow-hidden border border-dark-800 p-0.5">
+                    <div 
+                      className={`h-full ${diff.color} rounded-full transition-all duration-1000 ease-out shadow-lg ${diff.glow}`} 
+                      style={{ 
+                        width: `${stats.total ? (diff.count / stats.total) * 100 : 0}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Right: Topics & Patterns */}
-      <div className="card flex flex-col">
-        <div className="flex items-center gap-4 border-b border-dark-700 pb-3 mb-3">
-          <button 
-            className={`text-sm font-medium pb-1 transition-colors ${
-              expandedSection === 'topics' ? 'text-white border-b-2 border-white' : 'text-dark-400 hover:text-dark-200'
-            }`}
-            onClick={() => setExpandedSection('topics')}
-          >
-            Topics
-          </button>
-          <button 
-            className={`text-sm font-medium pb-1 transition-colors ${
-              expandedSection === 'patterns' ? 'text-white border-b-2 border-white' : 'text-dark-400 hover:text-dark-200'
-            }`}
-            onClick={() => setExpandedSection('patterns')}
-          >
-            Patterns
-          </button>
-        </div>
+      {/* Right Column: Exploration (5 cols) */}
+      <div className="lg:col-span-12 xl:col-span-5">
+        <div className="bg-dark-900/40 backdrop-blur-xl border border-dark-800 rounded-[2rem] p-8 h-full flex flex-col shadow-2xl relative overflow-hidden group">
+          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-500/5 blur-[80px] rounded-full pointer-events-none group-hover:bg-blue-500/10 transition-all duration-700" />
+          
+          <div className="flex items-center gap-6 border-b border-dark-800 pb-5 mb-6 relative z-10">
+            <button 
+              className={`text-xs font-black uppercase tracking-[0.2em] transition-all relative py-2 ${
+                expandedSection === 'topics' ? 'text-white' : 'text-dark-500 hover:text-dark-300'
+              }`}
+              onClick={() => setExpandedSection('topics')}
+            >
+              Mastered Topics
+              {expandedSection === 'topics' && (
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-brand-orange to-orange-400 rounded-full animate-in slide-in-from-left duration-300" />
+              )}
+            </button>
+            <button 
+              className={`text-xs font-black uppercase tracking-[0.2em] transition-all relative py-2 ${
+                expandedSection === 'patterns' ? 'text-white' : 'text-dark-500 hover:text-dark-300'
+              }`}
+              onClick={() => setExpandedSection('patterns')}
+            >
+              Recurring Patterns
+              {expandedSection === 'patterns' && (
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-blue-500 to-sky-400 rounded-full animate-in slide-in-from-left duration-300" />
+              )}
+            </button>
+          </div>
 
-        <div className="flex-1 overflow-y-auto max-h-[180px] pr-2 custom-scrollbar">
-          <div className="flex flex-wrap gap-2">
-            {expandedSection === 'topics' ? (
-              stats.topics.length > 0 ? (
-                stats.topics.map(t => {
-                  const isActive = filters.topic === t.name;
-                  return (
-                    <button
-                      key={t.name}
-                      onClick={() => setFilters({ topic: t.name })}
-                      className={`badge cursor-pointer transition-all flex items-center gap-2 ${
-                        isActive 
-                          ? 'bg-brand-orange text-white border-brand-orange shadow-md shadow-brand-orange/30' 
-                          : 'bg-dark-800 hover:bg-dark-700 text-dark-300 border-dark-700'
-                      }`}
-                    >
-                      {t.name}
-                      <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-                        isActive ? 'bg-white/20 text-white' : 'bg-dark-900 text-dark-400'
-                      }`}>
-                        {t.count}
-                      </span>
-                    </button>
-                  );
-                })
+          <div className="flex-1 overflow-y-auto max-h-[160px] pr-2 custom-scrollbar relative z-10">
+            <div className="flex flex-wrap gap-2.5">
+              {expandedSection === 'topics' ? (
+                stats.topics.length > 0 ? (
+                  stats.topics.map(t => {
+                    const isActive = filters.topic === t.name;
+                    return (
+                      <button
+                        key={t.name}
+                        onClick={() => setFilters({ topic: t.name })}
+                        className={`group/tag px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border flex items-center gap-3 active:scale-95 ${
+                          isActive 
+                            ? 'bg-brand-orange border-brand-orange text-white shadow-[0_0_20px_rgba(249,115,22,0.2)]' 
+                            : 'bg-dark-950 border-dark-800 text-dark-500 hover:border-dark-700 hover:bg-dark-800'
+                        }`}
+                      >
+                        {t.name}
+                        <span className={`px-2 py-0.5 rounded-lg text-[10px] ${
+                          isActive ? 'bg-white/20 text-white' : 'bg-dark-800 text-dark-400 group-hover/tag:bg-dark-700'
+                        }`}>
+                          {t.count}
+                        </span>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full w-full py-8 text-dark-600">
+                    <div className="text-sm font-black uppercase tracking-widest italic opacity-50">Empty Archive</div>
+                  </div>
+                )
               ) : (
-                <div className="text-dark-500 text-sm italic">No topics yet</div>
-              )
-            ) : (
-              stats.patterns.length > 0 ? (
-                stats.patterns.map(p => {
-                  const isActive = filters.pattern === p.name;
-                  return (
-                    <button
-                      key={p.name}
-                      onClick={() => setFilters({ pattern: p.name })}
-                      className={`badge cursor-pointer transition-all flex items-center gap-2 ${
-                        isActive 
-                          ? 'bg-brand-orange text-white border-brand-orange shadow-md shadow-brand-orange/30' 
-                          : 'bg-brand-orange/10 hover:bg-brand-orange/20 text-brand-orange border-brand-orange/20'
-                      }`}
-                    >
-                      {p.name}
-                      <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-                        isActive ? 'bg-white/20 text-white' : 'bg-brand-orange/20'
-                      }`}>
-                        {p.count}
-                      </span>
-                    </button>
-                  );
-                })
-              ) : (
-                <div className="text-dark-500 text-sm italic">No patterns yet</div>
-              )
-            )}
+                stats.patterns.length > 0 ? (
+                  stats.patterns.map(p => {
+                    const isActive = filters.pattern === p.name;
+                    return (
+                      <button
+                        key={p.name}
+                        onClick={() => setFilters({ pattern: p.name })}
+                        className={`group/tag px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border flex items-center gap-3 active:scale-95 ${
+                          isActive 
+                            ? 'bg-blue-600 border-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.2)]' 
+                            : 'bg-dark-950 border-dark-800 text-dark-500 hover:border-dark-700 hover:bg-dark-800'
+                        }`}
+                      >
+                        {p.name}
+                        <span className={`px-2 py-0.5 rounded-lg text-[10px] ${
+                          isActive ? 'bg-white/20 text-white' : 'bg-dark-800 text-dark-400 group-hover/tag:bg-dark-700'
+                        }`}>
+                          {p.count}
+                        </span>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full w-full py-8 text-dark-600">
+                    <div className="text-sm font-black uppercase tracking-widest italic opacity-50">No Patterns Logged</div>
+                  </div>
+                )
+              )}
+            </div>
           </div>
         </div>
       </div>

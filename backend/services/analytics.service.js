@@ -4,7 +4,10 @@ class AnalyticsService {
     const distribution = {};
     
     problems.forEach(problem => {
-      problem.topics?.forEach(topic => {
+      if (!this.isSolvedProblem(problem)) return;
+      // Use Set to ensure each topic is counted only once per problem
+      const uniqueTopics = new Set(problem.topics || []);
+      uniqueTopics.forEach(topic => {
         distribution[topic] = (distribution[topic] || 0) + 1;
       });
     });
@@ -19,7 +22,10 @@ class AnalyticsService {
     const coverage = {};
     
     problems.forEach(problem => {
-      problem.patterns?.forEach(pattern => {
+      if (!this.isSolvedProblem(problem)) return;
+      // Use Set to ensure each pattern is counted only once per problem
+      const uniquePatterns = new Set(problem.patterns || []);
+      uniquePatterns.forEach(pattern => {
         coverage[pattern] = (coverage[pattern] || 0) + 1;
       });
     });
@@ -34,7 +40,7 @@ class AnalyticsService {
     const distribution = { Easy: 0, Medium: 0, Hard: 0 };
     
     problems.forEach(problem => {
-      if (problem.difficulty) {
+      if (this.isSolvedProblem(problem) && problem.difficulty) {
         distribution[problem.difficulty]++;
       }
     });
@@ -47,6 +53,7 @@ class AnalyticsService {
     const distribution = {};
     
     problems.forEach(problem => {
+      if (!this.isSolvedProblem(problem)) return;
       const platform = problem.platform || 'Other';
       distribution[platform] = (distribution[platform] || 0) + 1;
     });
@@ -147,7 +154,8 @@ class AnalyticsService {
 
   // Calculate overall statistics
   calculateOverallStats(problems) {
-    const total = problems.length;
+    const solvedProblems = problems.filter(p => this.isSolvedProblem(p));
+    const totalSolved = solvedProblems.length;
     const difficultyDist = this.calculateDifficultyDistribution(problems);
     
     // Calculate streaks and heatmap
@@ -162,13 +170,13 @@ class AnalyticsService {
     const topics = new Set();
     const patterns = new Set();
     
-    problems.forEach(p => {
+    solvedProblems.forEach(p => {
       p.topics?.forEach(t => topics.add(t));
       p.patterns?.forEach(pat => patterns.add(pat));
     });
 
     return {
-      totalProblems: total,
+      totalProblems: totalSolved,
       easyCount: difficultyDist.Easy,
       mediumCount: difficultyDist.Medium,
       hardCount: difficultyDist.Hard,
@@ -177,7 +185,7 @@ class AnalyticsService {
       totalActiveDays,
       topicsCovered: topics.size,
       patternsMastered: patterns.size,
-      averagePerDay: this.calculateAveragePerDay(problems)
+      averagePerDay: this.calculateAveragePerDay(solvedProblems)
     };
   }
 

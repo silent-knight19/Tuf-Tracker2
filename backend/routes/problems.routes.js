@@ -136,6 +136,8 @@ router.post('/', verifyToken, async (req, res) => {
         {
           title: analysis.title,
           pattern: analysis.patterns?.[0],
+          patterns: analysis.patterns || [],
+          topics: analysis.topics || [],
           difficulty: analysis.difficulty,
           coreIdea: ''
         },
@@ -330,6 +332,15 @@ router.post('/:id/generate-notes', verifyToken, async (req, res) => {
     const aiService = require('../services/ai.service');
     const cacheKey = `notes_v3_${cacheService.normalizeKey(problem.title)}`;
     
+    // Check if force refresh is requested
+    const forceRefresh = req.body.forceRefresh === true;
+    
+    // If force refresh, delete old cache first
+    if (forceRefresh) {
+      await cacheService.deleteCache('ai_cache_notes', cacheKey);
+      console.log(`Cache cleared for: ${cacheKey}`);
+    }
+    
     const notes = await cacheService.getCachedOrGenerate(
       'ai_cache_notes',
       cacheKey,
@@ -363,6 +374,15 @@ router.post('/generate-notes-preview', async (req, res) => {
 
     const aiService = require('../services/ai.service');
     const cacheKey = `notes_v3_${cacheService.normalizeKey(title)}`;
+
+    // Check if force refresh is requested
+    const forceRefresh = req.body.forceRefresh === true;
+    
+    // If force refresh, delete old cache first
+    if (forceRefresh) {
+      await cacheService.deleteCache('ai_cache_notes', cacheKey);
+      console.log(`Cache cleared for preview: ${cacheKey}`);
+    }
 
     const notes = await cacheService.getCachedOrGenerate(
       'ai_cache_notes',

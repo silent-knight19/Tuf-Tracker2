@@ -12,6 +12,10 @@ const RevisionProblemDetailPage = lazy(() => import('./pages/RevisionProblemDeta
 const InterviewProblemPage = lazy(() => import('./pages/InterviewProblemPage'));
 const AIInterviewPage = lazy(() => import('./pages/AIInterviewPage'));
 const SolveProblemPage = lazy(() => import('./pages/SolveProblemPage'));
+const PatternPracticePage = lazy(() => import('./pages/practice/PatternPracticePage'));
+const InterviewPracticePage = lazy(() => import('./pages/practice/InterviewPracticePage'));
+const CompanyPracticePage = lazy(() => import('./pages/practice/CompanyPracticePage'));
+const SolveProblemsPage = lazy(() => import('./pages/practice/SolveProblemsPage'));
 
 // Loading spinner component
 const PageLoader = () => (
@@ -67,6 +71,27 @@ function App() {
             <Route 
               path="/solve/:id" 
               element={user ? <SolveProblemPage /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/solve/:id" 
+              element={user ? <SolveProblemPage /> : <Navigate to="/login" />} 
+            />
+            {/* Practice Routes - Note the '/*' to allow nested routes if needed, though here we render specific children */}
+            <Route 
+              path="/practice/patterns/*" 
+              element={user ? <DashboardPage><PatternPracticePage /></DashboardPage> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/practice/interview/*" 
+              element={user ? <DashboardPage><InterviewPracticePage /></DashboardPage> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/practice/companies/*" 
+              element={user ? <DashboardPage><CompanyPracticePage /></DashboardPage> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/practice/solve/*" 
+              element={user ? <DashboardPage><SolveProblemsPage /></DashboardPage> : <Navigate to="/login" />} 
             />
             <Route 
               path="/*" 

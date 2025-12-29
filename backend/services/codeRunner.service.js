@@ -269,19 +269,25 @@ public class Main {
             if (componentType == int.class) {
                 int[] arr = new int[list.size()];
                 for (int i = 0; i < list.size(); i++) {
-                    arr[i] = ((Number) list.get(i)).intValue();
+                    Object val = list.get(i);
+                    if (val instanceof Number) arr[i] = ((Number) val).intValue();
+                    else arr[i] = Integer.parseInt(val.toString());
                 }
                 return arr;
             } else if (componentType == long.class) {
                 long[] arr = new long[list.size()];
                 for (int i = 0; i < list.size(); i++) {
-                    arr[i] = ((Number) list.get(i)).longValue();
+                    Object val = list.get(i);
+                    if (val instanceof Number) arr[i] = ((Number) val).longValue();
+                    else arr[i] = Long.parseLong(val.toString());
                 }
                 return arr;
             } else if (componentType == double.class) {
                 double[] arr = new double[list.size()];
                 for (int i = 0; i < list.size(); i++) {
-                    arr[i] = ((Number) list.get(i)).doubleValue();
+                    Object val = list.get(i);
+                    if (val instanceof Number) arr[i] = ((Number) val).doubleValue();
+                    else arr[i] = Double.parseDouble(val.toString());
                 }
                 return arr;
             } else if (componentType == String.class) {
