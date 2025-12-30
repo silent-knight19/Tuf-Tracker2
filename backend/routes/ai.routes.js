@@ -126,7 +126,9 @@ router.post('/problem-help', verifyToken, async (req, res) => {
           pattern || null,
           examples || [],
           constraints || [],
-          functionSignature || null
+          functionSignature || null,
+          req.body.mode || 'full', // Pass mode
+          req.body.providedSolution || null // Pass providedSolution
         );
       }
     );

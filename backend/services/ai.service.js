@@ -399,8 +399,9 @@ RULES:
     }
   }
 
-  // Generate hints, solutions, AND edge cases for a problem (PARALLEL Strategy)
-  async generateProblemHelp(title, description, difficulty, pattern = null, examples = [], constraints = [], functionSignature = null) {
+  // Generate hints, solutions, AND edge cases for a problem (SEQUENTIAL-ISH Strategy)
+  // Generate hints, solutions, AND edge cases for a problem (SEQUENTIAL-ISH Strategy)
+  async generateProblemHelp(title, description, difficulty, pattern = null, examples = [], constraints = [], functionSignature = null, mode = 'full', providedSolution = null) {
     try {
       const patternRequirement = pattern 
         ? `\n\n**MANDATORY**: The optimal solution MUST use the "${pattern}" pattern/technique. This is NON-NEGOTIABLE. If someone selected "${pattern}" to practice, the solution MUST demonstrate "${pattern}" as the primary solving strategy.`
@@ -421,9 +422,46 @@ Examples: ${JSON.stringify(examples)}
         solutions: { optimal: null, better: null, brute: null }
       };
 
-      // --- STEP 1 & 2: GENERATE HINTS AND SOLUTIONS IN PARALLEL ---
+      // --- STEP 1: GENERATE EDGE CASES FIRST (Gemini) ---
+      // We do this first so we can tell the Solution Generator about them!
+      console.log('Step 1: Generating Edge Cases (Gemini 3.0)...');
+      let edgeCaseInputs = [];
+      try {
+        edgeCaseInputs = await this.generateEdgeCaseInputs(title, description, examples, constraints, functionSignature);
+      } catch (e) {
+        console.error('Failed to generate edge cases first:', e);
+        // Continue without them, will fallback later
+      }
+
+      // If mode is ONLY edge cases, we stop here (unless we have a solution to run)
+      if (mode === 'edge_cases_only') {
+         console.log('Mode is edge_cases_only. Skipping solution generation.');
+         
+         // If we have a provided solution (from frontend), use it to compute outputs!
+         if (providedSolution && edgeCaseInputs.length > 0) {
+            console.log('Using PROVIDED solution to compute edge case outputs...');
+            try {
+              result.edgeCases = await this.computeEdgeCaseOutputs(providedSolution, edgeCaseInputs, functionSignature);
+            } catch (e) {
+              console.error('Failed to compute outputs with provided solution:', e);
+              // Fallback to inputs only
+               result.edgeCases = edgeCaseInputs.map(ec => ({...ec, expectedOutput: null}));
+            }
+         } else {
+            // No solution to run, just return inputs
+            result.edgeCases = edgeCaseInputs.map(ec => ({...ec, expectedOutput: null}));
+         }
+         return result;
+      }
+
+      // Format edge cases for the prompt
+      const edgeCasesContext = edgeCaseInputs.length > 0 
+        ? `\n\nCRITICAL: Your solution MUST handle the following specific edge cases correctly. We have already generated these inputs, and we will TEST your code against them:\n${JSON.stringify(edgeCaseInputs.slice(0, 5))} (and ${edgeCaseInputs.length - 5} more similar cases).`
+        : '';
+
+      // --- STEP 2: GENERATE HINTS AND SOLUTIONS (Cerebras) ---
       const hintPromise = (async () => {
-        console.log('Generating Hints...');
+        console.log('Step 2a: Generating Hints...');
         const hintPrompt = `You are an expert coding tutor.
 TASK: Generate 10 progressive, high-quality hints for this problem.${pattern ? `\nIMPORTANT: Hints should guide toward solving with the "${pattern}" technique.` : ''}
 ${problemContext}
@@ -438,11 +476,12 @@ OUTPUT: JSON { "hints": ["Hint 1", ..., "Hint 10"] }`;
       })();
 
       const solutionPromise = (async () => {
-        console.log('Generating Solutions...');
+        console.log('Step 2b: Generating Solutions (Context Aware)...');
         const solPrompt = `You are a FAANG Interviewer.${patternRequirement}
 
 TASK: Provide the OPTIMAL solution for this problem.
 ${problemContext}
+${edgeCasesContext}
 
 ${pattern ? `CRITICAL: The user specifically selected "${pattern}" to practice. Your solution MUST use "${pattern}" as the primary technique. Do NOT use HashMap, HashSet, sorting, or any other approach if "${pattern}" can solve it.` : ''}
 
@@ -470,12 +509,13 @@ RULES:
 1. CODE MUST BE A SINGLE STRING containing valid Java code with \\n for newlines.
 2. CODE must have detailed comments explaining the thought process, not just WHAT but WHY.
 3. approachSteps must be 5-8 NUMBERED steps with clear reasoning for each.
-4. The solution MUST use ${pattern ? `"${pattern}"` : 'the best approach'} as the primary technique.`;
+4. The solution MUST use ${pattern ? `"${pattern}"` : 'the best approach'} as the primary technique.
+5. Ensure the code handles the Edge Cases mentioned above (null checks, empty inputs, bounds, etc).`;
         const solText = await this.callCerebras(solPrompt, 'complex', false);
         return this.parseJSONSafe(solText);
       })();
 
-      // Wait for both in parallel with 45-second timeout
+      // Wait for Hints & Solutions
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Hints/Solutions generation timed out')), 45000)
       );
@@ -489,33 +529,28 @@ RULES:
         result.solutions = solResult?.solutions || result.solutions;
       } catch (parallelErr) {
         console.error('Parallel hint/solution generation failed:', parallelErr.message);
-        // Try to salvage whichever completed
-        try {
-          const hintJson = await Promise.race([hintPromise, Promise.resolve(null)]);
-          if (hintJson?.hints) result.hints = hintJson.hints;
-        } catch {}
-        try {
-          const solJson = await Promise.race([solutionPromise, Promise.resolve(null)]);
-          if (solJson?.solutions) result.solutions = solJson.solutions;
-        } catch {}
+        // Try to salvage
+        try { if (await hintPromise) result.hints = (await hintPromise).hints; } catch {}
+        try { if (await solutionPromise) result.solutions = (await solutionPromise).solutions; } catch {}
       }
 
       const solutionCode = result.solutions?.optimal?.code || null;
 
-      // --- STEP 3: GENERATE EDGE CASES WITH COMPUTED OUTPUTS ---
+      // --- STEP 3: COMPUTE OUTPUTS ---
       try {
-        console.log('Generating Edge Cases...');
-        const edgeCaseInputs = await this.generateEdgeCaseInputs(title, description, examples, constraints, functionSignature);
-        
         if (solutionCode && edgeCaseInputs.length > 0) {
-          console.log(`Computing expected outputs for ${edgeCaseInputs.length} edge cases...`);
+          console.log(`Step 3: Computing expected outputs for ${edgeCaseInputs.length} edge cases...`);
           result.edgeCases = await this.computeEdgeCaseOutputs(solutionCode, edgeCaseInputs, functionSignature);
+        } else if (edgeCaseInputs.length > 0) {
+           // We have inputs but no solution code to run them? Return them as is with null expected
+           console.warn('No solution code to compute outputs, returning inputs only.');
+           result.edgeCases = edgeCaseInputs.map(ec => ({...ec, expectedOutput: null}));
         } else {
-          // Fallback: use AI-generated edge cases if no solution code available
-          console.warn('No solution code available, using AI-generated edge cases...');
-          result.edgeCases = await this.generateEdgeCases(title, description, examples, constraints, functionSignature);
+           // Fallback: No inputs generated first? Try generating everything (old way fallback)
+           console.warn('Edge case generation failed initially, trying fallback generation...');
+           result.edgeCases = await this.generateEdgeCases(title, description, examples, constraints, functionSignature);
         }
-      } catch (e) { console.error('Edge case generation failed', e); }
+      } catch (e) { console.error('Edge case output computation failed', e); }
 
       return result;
 
@@ -681,22 +716,44 @@ Return ONLY a valid JSON array. No commentary. Example format:
         ? `Examples: ${examples.map((ex, i) => `Input: ${JSON.stringify(ex.input)}`).join(', ')}`
         : '';
 
-      const prompt = `Generate 15 unique test inputs for this problem. Do NOT include expected outputs.
-
+      const prompt = `You are an expert software tester. Generate 15 UNIQUE and COMPREHENSIVE test inputs for this coding problem.
+      
 Problem: ${title}
-Function: ${functionSignature || 'solve'}
+Function Signature: ${functionSignature || 'solve'}
 ${examplesText}
 
-RULES:
-1. Generate diverse inputs covering: basic, boundary (empty, single element, max size), edge cases (duplicates, negative).
-2. Input format must match the function signature.
-3. Return ONLY a JSON array. No commentary.
+REQUIREMENTS:
+1.  **Quantity**: Exactly 15 unique test inputs.
+2.  **Completeness**: Cover ALL categories:
+    *   **Happy Path**: Standard valid inputs.
+    *   **Boundary Conditions**: Minimum/Maximum values (as per constraints), Empty inputs, Single elements.
+    *   **Edge Cases**: Duplicates, Negative numbers, Sorted/Reverse sorted, All same elements.
+    *   **Tricky Cases**: Logic intersections, inputs that might cause overflow or TLE if not handled.
+3.  **Format**: Return ONLY a valid JSON array of objects.
+4.  **Structure**: Each object MUST have:
+    *   \`name\`: Descriptive name (e.g., "Max Value Input", "Empty Array").
+    *   \`input\`: The input arguments matching the function signature.
+    *   \`category\`: One of "Happy Path", "Boundary", "Edge Case", "Tricky".
 
-Format: [{"name":"TestName","input":{...},"category":"Category"}]
-`;
+JSON FORMAT EXAMPLE:
+[
+  {"name": "Basic Case", "input": {"nums": [1, 2], "target": 3}, "category": "Happy Path"},
+  {"name": "Empty Array", "input": {"nums": [], "target": 0}, "category": "Boundary"}
+]
 
-      console.log('Generating 15 edge case inputs (no expected outputs)...');
-      const text = await this.callCerebras(prompt, 'complex', false);
+Constraints (Respect these strictly):
+${constraints.join('\n')}
+
+DO NOT include expected outputs. DO NOT include markdown code blocks. RETURN RAW JSON ONLY.`;
+
+      console.log('Generating 15 edge case inputs using Gemini 3.0 Flash...');
+      
+      // Use Gemini for better reasoning and JSON adherence on complex edge cases
+      const { geminiEdgeCaseModel } = require('../config/ai.config');
+      
+      const result = await geminiEdgeCaseModel.generateContent(prompt);
+      const text = result.response.text();
+      
       const parsed = this.parseJSONSafe(text);
       
       if (Array.isArray(parsed) && parsed.length > 0) {

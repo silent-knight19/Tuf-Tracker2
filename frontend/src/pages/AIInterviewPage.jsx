@@ -151,47 +151,39 @@ function AIInterviewPage() {
 
   const handleAIAssist = async (forceRefresh = false) => {
     if (helpData?.solutions?.optimal && !forceRefresh) {
-      // If we only have solutions but no edge cases (rare if fetched together), maybe fetch edge cases?
-      // But for now, just show solutions.
       return; 
     }
-
-    // Call the unified endpoint
-    await handleFetchAIContent(forceRefresh);
+    // Mode 'full' generates everything
+    await handleFetchAIContent({ forceRefresh, mode: 'full' });
   };
 
   const handleGenerateEdgeCases = async () => {
-    await handleFetchAIContent(true);
+    // Mode 'edge_cases_only' generates only edge cases (using provided solution for computation)
+    await handleFetchAIContent({ 
+      forceRefresh: true, 
+      mode: 'edge_cases_only',
+      providedSolution: helpData?.solutions?.optimal?.code || null
+    });
   };
 
-  const handleRunCode = async (code, stdin, problemId) => {
-    try {
-      const token = await auth.currentUser.getIdToken();
-      // Use a generic ID or the title for AI problems
-      const response = await api.post('/run/java', {
-        source: code,
-        stdin: stdin,
-        problemId: problemId || 'ai-generated'
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Failed to run code:', error);
-      throw new Error(error.response?.data?.error || 'Failed to execute code');
-    }
-  };
+  const handleFetchAIContent = async (options = {}) => {
+    // Backward compatibility for boolean argument
+    const config = typeof options === 'boolean' ? { forceRefresh: options } : options;
+    const { forceRefresh = false, mode = 'full', providedSolution = null } = config;
 
-  const handleFetchAIContent = async (forceRefresh = false) => {
     if ((loadingEdgeCases || loadingHelp) && !forceRefresh) return;
     if (!problem) return;
 
     try {
-      setLoadingEdgeCases(true);
-      setLoadingHelp(true);
+      if (mode === 'full') {
+        setLoadingEdgeCases(true);
+        setLoadingHelp(true);
+      } else if (mode === 'edge_cases_only') {
+        setLoadingEdgeCases(true);
+      }
+
       const token = await auth.currentUser.getIdToken();
       
-      // Unified call to get hints, solutions, AND edge cases
       const response = await api.post('/ai/problem-help', {
         title: problem.title,
         description: problem.description,
@@ -200,18 +192,22 @@ function AIInterviewPage() {
         examples: problem.examples || [],
         constraints: problem.constraints || [],
         functionSignature: problem.functionSignature || null,
-        forceRefresh: forceRefresh
+        forceRefresh: forceRefresh,
+        mode: mode,
+        providedSolution: providedSolution
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
       const data = response.data;
 
-      // 1. Set Help Data (Hints & Solutions) - ALWAYS use fresh data
-      setHelpData({
-        hints: data.hints || [],
-        solutions: data.solutions
-      });
+      // 1. Set Help Data (Hints & Solutions) - Only if generated
+      if (data.hints?.length > 0 || data.solutions?.optimal) {
+        setHelpData({
+          hints: data.hints || [],
+          solutions: data.solutions
+        });
+      }
 
       // 2. Set Edge Cases
       if (data.edgeCases) {
@@ -226,12 +222,14 @@ function AIInterviewPage() {
 
     } catch (error) {
       console.error('Failed to fetch AI content:', error);
-      // Fallback: don't alert significantly since this runs on mount, 
-      // but maybe show a toast if triggered by button.
-      if (forceRefresh) alert('Failed to regenerate AI content.');
+      if (forceRefresh) alert('Failed to regenerate content.');
     } finally {
-      setLoadingEdgeCases(false);
-      setLoadingHelp(false);
+      if (mode === 'full') {
+        setLoadingEdgeCases(false);
+        setLoadingHelp(false);
+      } else if (mode === 'edge_cases_only') {
+        setLoadingEdgeCases(false);
+      }
     }
   };
 

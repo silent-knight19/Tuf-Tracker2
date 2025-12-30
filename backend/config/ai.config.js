@@ -14,7 +14,7 @@ const models = {
   },
   gemini: {
     general: 'gemma-3-27b-it',
-    reasoning: 'gemini-2.5-flash',
+    reasoning: 'gemini-3.0-flash',
   }
 };
 
