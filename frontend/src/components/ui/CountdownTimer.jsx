@@ -8,6 +8,7 @@ const CountdownTimer = ({ targetDate = '2026-04-01T00:00:00' }) => {
     minutes: 0,
     seconds: 0
   });
+  const [animationKey, setAnimationKey] = useState(0);
 
   useEffect(() => {
     const calculateTimeLeft = () => {
@@ -15,12 +16,16 @@ const CountdownTimer = ({ targetDate = '2026-04-01T00:00:00' }) => {
       let timeLeft = {};
 
       if (difference > 0) {
+        const newSeconds = Math.floor((difference / 1000) % 60);
         timeLeft = {
           days: Math.floor(difference / (1000 * 60 * 60 * 24)),
           hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
           minutes: Math.floor((difference / 1000 / 60) % 60),
-          seconds: Math.floor((difference / 1000) % 60)
+          seconds: newSeconds
         };
+        
+        // Trigger animation restart when seconds change
+        setAnimationKey(prev => prev + 1);
       } else {
         timeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0 };
       }
@@ -34,12 +39,14 @@ const CountdownTimer = ({ targetDate = '2026-04-01T00:00:00' }) => {
     return () => clearInterval(timer);
   }, [targetDate]);
 
-  const TimeBlock = ({ value, label, primary = false }) => (
+  const TimeBlock = ({ value, label, primary = false, isSeconds = false }) => (
     <div className="flex flex-col items-center min-w-[3.1rem] relative group/block">
       {/* Block Background with Glassmorphism */}
-      <div className={`relative px-2 py-2 rounded-lg border transition-all duration-500 overflow-hidden ${
+      <div className={`relative px-2 py-2 rounded-lg border transition-all duration-500 overflow-visible ${
         primary 
-          ? 'bg-brand-orange/10 border-brand-orange/30 shadow-[0_0_15px_rgba(249,115,22,0.1)] group-hover/block:border-brand-orange/50 animate-breath-active' 
+          ? 'bg-brand-orange/10 border-brand-orange/30 shadow-[0_0_15px_rgba(249,115,22,0.1)] group-hover/block:border-brand-orange/50' 
+          : isSeconds
+          ? 'bg-dark-900/40 border-white/[0.05] animate-breath-seconds'
           : 'bg-dark-900/50 border-dark-800 group-hover/block:border-dark-700'
       }`}>
         {/* Unit Value */}
@@ -73,20 +80,19 @@ const CountdownTimer = ({ targetDate = '2026-04-01T00:00:00' }) => {
             <div className="w-0.5 h-2.5 rounded-full bg-dark-800 mx-1" />
             <TimeBlock value={timeLeft.minutes} label="Min" />
             <div className="w-0.5 h-2.5 rounded-full bg-dark-800 mx-1" />
-            <TimeBlock value={timeLeft.seconds} label="Sec" />
+            <TimeBlock value={timeLeft.seconds} label="Sec" isSeconds={true} key={animationKey} />
           </div>
 
-          <div className="h-9 w-px bg-white/[0.05] mx-1.5" />
+          <div className="h-9 w-px bg-white/[0.05] mx-2" />
 
-          {/* "LEFT" Status Panel */}
-          <div className="pr-3 pl-1 py-0.5 flex flex-col justify-center">
-             <div className="flex items-center gap-1 mb-0.5">
-               <div className="w-1.5 h-1.5 rounded-full bg-brand-orange animate-pulse shadow-[0_0_6px_rgba(249,115,22,0.6)]" />
-               <span className="text-[8px] font-black text-dark-600 uppercase tracking-widest">Active</span>
-             </div>
-             <div className="text-[12px] font-black text-brand-orange border-b border-brand-orange/30 italic tracking-[0.1em] leading-none">
-               LEFT
-             </div>
+          {/* Final Refined "LEFT" UI */}
+          <div className="pr-4 pl-2 flex flex-col justify-center select-none">
+            <div className="relative group/left-label">
+              <span className="text-[22px] font-[1000] text-brand-orange bg-gradient-to-r from-brand-orange to-brand-yellow bg-clip-text text-transparent italic tracking-widest leading-none block">
+                LEFT
+              </span>
+              <div className="absolute -bottom-1 left-0 w-full h-[2px] bg-brand-orange/40 transform origin-left scale-x-50 group-hover/left-label:scale-x-100 transition-transform duration-500" />
+            </div>
           </div>
         </div>
       </div>

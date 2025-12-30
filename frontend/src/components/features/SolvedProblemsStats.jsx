@@ -56,7 +56,7 @@ function SolvedProblemsStats({ customProblems, onShowAddModal }) {
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
       {/* Left Column: Core Stats Mastery (7 cols) */}
       <div className="lg:col-span-12 xl:col-span-7">
-        <div className="bg-dark-900/40 backdrop-blur-xl border border-dark-800 rounded-[2rem] p-8 shadow-2xl relative overflow-hidden group transition-all duration-500 ease-out hover:scale-[1.1] hover:border-brand-orange hover:shadow-[0_0_30px_rgba(249,115,22,0.5)] hover:z-50">
+        <div className="bg-dark-900/40 backdrop-blur-xl border border-dark-800 rounded-[2rem] p-8 shadow-2xl relative overflow-hidden group transition-all duration-500 ease-out">
           {/* Decorative background glow */}
           {/* Decorative background glow */}
           <div className="absolute top-0 right-0 w-48 h-48 bg-brand-orange blur-[80px] rounded-full pointer-events-none opacity-0 group-hover:opacity-25 transition-opacity duration-500" />
@@ -170,7 +170,7 @@ function SolvedProblemsStats({ customProblems, onShowAddModal }) {
 
       {/* Right Column: Exploration (5 cols) */}
       <div className="lg:col-span-12 xl:col-span-5">
-        <div className="bg-dark-900/40 backdrop-blur-xl border border-dark-800 rounded-[2rem] p-8 h-full flex flex-col shadow-2xl relative overflow-hidden group transition-all duration-500 ease-out hover:scale-[1.1] hover:border-blue-500 hover:shadow-[0_0_30px_rgba(59,130,246,0.5)] hover:z-50">
+        <div className="bg-dark-900/40 backdrop-blur-xl border border-dark-800 rounded-[2rem] p-8 h-full flex flex-col shadow-2xl relative overflow-hidden group transition-all duration-500 ease-out">
           <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500 blur-[80px] rounded-full pointer-events-none opacity-0 group-hover:opacity-25 transition-opacity duration-500" />
           
           <div className="flex items-center gap-6 border-b border-dark-800 pb-5 mb-6 relative z-10">
@@ -198,8 +198,8 @@ function SolvedProblemsStats({ customProblems, onShowAddModal }) {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto max-h-[160px] pr-2 custom-scrollbar relative z-10">
-            <div className="flex flex-wrap gap-2.5">
+          <div className="flex-1 overflow-y-auto max-h-[160px] pr-2 custom-scrollbar relative z-10 p-2 -m-2">
+            <div className="flex flex-wrap gap-2.5 p-1">
               {expandedSection === 'topics' ? (
                 stats.topics.length > 0 ? (
                   stats.topics.map(t => {
@@ -208,10 +208,10 @@ function SolvedProblemsStats({ customProblems, onShowAddModal }) {
                       <button
                         key={t.name}
                         onClick={() => setFilters({ topic: t.name })}
-                        className={`group/tag px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border flex items-center gap-3 active:scale-95 ${
+                        className={`group/tag px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 border flex items-center gap-3 active:scale-95 hover:scale-110 hover:z-20 ${
                           isActive 
                             ? 'bg-brand-orange border-brand-orange text-white shadow-[0_0_20px_rgba(249,115,22,0.2)]' 
-                            : 'bg-dark-950 border-dark-800 text-dark-500 hover:border-dark-700 hover:bg-dark-800'
+                            : 'bg-dark-950 border-dark-800 text-dark-500 hover:border-brand-orange/50 hover:bg-dark-800 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)]'
                         }`}
                       >
                         {t.name}
@@ -236,10 +236,10 @@ function SolvedProblemsStats({ customProblems, onShowAddModal }) {
                       <button
                         key={p.name}
                         onClick={() => setFilters({ pattern: p.name })}
-                        className={`group/tag px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border flex items-center gap-3 active:scale-95 ${
+                        className={`group/tag px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 border flex items-center gap-3 active:scale-95 hover:scale-110 hover:z-20 ${
                           isActive 
                             ? 'bg-blue-600 border-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.2)]' 
-                            : 'bg-dark-950 border-dark-800 text-dark-500 hover:border-dark-700 hover:bg-dark-800'
+                            : 'bg-dark-950 border-dark-800 text-dark-500 hover:border-blue-500/50 hover:bg-dark-800 hover:shadow-[0_0_15px_rgba(59,130,246,0.3)]'
                         }`}
                       >
                         {p.name}

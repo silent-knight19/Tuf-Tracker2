@@ -3,13 +3,14 @@ const http = require('http');
 const https = require('https');
 
 const initCronJobs = () => {
-    // Schedule: Every 14 minutes
-    // Time range: 08:00 AM to 11:59 PM (server time)
-    // This runs ~68 times a day -> ~2000 requests/month (negligible)
-    // Active hours: ~18/day -> ~540-560 hours/month (Safe within 750h free tier)
+    // Schedule: Every 10 minutes (24/7)
+    // This runs ~144 times a day -> ~4320 requests/month (still very low)
+    // Note: Internal CRON can't keep server alive on free-tier hosting!
+    // For true keep-alive, use external service (cron-job.org, UptimeRobot, etc.)
+    // This mainly helps with quote refresh and provides logging when server is up
     
     // Cron expression: minute hour day-of-month month day-of-week
-    cron.schedule('*/14 06-23 * * *', () => {
+    cron.schedule('*/10 * * * *', () => {
         const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
         console.log(`⏰ Triggering keep-alive ping to: ${backendUrl}`);
 
@@ -51,7 +52,7 @@ const initCronJobs = () => {
         }
     });
 
-    console.log('🗓️  Smart Cron initialized: Running every 14 mins (06:00-23:59) + Daily Quotes');
+    console.log('🗓️  CRON initialized: Keep-alive every 10 mins (24/7) + Daily Quotes at midnight');
 };
 
 module.exports = { initCronJobs };
