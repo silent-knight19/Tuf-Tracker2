@@ -1,7 +1,10 @@
 const { exec } = require('child_process');
+const { promisify } = require('util');
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
+
+const execAsync = promisify(exec);
 
 class CodeRunnerService {
   /**
@@ -12,130 +15,88 @@ class CodeRunnerService {
    */
   async runJava(source, stdin = '') {
     let tempDir = null;
-    const debug = []; // Collect debug info to return
     
     try {
-      // First, check if Java is available
-      debug.push({ step: 'javaCheck', time: new Date().toISOString() });
-      const javaCheck = await this.executeCommand('java -version', process.cwd(), '', 5000);
-      debug.push({ step: 'javaCheckDone', result: { exitCode: javaCheck.exitCode, stderrLen: javaCheck.stderr?.length } });
-      
-      const javacCheck = await this.executeCommand('javac -version', process.cwd(), '', 5000);
-      debug.push({ step: 'javacCheckDone', result: { exitCode: javacCheck.exitCode, stderrLen: javacCheck.stderr?.length } });
-      
-      console.log('Java check:', { 
-        javaExitCode: javaCheck.exitCode, 
-        javacExitCode: javacCheck.exitCode,
-        javaStderr: javaCheck.stderr?.substring(0, 100),
-        javacStderr: javacCheck.stderr?.substring(0, 100)
-      });
-      
-      if (javacCheck.exitCode !== 0) {
-        console.error('Java compiler not available!');
-        return {
-          stdout: '',
-          stderr: 'Java compiler (javac) is not available on this server. Please contact support.',
-          exitCode: 1,
-          timedOut: false,
-          debug: debug
-        };
-      }
-      
       // Detect if this is a LeetCode-style Solution class
       const isSolutionClass = source.includes('class Solution') && !source.includes('public class Main');
-      console.log('Is Solution class:', isSolutionClass);
       
       let finalSource = source;
       
       if (isSolutionClass) {
-        // Auto-wrap Solution class with Main class and test harness
-        console.log('Wrapping Solution class with test harness...');
-        console.log('Test cases input (first 200 chars):', stdin?.substring(0, 200));
         finalSource = this.wrapSolutionClass(source, stdin);
-        // Clear stdin since we're using hardcoded test cases
         stdin = '';
       }
       
       // Create a unique temp directory
       tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tuftracker-java-'));
-      console.log('Created temp directory:', tempDir);
       const sourceFile = path.join(tempDir, 'Main.java');
       
       // Write source to file
       await fs.writeFile(sourceFile, finalSource, 'utf8');
-      console.log('Wrote source file:', sourceFile);
       
-      // Compile the Java code
-      console.log('Compiling Java code...');
-      debug.push({ step: 'compileStart', tempDir: tempDir });
-      const compileResult = await this.executeCommand(
-        `javac Main.java`,
-        tempDir,
-        '',
-        5000 // 5 second timeout for compilation
-      );
-      debug.push({ step: 'compileDone', exitCode: compileResult.exitCode, hasStderr: !!compileResult.stderr });
-      console.log('Compilation result:', { exitCode: compileResult.exitCode, hasStderr: !!compileResult.stderr });
-      
-      if (compileResult.exitCode !== 0) {
-        // Detailed logging for debugging (visible in Render logs)
-        console.error('\n=== COMPILATION FAILED ===');
-        console.error(`Timestamp: ${new Date().toISOString()}`);
-        console.error(`Exit Code: ${compileResult.exitCode}`);
-        console.error(`Error: ${compileResult.stderr}`);
-        console.error('--- SOURCE CODE (Main.java) ---');
-        console.error(finalSource);
-        console.error('-------------------------------\n');
-
+      // Compile the Java code using execAsync (promisify)
+      try {
+        await execAsync('javac Main.java', { 
+          cwd: tempDir, 
+          timeout: 10000,
+          maxBuffer: 1024 * 1024 
+        });
+      } catch (compileError) {
         // Compilation failed
-        // Clean up the error message to be more user-friendly
-        const cleanError = compileResult.stderr
-          .replace(new RegExp(tempDir, 'g'), '') // Remove temp paths
-          .replace(/\/Main\.java/g, 'Line');     // Simplify filenames
-
+        const cleanError = (compileError.stderr || compileError.message || 'Compilation failed')
+          .replace(new RegExp(tempDir, 'g'), '')
+          .replace(/\/Main\.java/g, 'Line');
+        
         return {
-          stdout: compileResult.stdout,
-          stderr: cleanError, // Return the actual compiler error
-          exitCode: compileResult.exitCode,
-          timedOut: false,
-          debug: debug
+          stdout: compileError.stdout || '',
+          stderr: cleanError,
+          exitCode: compileError.code || 1,
+          timedOut: false
         };
       }
       
       // Run the compiled Java program
-      console.log('Running compiled Java program...');
-      debug.push({ step: 'runStart' });
-      const runResult = await this.executeCommand(
-        `java Main`,
-        tempDir,
-        stdin,
-        3000 // 3 second timeout for execution
-      );
-      console.log('Execution result:', { 
-        exitCode: runResult.exitCode, 
-        stdoutLength: runResult.stdout?.length,
-        stderrLength: runResult.stderr?.length,
-        timedOut: runResult.timedOut 
-      });
-      debug.push({ step: 'runDone', exitCode: runResult.exitCode, stdoutLen: runResult.stdout?.length });
-      
-      return {
-        stdout: runResult.stdout,
-        stderr: runResult.stderr,
-        exitCode: runResult.exitCode,
-        timedOut: runResult.timedOut,
-        debug: debug
-      };
+      try {
+        const runResult = await execAsync('java Main', { 
+          cwd: tempDir, 
+          timeout: 5000,
+          maxBuffer: 1024 * 1024 
+        });
+        
+        return {
+          stdout: runResult.stdout || '',
+          stderr: runResult.stderr || '',
+          exitCode: 0,
+          timedOut: false
+        };
+      } catch (runError) {
+        // Check if it's a timeout
+        if (runError.killed || runError.signal === 'SIGTERM') {
+          return {
+            stdout: runError.stdout || '',
+            stderr: runError.stderr || '',
+            exitCode: 1,
+            timedOut: true,
+            timeout: 5000
+          };
+        }
+        
+        // Runtime error
+        return {
+          stdout: runError.stdout || '',
+          stderr: runError.stderr || runError.message || '',
+          exitCode: runError.code || 1,
+          timedOut: false
+        };
+      }
       
     } catch (error) {
       console.error('Error running Java code:', error);
-      debug.push({ step: 'error', message: error.message });
       return {
         stdout: '',
         stderr: `Internal error: ${error.message}`,
         exitCode: 1,
-        timedOut: false,
-        debug: debug
+        timedOut: false
       };
     } finally {
       // Clean up temp directory
@@ -547,6 +508,7 @@ public class Main {
    */
   executeCommand(command, cwd, stdin, timeout) {
     return new Promise((resolve) => {
+      console.log(`[executeCommand] Running: ${command} in ${cwd}`);
       const process = exec(
         command,
         {
@@ -556,6 +518,18 @@ public class Main {
           killSignal: 'SIGTERM'
         },
         (error, stdout, stderr) => {
+          // Log everything for debugging
+          console.log(`[executeCommand] Complete:`, {
+            command: command.substring(0, 50),
+            hasError: !!error,
+            errorCode: error?.code,
+            errorMessage: error?.message?.substring(0, 100),
+            stdoutLen: stdout?.length,
+            stderrLen: stderr?.length,
+            killed: error?.killed,
+            signal: error?.signal
+          });
+          
           if (error) {
             // Check if it's a timeout
             if (error.killed || error.signal === 'SIGTERM') {
@@ -563,7 +537,8 @@ public class Main {
                 stdout: stdout || '',
                 stderr: stderr || '',
                 exitCode: error.code || 1,
-                timedOut: true
+                timedOut: true,
+                errorDetails: { message: error.message, code: error.code, killed: error.killed }
               });
               return;
             }
@@ -573,7 +548,8 @@ public class Main {
               stdout: stdout || '',
               stderr: stderr || error.message,
               exitCode: error.code || 1,
-              timedOut: false
+              timedOut: false,
+              errorDetails: { message: error.message, code: error.code }
             });
             return;
           }
