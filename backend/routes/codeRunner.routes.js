@@ -157,6 +157,65 @@ router.get('/test', async (req, res) => {
   }
 });
 
+// GET /api/run/test2
+// Test codeRunnerService with a simple class (no Solution wrapper)
+router.get('/test2', async (req, res) => {
+  try {
+    // This is a Main class, NOT a Solution class, so no wrapping happens
+    const simpleCode = `public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello from codeRunnerService!");
+        System.out.println("This bypasses the Solution wrapper");
+    }
+}`;
+    const result = await codeRunnerService.runJava(simpleCode, '');
+    res.json({
+      message: 'Test with Main class (no wrapper)',
+      result: result,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'ERROR',
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
+// GET /api/run/test3
+// Test codeRunnerService WITH the Solution wrapper
+router.get('/test3', async (req, res) => {
+  try {
+    // This is a Solution class, so wrapping WILL happen
+    const solutionCode = `class Solution {
+    public int add(int a, int b) {
+        return a + b;
+    }
+}`;
+    const testInput = JSON.stringify({
+      method: "add",
+      tests: [
+        { args: [1, 2], expected: 3 },
+        { args: [5, 5], expected: 10 }
+      ]
+    });
+    const result = await codeRunnerService.runJava(solutionCode, testInput);
+    res.json({
+      message: 'Test with Solution class (WITH wrapper)',
+      testInput: testInput,
+      result: result,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'ERROR',
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // POST /api/run/java
 // Execute Java code with custom input
 router.post('/java', verifyToken, async (req, res) => {
