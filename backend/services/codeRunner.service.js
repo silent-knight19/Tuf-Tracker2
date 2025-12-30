@@ -37,11 +37,14 @@ class CodeRunnerService {
       
       // Detect if this is a LeetCode-style Solution class
       const isSolutionClass = source.includes('class Solution') && !source.includes('public class Main');
+      console.log('Is Solution class:', isSolutionClass);
       
       let finalSource = source;
       
       if (isSolutionClass) {
         // Auto-wrap Solution class with Main class and test harness
+        console.log('Wrapping Solution class with test harness...');
+        console.log('Test cases input (first 200 chars):', stdin?.substring(0, 200));
         finalSource = this.wrapSolutionClass(source, stdin);
         // Clear stdin since we're using hardcoded test cases
         stdin = '';
@@ -49,18 +52,22 @@ class CodeRunnerService {
       
       // Create a unique temp directory
       tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tuftracker-java-'));
+      console.log('Created temp directory:', tempDir);
       const sourceFile = path.join(tempDir, 'Main.java');
       
       // Write source to file
       await fs.writeFile(sourceFile, finalSource, 'utf8');
+      console.log('Wrote source file:', sourceFile);
       
       // Compile the Java code
+      console.log('Compiling Java code...');
       const compileResult = await this.executeCommand(
         `javac Main.java`,
         tempDir,
         '',
         5000 // 5 second timeout for compilation
       );
+      console.log('Compilation result:', { exitCode: compileResult.exitCode, hasStderr: !!compileResult.stderr });
       
       if (compileResult.exitCode !== 0) {
         // Detailed logging for debugging (visible in Render logs)
@@ -87,12 +94,19 @@ class CodeRunnerService {
       }
       
       // Run the compiled Java program
+      console.log('Running compiled Java program...');
       const runResult = await this.executeCommand(
         `java Main`,
         tempDir,
         stdin,
         3000 // 3 second timeout for execution
       );
+      console.log('Execution result:', { 
+        exitCode: runResult.exitCode, 
+        stdoutLength: runResult.stdout?.length,
+        stderrLength: runResult.stderr?.length,
+        timedOut: runResult.timedOut 
+      });
       
       return {
         stdout: runResult.stdout,
@@ -155,17 +169,25 @@ public class Main {
         try {
             String jsonInput = "${jsonEscaped}";
             
+            // Debug: print input length
+            System.out.println("DEBUG: Input length = " + jsonInput.length());
+            System.out.flush();
+            
             // Debug: print first 100 chars of input
             if (jsonInput.length() < 10) {
                 System.out.println("No test cases provided. Running with default test...");
                 runDefaultTest();
+                System.out.flush();
                 return;
             }
             
             runTests(jsonInput);
-        } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-            e.printStackTrace();
+            System.out.flush();
+        } catch (Throwable e) {
+            System.err.println("FATAL ERROR: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            e.printStackTrace(System.err);
+            System.err.flush();
+            System.exit(1);
         }
     }
     
