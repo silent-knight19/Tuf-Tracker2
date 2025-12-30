@@ -60,7 +60,7 @@ class CodeRunnerService {
       // Step 5: Compile
       const compileResult = await this.compile(tempDir);
       if (!compileResult.success) {
-        // Immediate cleanup on error to save space
+        // Immediate cleanup on error
         await this.cleanup(tempDir);
         tempDir = null;
         
@@ -120,7 +120,6 @@ class CodeRunnerService {
       console.log('[CodeRunner] Compiling in:', tempDir);
       
       // CRITICAL MEMORY LIMITS for Render Free Tier (512MB RAM total)
-      // WE MUST BE EXTREMELY CONSERVATIVE.
       // -J-Xmx128m: Limit javac heap to 128MB.
       // -J-Xms16m: Start small.
       await execPromise('javac -J-Xmx128m -J-Xms16m -encoding UTF-8 Main.java', {
@@ -133,7 +132,7 @@ class CodeRunnerService {
     } catch (error) {
       let errorMessage = '';
 
-      // Check for timeout explicitly
+      // Check for timeout specifically
       if (error.killed && error.signal === 'SIGTERM') {
         return {
           success: false,
@@ -162,7 +161,7 @@ class CodeRunnerService {
       console.log('[CodeRunner] Executing in:', tempDir);
       
       // STRICT MEMORY LIMIT:
-      // -Xmx64m: Max heap 64MB. Enough for algo problems (arrays of ~10M ints fit), safe for 512MB container.
+      // -Xmx64m: Max heap 64MB.
       const result = await execPromise('java -Xmx64m -Xms16m Main', {
         cwd: tempDir,
         timeout: this.timeout.run,
@@ -447,6 +446,9 @@ public class Main {
         if (obj instanceof Object[]) return Arrays.deepToString((Object[]) obj);
         return obj.toString();
     }
+}
+`;
+  }
 }
 
 module.exports = new CodeRunnerService();
