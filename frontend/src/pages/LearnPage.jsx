@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookOpen, Zap, X, Target, Brain, Sparkles, ChevronRight, Activity, Code2, Clock, Terminal, Lightbulb, Trophy } from 'lucide-react';
+import { BookOpen, Zap, X, Target, Brain, Sparkles, ChevronRight, Activity, Code2, Clock, Terminal, Lightbulb, Trophy, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import api from '../utils/api';
 import SearchableSelect from '../components/ui/SearchableSelect';
@@ -288,7 +288,7 @@ function LearnPage() {
           </div>
 
           {/* Operational Metrics Cluster */}
-          <div className="lg:col-span-5 space-y-10">
+          <div className="lg:col-span-12 space-y-10">
             {/* Deploy Signals */}
             <section className="bg-dark-900/30 backdrop-blur-md border border-white/[0.05] rounded-[3rem] p-10 h-fit">
                <div className="flex flex-col items-center text-center mb-10">
@@ -299,7 +299,7 @@ function LearnPage() {
                   <p className="text-[10px] font-bold text-dark-500 uppercase tracking-widest mt-1">When to initialize this protocol</p>
                </div>
                
-               <div className="space-y-4">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {learningNotes.whenToUse?.map((signal, i) => (
                     <div key={i} className="flex items-start gap-4 p-5 bg-dark-950/40 border border-white/[0.03] rounded-2xl group/sig transition-all hover:bg-white/[0.02]">
                        <div className="w-2 h-2 rounded-full bg-green-500 mt-2 shrink-0 group-hover/sig:scale-150 transition-transform shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
@@ -348,7 +348,7 @@ function LearnPage() {
           </div>
 
           {/* Core Architecture Cluster */}
-          <div className="lg:col-span-7 space-y-10">
+          <div className="lg:col-span-12 space-y-10">
             <section className="bg-dark-900/40 backdrop-blur-2xl border border-white/[0.05] rounded-[3.5rem] p-12 h-full">
                <h2 className="text-3xl font-black text-white tracking-tighter uppercase mb-12 flex items-center gap-4">
                  <Terminal className="w-8 h-8 text-cyan-400" /> Structural Blueprint
@@ -387,6 +387,21 @@ function LearnPage() {
                      </div>
                   </div>
 
+                  {/* Edge Cases Pod */}
+                  {learningNotes.coreApproach?.edgeCases?.length > 0 && (
+                    <div className="space-y-6">
+                       <h3 className="text-[10px] font-black text-dark-500 uppercase tracking-[0.3em] ml-2">Boundary Conditions</h3>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {learningNotes.coreApproach.edgeCases.map((edgeCase, i) => (
+                            <div key={i} className="flex items-start gap-4 p-5 bg-orange-500/[0.03] border border-orange-500/10 rounded-2xl group/edge hover:bg-orange-500/[0.05] transition-colors">
+                               <AlertCircle className="w-5 h-5 text-orange-400 mt-0.5 shrink-0" />
+                               <span className="text-dark-200 font-medium leading-relaxed">{edgeCase}</span>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+                  )}
+
                   {/* Operational Logic (Pseudocode) */}
                   {learningNotes.coreApproach?.pseudocode && (
                     <div className="space-y-4">
@@ -410,7 +425,7 @@ function LearnPage() {
                 <p className="text-[10px] font-bold text-dark-500 uppercase tracking-[0.3em] mt-2 italic px-3 py-1 bg-dark-950 rounded-full border border-dark-800">Verified LeetCode Field Scenarios</p>
              </div>
 
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+             <div className="grid grid-cols-1 gap-12">
                 {learningNotes.exampleProblems?.map((problem, i) => (
                   <div key={i} className="group relative bg-dark-900/40 backdrop-blur-3xl border border-white/[0.05] rounded-[3rem] p-10 hover:border-purple-500/30 transition-all duration-700 h-full flex flex-col">
                     <div className="flex items-start justify-between mb-8">
