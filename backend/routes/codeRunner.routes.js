@@ -40,6 +40,33 @@ router.get('/status', async (req, res) => {
   }
 });
 
+// GET /api/run/test
+// Test Java execution with a simple Hello World
+router.get('/test', async (req, res) => {
+  try {
+    const simpleCode = `
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello from Java!");
+        System.out.println("Java version: " + System.getProperty("java.version"));
+        System.out.flush();
+    }
+}`;
+    const result = await codeRunnerService.runJava(simpleCode, '');
+    res.json({
+      message: 'Test execution result',
+      result: result,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'ERROR',
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // POST /api/run/java
 // Execute Java code with custom input
 router.post('/java', verifyToken, async (req, res) => {
