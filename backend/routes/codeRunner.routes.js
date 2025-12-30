@@ -41,29 +41,119 @@ router.get('/status', async (req, res) => {
 });
 
 // GET /api/run/test
-// Test Java execution with a simple Hello World
+// Comprehensive diagnostic for Java execution
 router.get('/test', async (req, res) => {
+  const fs = require('fs').promises;
+  const path = require('path');
+  const os = require('os');
+  const { promisify } = require('util');
+  const execAsync = promisify(exec);
+  
+  const diagnostics = {
+    timestamp: new Date().toISOString(),
+    steps: []
+  };
+  
+  let tempDir = null;
+  
   try {
-    const simpleCode = `
-public class Main {
+    // Step 1: Check temp dir
+    const tmpBase = os.tmpdir();
+    diagnostics.steps.push({ step: 'tmpdir', path: tmpBase });
+    
+    // Step 2: Create temp directory
+    tempDir = await fs.mkdtemp(path.join(tmpBase, 'test-'));
+    diagnostics.steps.push({ step: 'mkdtemp', path: tempDir, success: true });
+    
+    // Step 3: Write a simple Java file
+    const javaCode = `public class Test {
     public static void main(String[] args) {
-        System.out.println("Hello from Java!");
-        System.out.println("Java version: " + System.getProperty("java.version"));
-        System.out.flush();
+        System.out.println("SUCCESS");
     }
 }`;
-    const result = await codeRunnerService.runJava(simpleCode, '');
-    res.json({
-      message: 'Test execution result',
-      result: result,
-      timestamp: new Date().toISOString()
-    });
+    const javaFile = path.join(tempDir, 'Test.java');
+    await fs.writeFile(javaFile, javaCode);
+    diagnostics.steps.push({ step: 'writeFile', path: javaFile, success: true });
+    
+    // Step 4: Check file exists
+    const stat = await fs.stat(javaFile);
+    diagnostics.steps.push({ step: 'statFile', size: stat.size, success: true });
+    
+    // Step 5: Try javac with full error capture
+    try {
+      const compileResult = await execAsync('javac Test.java', { 
+        cwd: tempDir, 
+        timeout: 10000,
+        maxBuffer: 1024 * 1024 
+      });
+      diagnostics.steps.push({ 
+        step: 'compile', 
+        success: true, 
+        stdout: compileResult.stdout,
+        stderr: compileResult.stderr 
+      });
+    } catch (compileError) {
+      diagnostics.steps.push({ 
+        step: 'compile', 
+        success: false, 
+        error: compileError.message,
+        stderr: compileError.stderr,
+        stdout: compileError.stdout,
+        code: compileError.code
+      });
+      throw compileError;
+    }
+    
+    // Step 6: Check if .class file was created
+    const classFile = path.join(tempDir, 'Test.class');
+    try {
+      const classStat = await fs.stat(classFile);
+      diagnostics.steps.push({ step: 'classFile', size: classStat.size, success: true });
+    } catch (e) {
+      diagnostics.steps.push({ step: 'classFile', success: false, error: 'Not found' });
+    }
+    
+    // Step 7: Try running java
+    try {
+      const runResult = await execAsync('java Test', { 
+        cwd: tempDir, 
+        timeout: 5000,
+        maxBuffer: 1024 * 1024 
+      });
+      diagnostics.steps.push({ 
+        step: 'run', 
+        success: true, 
+        stdout: runResult.stdout,
+        stderr: runResult.stderr 
+      });
+    } catch (runError) {
+      diagnostics.steps.push({ 
+        step: 'run', 
+        success: false, 
+        error: runError.message,
+        stderr: runError.stderr,
+        stdout: runError.stdout,
+        code: runError.code
+      });
+    }
+    
+    diagnostics.overall = 'SUCCESS';
+    res.json(diagnostics);
+    
   } catch (error) {
-    res.status(500).json({
-      status: 'ERROR',
-      error: error.message,
-      stack: error.stack
-    });
+    diagnostics.overall = 'FAILED';
+    diagnostics.finalError = {
+      message: error.message,
+      stack: error.stack?.split('\n').slice(0, 5)
+    };
+    res.json(diagnostics);
+  } finally {
+    // Cleanup
+    if (tempDir) {
+      try {
+        await fs.rm(tempDir, { recursive: true, force: true });
+      } catch (e) {}
+    }
   }
 });
 
