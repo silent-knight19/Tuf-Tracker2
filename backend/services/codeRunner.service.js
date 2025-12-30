@@ -289,10 +289,22 @@ public class Main {
     }
 
     private static void runTests(String jsonInput) throws Exception {
-        // Parse method name
-        int methodStart = jsonInput.indexOf("\\"method\\":\\"") + 10;
-        int methodEnd = jsonInput.indexOf("\\"", methodStart);
+        // Debug: show what we received
+        System.out.println("DEBUG: Parsing JSON, length=" + jsonInput.length());
+        
+        // Parse method name - search for "method":"
+        String methodKey = String.valueOf('"') + "method" + String.valueOf('"') + ":" + String.valueOf('"');
+        int methodStart = jsonInput.indexOf(methodKey);
+        if (methodStart == -1) {
+            System.err.println("Could not find method key in JSON");
+            System.err.println("First 100 chars: " + jsonInput.substring(0, Math.min(100, jsonInput.length())));
+            return;
+        }
+        methodStart += methodKey.length();
+        int methodEnd = jsonInput.indexOf(String.valueOf('"'), methodStart);
         String methodName = jsonInput.substring(methodStart, methodEnd);
+        
+        System.out.println("DEBUG: Found method: " + methodName);
         
         // Find the method
         Solution solution = new Solution();
@@ -306,14 +318,21 @@ public class Main {
         
         if (method == null) {
             System.err.println("Method not found: " + methodName);
+            System.err.println("Available methods:");
+            for (Method m : Solution.class.getDeclaredMethods()) {
+                System.err.println("  - " + m.getName());
+            }
             return;
         }
+        
+        System.out.println("DEBUG: Method has " + method.getParameterCount() + " parameters");
         
         // Parse and run tests
         int testNum = 1;
         int argsIndex = 0;
+        String argsKey = String.valueOf('"') + "args" + String.valueOf('"') + ":";
         
-        while ((argsIndex = jsonInput.indexOf("\\"args\\":", argsIndex)) != -1) {
+        while ((argsIndex = jsonInput.indexOf(argsKey, argsIndex)) != -1) {
             try {
                 // Find the args array
                 int bracketStart = jsonInput.indexOf("[", argsIndex + 7);
