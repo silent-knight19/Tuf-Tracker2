@@ -292,8 +292,13 @@ public class Main {
         // Debug: show what we received
         System.out.println("DEBUG: Parsing JSON, length=" + jsonInput.length());
         
+        // Remove all whitespace from JSON for easier parsing
+        jsonInput = jsonInput.replaceAll("\\\\s+", "");
+        System.out.println("DEBUG: After whitespace removal, length=" + jsonInput.length());
+        
         // Parse method name - search for "method":"
-        String methodKey = String.valueOf('"') + "method" + String.valueOf('"') + ":" + String.valueOf('"');
+        String quote = String.valueOf('"');
+        String methodKey = quote + "method" + quote + ":" + quote;
         int methodStart = jsonInput.indexOf(methodKey);
         if (methodStart == -1) {
             System.err.println("Could not find method key in JSON");
@@ -301,7 +306,7 @@ public class Main {
             return;
         }
         methodStart += methodKey.length();
-        int methodEnd = jsonInput.indexOf(String.valueOf('"'), methodStart);
+        int methodEnd = jsonInput.indexOf(quote, methodStart);
         String methodName = jsonInput.substring(methodStart, methodEnd);
         
         System.out.println("DEBUG: Found method: " + methodName);
@@ -330,7 +335,7 @@ public class Main {
         // Parse and run tests
         int testNum = 1;
         int argsIndex = 0;
-        String argsKey = String.valueOf('"') + "args" + String.valueOf('"') + ":";
+        String argsKey = quote + "args" + quote + ":";
         
         while ((argsIndex = jsonInput.indexOf(argsKey, argsIndex)) != -1) {
             try {
