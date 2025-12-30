@@ -140,7 +140,10 @@ function InterviewProblemPage() {
       const response = await api.post('/ai/problem-help', {
         title: problem.problemTitle,
         description: description?.description || `Problem titled "${problem.problemTitle}"`,
-        difficulty: problem.difficulty || 'Medium'
+        difficulty: problem.difficulty || 'Medium',
+        examples: description?.examples || [],
+        constraints: description?.constraints || [],
+        functionSignature: description?.functionSignature || null
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });

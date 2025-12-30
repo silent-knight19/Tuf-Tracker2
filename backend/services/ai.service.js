@@ -713,7 +713,7 @@ Format: [{"name":"TestName","input":{...},"category":"Category"}]
     }
   }
 
-  // Compute expected outputs by running solution code (PARALLEL)
+  // Compute expected outputs by running solution code (SEQUENTIAL)
   async computeEdgeCaseOutputs(solutionCode, edgeCaseInputs, functionSignature) {
     const codeRunnerService = require('./codeRunner.service');
     
@@ -724,7 +724,7 @@ Format: [{"name":"TestName","input":{...},"category":"Category"}]
       if (match && match[1]) methodName = match[1];
     }
 
-    console.log(`Computing outputs for ${edgeCaseInputs.length} inputs using method: ${methodName} (PARALLEL)`);
+    console.log(`Computing outputs for ${edgeCaseInputs.length} inputs using method: ${methodName} (SEQUENTIAL)`);
 
     // Wrap solution code in class Solution if not already wrapped
     let wrappedCode = solutionCode;
@@ -732,69 +732,63 @@ Format: [{"name":"TestName","input":{...},"category":"Category"}]
       wrappedCode = `class Solution {\n${solutionCode}\n}`;
     }
 
-    // Helper function to compute output for a single test case with timeout
-    const computeOne = async (testCase, index) => {
-      try {
-        const stdin = JSON.stringify({
-          method: methodName,
-          tests: [{ args: Object.values(testCase.input), expected: null }]
-        });
-
-        // Timeout: 10 seconds per test case
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout')), 10000)
-        );
-        
-        const result = await Promise.race([
-          codeRunnerService.runJava(wrappedCode, stdin),
-          timeoutPromise
-        ]);
-        
-        // Parse output to extract the computed value
-        let expectedOutput = null;
-        if (result.stdout) {
-          const outputMatch = result.stdout.match(/Test \d+:\s*(.+)/);
-          if (outputMatch) {
-            const rawOutput = outputMatch[1].trim();
-            try {
-              expectedOutput = JSON.parse(rawOutput.replace(/\[/g, '[').replace(/\]/g, ']'));
-            } catch {
-              if (rawOutput === 'true') expectedOutput = true;
-              else if (rawOutput === 'false') expectedOutput = false;
-              else if (!isNaN(rawOutput)) expectedOutput = Number(rawOutput);
-              else expectedOutput = rawOutput;
-            }
-          }
-        }
-        
-        console.log(`[Compute ${index+1}/${edgeCaseInputs.length}] => ${JSON.stringify(expectedOutput)}`);
-        
-        return {
-          name: testCase.name || `Test ${index + 1}`,
-          input: testCase.input,
-          expectedOutput: expectedOutput,
-          explanation: `Computed by running the optimal solution.`,
-          category: testCase.category || 'Computed'
-        };
-        
-      } catch (err) {
-        console.error(`Failed to compute output for test ${index+1}:`, err.message);
-        return {
-          name: testCase.name || `Test ${index + 1}`,
-          input: testCase.input,
-          expectedOutput: null,
-          explanation: `Could not compute: ${err.message}`,
-          category: testCase.category || 'Error'
-        };
-      }
-    };
-
-    // Run all computations in PARALLEL
-    const computedCases = await Promise.all(
-      edgeCaseInputs.map((testCase, i) => computeOne(testCase, i))
-    );
+    // Run computations SEQUENTIALLY to prevent OOM on Render Free Tier
+    // Running 15 parallel compilations (15 * 128MB) would instantly crash the 512MB server
+    const computedCases = [];
+    console.log('Starting sequential execution of edge cases...');
     
-    // Filter out cases with null outputs
+    for (let i = 0; i < edgeCaseInputs.length; i++) {
+        // Increase timeout to 60s (Compile 25s + Run 10s + buffer)
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), 60000)
+        );
+
+        try {
+            const testCase = edgeCaseInputs[i];
+            const stdin = JSON.stringify({
+              method: methodName,
+              tests: [{ args: Object.values(testCase.input), expected: null }]
+            });
+
+            const result = await Promise.race([
+              codeRunnerService.runJava(wrappedCode, stdin),
+              timeoutPromise
+            ]);
+            
+            // Parse output
+            let expectedOutput = null;
+            if (result.stdout) {
+              const outputMatch = result.stdout.match(/Test \d+:\s*(.+)/);
+              if (outputMatch) {
+                const rawOutput = outputMatch[1].trim();
+                try {
+                  expectedOutput = JSON.parse(rawOutput.replace(/\[/g, '[').replace(/\]/g, ']'));
+                } catch {
+                  if (rawOutput === 'true') expectedOutput = true;
+                  else if (rawOutput === 'false') expectedOutput = false;
+                  else if (!isNaN(rawOutput)) expectedOutput = Number(rawOutput);
+                  else expectedOutput = rawOutput;
+                }
+              }
+            }
+            
+            console.log(`[Compute ${i+1}/${edgeCaseInputs.length}] => ${JSON.stringify(expectedOutput)}`);
+            
+            computedCases.push({
+              name: testCase.name || `Test ${i + 1}`,
+              input: testCase.input,
+              expectedOutput: expectedOutput, // Will be null if parsing failed/timeout
+              explanation: `Computed by running the optimal solution.`,
+              category: testCase.category || 'Computed'
+            });
+
+        } catch (err) {
+            console.error(`Failed to compute output for test ${i+1}:`, err.message);
+            // Don't add failed cases
+        }
+    }
+    
+    // Filter out cases where computation failed or returned null
     const validCases = computedCases.filter(c => c.expectedOutput !== null);
     console.log(`Successfully computed ${validCases.length}/${edgeCaseInputs.length} expected outputs.`);
     
