@@ -166,12 +166,29 @@ class CodeRunnerService {
         signal: error.signal
       });
 
-      // Clean up the error message for display
-      const cleanError = this.cleanErrorMessage(errorMessage, tempDir);
-      
+      // Construct detailed error message if stderr is missing
+      if (!errorMessage || errorMessage.includes('Command failed')) {
+        errorMessage = `Compilation Failed: ${errorMessage}`;
+        if (error.killed) errorMessage += ' (Process was killed - likely OOM)';
+        if (error.signal) errorMessage += ` (Signal: ${error.signal})`;
+        if (error.code) errorMessage += ` (Exit Code: ${error.code})`;
+        if (error.stdout) errorMessage += `\nSTDOUT: ${error.stdout}`;
+      }
+
+      // DEBUG: Return the FULL error object as string so we can see it in frontend
+      const debugInfo = JSON.stringify({
+        message: error.message,
+        code: error.code,
+        killed: error.killed,
+        signal: error.signal,
+        cmd: error.cmd,
+        stdout: error.stdout,
+        stderr: error.stderr
+      }, null, 2);
+
       return { 
         success: false, 
-        error: cleanError 
+        error: "DEBUG COMPILATION ERROR:\n" + debugInfo 
       };
     }
   }
