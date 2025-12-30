@@ -212,7 +212,8 @@ function AIInterviewPage() {
         functionSignature: problem.functionSignature || null,
         forceRefresh: forceRefresh,
         mode: mode,
-        providedSolution: providedSolution
+        providedSolution: providedSolution,
+        existingEdgeCases: edgeCases // Pass existing edge cases to avoid redundant generation
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -580,7 +581,11 @@ function AIInterviewPage() {
                       <Bot className="w-5 h-5 text-green-400" /> Solution
                     </h2>
                     <button
-                      onClick={() => setShowSolution(!showSolution)}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowSolution(!showSolution);
+                      }}
                       className="flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 text-dark-200 transition-colors"
                     >
                       {showSolution ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

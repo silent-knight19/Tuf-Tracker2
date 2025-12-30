@@ -408,7 +408,7 @@ RULES:
 
   // Generate hints, solutions, AND edge cases for a problem (SEQUENTIAL-ISH Strategy)
   // Generate hints, solutions, AND edge cases for a problem (SEQUENTIAL-ISH Strategy)
-  async generateProblemHelp(title, description, difficulty, pattern = null, examples = [], constraints = [], functionSignature = null, mode = 'full', providedSolution = null) {
+  async generateProblemHelp(title, description, difficulty, pattern = null, examples = [], constraints = [], functionSignature = null, mode = 'full', providedSolution = null, existingEdgeCases = null) {
     try {
       const patternRequirement = pattern 
         ? `\n\n**MANDATORY**: The optimal solution MUST use the "${pattern}" pattern/technique. This is NON-NEGOTIABLE. If someone selected "${pattern}" to practice, the solution MUST demonstrate "${pattern}" as the primary solving strategy.`
@@ -429,15 +429,23 @@ Examples: ${JSON.stringify(examples)}
         solutions: { optimal: null, better: null, brute: null }
       };
 
-      // --- STEP 1: GENERATE EDGE CASES FIRST (Gemini) ---
-      // We do this first so we can tell the Solution Generator about them!
-      console.log('Step 1: Generating Edge Cases (Gemini 3.0)...');
+      // --- STEP 1: GENERATE EDGE CASES (Gemini) ---
       let edgeCaseInputs = [];
-      try {
-        edgeCaseInputs = await this.generateEdgeCaseInputs(title, description, examples, constraints, functionSignature);
-      } catch (e) {
-        console.error('Failed to generate edge cases first:', e);
-        // Continue without them, will fallback later
+      
+      if (existingEdgeCases && existingEdgeCases.length > 0) {
+        console.log('Using EXISTING edge cases provided in request...');
+        edgeCaseInputs = existingEdgeCases.map(ec => ({
+            name: ec.name,
+            input: ec.input,
+            category: ec.category
+        }));
+      } else {
+        console.log('Step 1: Generating Edge Cases (Gemini 3.0)...');
+        try {
+          edgeCaseInputs = await this.generateEdgeCaseInputs(title, description, examples, constraints, functionSignature);
+        } catch (e) {
+          console.error('Failed to generate edge cases first:', e);
+        }
       }
 
       // If mode is ONLY edge cases, we stop here (unless we have a solution to run)
@@ -708,7 +716,16 @@ DO NOT include expected outputs. DO NOT include markdown code blocks. RETURN RAW
       
       const { geminiEdgeCaseModel } = require('../config/ai.config');
       
-      const result = await geminiEdgeCaseModel.generateContent(prompt);
+      // Add timeout to prevent infinite spinning - 30 second max
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Gemini API timeout after 30s')), 30000)
+      );
+      
+      const result = await Promise.race([
+        geminiEdgeCaseModel.generateContent(prompt),
+        timeoutPromise
+      ]);
+      
       let text = result.response.text();
       
       // Clean up Markdown code blocks if present (Gemini loves to add them)
@@ -918,6 +935,106 @@ CRITICAL: Replace ALL <placeholders> with REAL content about ${subject}. Do NOT 
     } catch (error) {
       console.error('Error generating learning notes:', error);
       throw new Error('Failed to generate learning notes');
+    }
+  }
+
+  // ============================================================
+  // NEW: Generate 20 Test Cases using Cerebras ONLY
+  // ============================================================
+  async generateTestCases(title, description, constraints = [], functionSignature = null) {
+    try {
+      const prompt = `You are an expert software tester. Generate exactly 20 HIGH-QUALITY test cases for this coding problem.
+
+Problem: ${title}
+Description: ${typeof description === 'string' ? description : description?.description || ''}
+Function Signature: ${functionSignature || 'solve(...)'}
+Constraints: ${constraints.join(', ') || 'Standard constraints'}
+
+REQUIREMENTS:
+1. Generate EXACTLY 20 unique test cases
+2. Cover ALL categories:
+   - Happy Path (5 cases): Standard valid inputs
+   - Boundary (5 cases): Min/Max values, empty inputs, single elements
+   - Edge Cases (5 cases): Duplicates, negatives, sorted/reverse, all same
+   - Tricky (5 cases): Logic edge cases, potential overflow, corner cases
+
+OUTPUT FORMAT - JSON array:
+[
+  {"name": "Basic Case 1", "input": {"nums": [1,2,3], "target": 5}, "expected": 2, "category": "Happy Path"},
+  {"name": "Empty Array", "input": {"nums": [], "target": 0}, "expected": -1, "category": "Boundary"}
+]
+
+RULES:
+1. Input should match function parameters
+2. Expected should be the correct output for each input
+3. Use realistic values based on constraints
+4. Return ONLY valid JSON array, no markdown`;
+
+      console.log('Generating 20 test cases with Cerebras...');
+      const text = await this.callCerebras(prompt, 'complex', true);
+      const parsed = this.parseJSONSafe(text);
+      
+      if (Array.isArray(parsed)) {
+        console.log(`Generated ${parsed.length} test cases.`);
+        return parsed;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error generating test cases:', error);
+      return [];
+    }
+  }
+
+  // ============================================================
+  // NEW: Generate Solution & Hints using Cerebras ONLY
+  // ============================================================
+  async generateSolutionOnly(title, description, difficulty = 'Medium', functionSignature = null, testCases = []) {
+    try {
+      const testCaseContext = testCases.length > 0 
+        ? `\n\nTest Cases to handle:\n${JSON.stringify(testCases.slice(0, 5), null, 2)}`
+        : '';
+
+      const prompt = `You are a FAANG Senior Engineer providing interview coaching.
+
+TASK: Generate hints and an optimal solution for this problem.
+
+Problem: "${title}"
+Difficulty: ${difficulty}
+Description: ${typeof description === 'string' ? description : description?.description || ''}
+Function Signature: ${functionSignature || 'N/A'}
+${testCaseContext}
+
+OUTPUT FORMAT - JSON object:
+{
+  "hints": [
+    "Hint 1: Start by thinking about...",
+    "Hint 2: Consider using...",
+    "Hint 3: The key insight is...",
+    "Hint 4: For optimization...",
+    "Hint 5: Edge case to watch..."
+  ],
+  "solution": {
+    "approach": "Brief 2-3 sentence description of the approach",
+    "timeComplexity": "O(n) - explanation",
+    "spaceComplexity": "O(1) - explanation",
+    "code": "public class Solution {\\n    public int methodName(int[] nums) {\\n        // Complete working Java code\\n    }\\n}"
+  }
+}
+
+RULES:
+1. Generate 5 progressive hints (vague to specific)
+2. Solution code must be complete, working Java
+3. Code must handle all edge cases
+4. Use \\n for newlines in code
+5. Return ONLY valid JSON`;
+
+      console.log('Generating solution with Cerebras...');
+      const text = await this.callCerebras(prompt, 'complex', true);
+      return this.parseJSONSafe(text);
+    } catch (error) {
+      console.error('Error generating solution:', error);
+      throw new Error('Failed to generate solution');
     }
   }
 
