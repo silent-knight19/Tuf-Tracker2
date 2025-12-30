@@ -1,7 +1,44 @@
 const express = require('express');
 const router = express.Router();
+const { exec } = require('child_process');
 const codeRunnerService = require('../services/codeRunner.service');
 const { verifyToken } = require('./auth.routes');
+
+// GET /api/run/status
+// Check if Java is available (diagnostic endpoint)
+router.get('/status', async (req, res) => {
+  try {
+    const checkCommand = (cmd) => new Promise((resolve) => {
+      exec(cmd, { timeout: 5000 }, (error, stdout, stderr) => {
+        resolve({
+          success: !error,
+          output: stdout || stderr,
+          error: error?.message
+        });
+      });
+    });
+
+    const [javaResult, javacResult] = await Promise.all([
+      checkCommand('java -version'),
+      checkCommand('javac -version')
+    ]);
+
+    res.json({
+      status: javaResult.success && javacResult.success ? 'OK' : 'JAVA_NOT_AVAILABLE',
+      java: javaResult,
+      javac: javacResult,
+      timestamp: new Date().toISOString(),
+      nodeVersion: process.version,
+      platform: process.platform,
+      arch: process.arch
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'ERROR',
+      error: error.message
+    });
+  }
+});
 
 // POST /api/run/java
 // Execute Java code with custom input

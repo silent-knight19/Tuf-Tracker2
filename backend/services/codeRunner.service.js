@@ -14,6 +14,27 @@ class CodeRunnerService {
     let tempDir = null;
     
     try {
+      // First, check if Java is available
+      const javaCheck = await this.executeCommand('java -version', process.cwd(), '', 5000);
+      const javacCheck = await this.executeCommand('javac -version', process.cwd(), '', 5000);
+      
+      console.log('Java check:', { 
+        javaExitCode: javaCheck.exitCode, 
+        javacExitCode: javacCheck.exitCode,
+        javaStderr: javaCheck.stderr?.substring(0, 100),
+        javacStderr: javacCheck.stderr?.substring(0, 100)
+      });
+      
+      if (javacCheck.exitCode !== 0) {
+        console.error('Java compiler not available!');
+        return {
+          stdout: '',
+          stderr: 'Java compiler (javac) is not available on this server. Please contact support.',
+          exitCode: 1,
+          timedOut: false
+        };
+      }
+      
       // Detect if this is a LeetCode-style Solution class
       const isSolutionClass = source.includes('class Solution') && !source.includes('public class Main');
       
