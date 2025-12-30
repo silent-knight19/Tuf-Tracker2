@@ -19,8 +19,8 @@ const execPromise = promisify(exec);
 class CodeRunnerService {
   constructor() {
     this.timeout = {
-      compile: 15000,  // 15 seconds for compilation
-      run: 5000        // 5 seconds for execution
+      compile: 30000,  // 30 seconds for compilation (increased for Render free tier)
+      run: 10000       // 10 seconds for execution
     };
     this.maxBuffer = 1024 * 1024; // 1MB buffer
   }
