@@ -13,8 +13,8 @@ const models = {
     complex: 'qwen-3-235b-a22b-instruct-2507',  // For reasoning (Study notes, solutions)
   },
   gemini: {
-    general: 'gemma-3-27b-it',
-    reasoning: 'gemini-3.0-flash',
+    general: 'gemini-3-flash-preview', // Using valid latest model
+    reasoning: 'gemini-3-flash-preview', // Using valid latest model
   }
 };
 
