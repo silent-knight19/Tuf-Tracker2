@@ -332,10 +332,10 @@ function SolveProblemPage() {
            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
              <Bot className="w-8 h-8 text-red-500" />
            </div>
-           <h2 className="text-xl font-bold text-white mb-2">{error || 'Problem not found'}</h2>
+           <h2 className="text-xl font-bold text-dark-100 mb-2">{error || 'Problem not found'}</h2>
            <button 
             onClick={() => navigate('/revision')}
-            className="mt-4 px-6 py-2 bg-dark-800 hover:bg-dark-700 text-white rounded-xl transition-colors font-medium border border-dark-700"
+            className="mt-4 px-6 py-2 bg-dark-800 hover:bg-dark-700 text-dark-100 rounded-xl transition-colors font-medium border border-dark-700"
            >
             Back to Dashboard
            </button>
@@ -357,13 +357,13 @@ function SolveProblemPage() {
           <div className="flex items-center gap-4 min-w-0">
             <button 
               onClick={() => navigate('/revision')}
-              className="p-2 hover:bg-dark-800/50 rounded-xl transition-all text-dark-400 hover:text-white group border border-transparent hover:border-dark-700"
+              className="p-2 hover:bg-dark-800/50 rounded-xl transition-all text-dark-400 hover:text-dark-100 group border border-transparent hover:border-dark-700"
               title="Back to Review"
             >
               <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
             </button>
             <div className="min-w-0">
-              <h1 className="text-lg font-bold text-white truncate leading-tight">{problem.problemTitle}</h1>
+              <h1 className="text-lg font-bold text-dark-100 truncate leading-tight">{problem.problemTitle}</h1>
               <div className="flex items-center gap-2 mt-1">
                  <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border ${
                   (problem.difficulty || 'Medium') === 'Easy' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
@@ -387,7 +387,7 @@ function SolveProblemPage() {
               <button 
                 onClick={handleAIAssist}
                 disabled={loadingHelp || loadingDescription}
-                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-500/20 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2 border border-blue-400/20"
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-dark-100 rounded-xl text-sm font-semibold shadow-lg shadow-blue-500/20 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2 border border-blue-400/20"
               >
                 {loadingHelp ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -415,7 +415,7 @@ function SolveProblemPage() {
                    <Code2 className="w-5 h-5" />
                    <h2 className="text-sm font-bold uppercase tracking-widest">Problem Statement</h2>
                 </div>
-                <div className="prose prose-invert prose-p:text-dark-200 prose-headings:text-white max-w-none text-base leading-relaxed">
+                <div className="prose prose-invert prose-p:text-dark-300 prose-headings:text-dark-100 max-w-none text-base leading-relaxed">
                   <ReactMarkdown 
                     components={{
                       code: ({node, inline, className, children, ...props}) => {
@@ -461,13 +461,13 @@ function SolveProblemPage() {
                         <div className="space-y-3 font-mono text-sm">
                           <div className="flex gap-3">
                             <span className="text-dark-500 font-bold shrink-0 w-12 text-xs uppercase pt-1">Input</span>
-                            <span className="text-white bg-dark-950 px-2 py-1 rounded border border-dark-800/50 block w-full">
+                            <span className="text-dark-100 bg-dark-950 px-2 py-1 rounded border border-dark-800/50 block w-full">
                               {typeof example.input === 'object' ? JSON.stringify(example.input) : example.input}
                             </span>
                           </div>
                           <div className="flex gap-3">
                             <span className="text-dark-500 font-bold shrink-0 w-12 text-xs uppercase pt-1">Output</span>
-                            <span className="text-white bg-dark-950 px-2 py-1 rounded border border-dark-800/50 block w-full">
+                            <span className="text-dark-100 bg-dark-950 px-2 py-1 rounded border border-dark-800/50 block w-full">
                               {typeof example.output === 'object' ? JSON.stringify(example.output) : example.output}
                             </span>
                           </div>
@@ -495,7 +495,8 @@ function SolveProblemPage() {
                   <div className="flex items-center justify-between">
                     <h2 className="text-sm font-bold text-brand-orange/80 uppercase tracking-widest">Constraints</h2>
                     <button
-                      onClick={handleGenerateEdgeCases}
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleGenerateEdgeCases(); }}
                       disabled={loadingEdgeCases}
                       className="px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 hover:border-purple-500/40 rounded-lg text-xs font-bold transition-all flex items-center gap-2 group"
                       title="Generate additional edge cases using AI"
@@ -505,7 +506,7 @@ function SolveProblemPage() {
                       ) : (
                         <Sparkles className="w-3 h-3 group-hover:text-purple-300" />
                       )}
-                      Generage Edge Cases
+                      Generate Edge Cases
                     </button>
                   </div>
                   <div className="bg-dark-900/40 p-4 rounded-xl border border-dark-800">
@@ -547,7 +548,7 @@ function SolveProblemPage() {
               {/* Hints */}
               <div className="space-y-4 mb-8">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                   <h2 className="text-sm font-bold text-dark-100 flex items-center gap-2">
                     <Lightbulb className="w-4 h-4 text-yellow-400" /> 
                     <span className="bg-gradient-to-r from-yellow-200 to-yellow-500 bg-clip-text text-transparent">Smart Hints</span>
                   </h2>
@@ -581,16 +582,17 @@ function SolveProblemPage() {
               {/* Solutions */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                   <h2 className="text-sm font-bold text-dark-100 flex items-center gap-2">
                     <Bot className="w-4 h-4 text-green-400" /> 
                     <span className="bg-gradient-to-r from-green-300 to-green-500 bg-clip-text text-transparent">AI Solution</span>
                   </h2>
                   <button
-                    onClick={() => setShowSolution(!showSolution)}
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setShowSolution(!showSolution); }}
                     className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
                        showSolution 
-                       ? 'bg-dark-800 text-white' 
-                       : 'bg-dark-900 text-dark-400 hover:text-white hover:bg-dark-800'
+                       ? 'bg-dark-800 text-dark-100' 
+                       : 'bg-dark-900 text-dark-400 hover:text-dark-100 hover:bg-dark-800'
                     }`}
                   >
                     {showSolution ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}

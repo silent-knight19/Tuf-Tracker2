@@ -10,19 +10,20 @@ export default {
       colors: {
         // LeetCode Dark Theme Colors
         dark: {
-          50: '#f8f8f8',
-          100: '#f1f1f1',
-          200: '#e4e4e4',
-          300: '#d1d1d1',
-          400: '#b4b4b4',
-          500: '#9a9a9a',
-          600: '#818181',
-          700: '#6a6a6a',
-          800: '#3a3a3a',
-          850: '#2d2d2d',
-          900: '#262626',
-          950: '#1a1a1a',
+          50: '#f1f1f1',
+          100: '#d1d1d1',
+          200: '#b4b4b4',
+          300: '#9a9a9a',
+          400: '#818181',
+          500: '#6a6a6a',
+          600: '#4a4a4a',
+          700: '#3a3a3a',
+          800: '#2d2d2d',
+          850: '#262626',
+          900: '#1a1a1a',
+          950: '#0f0f0f',
         },
+        white: '#e5e7eb', // Softer white (gray-200) to reduce eye strain
         // LeetCode Brand Colors
         brand: {
           orange: '#ffa116',

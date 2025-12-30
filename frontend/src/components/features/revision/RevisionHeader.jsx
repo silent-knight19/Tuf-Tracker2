@@ -36,7 +36,7 @@ function RevisionHeader({ revision }) {
              <div className="w-2 h-8 bg-brand-orange rounded-full" />
              <div className="flex flex-col">
                 <div className="flex items-center gap-3">
-                  <h1 className="text-2xl font-black text-white tracking-tight uppercase leading-none">
+                  <h1 className="text-2xl font-black text-dark-100 tracking-tight uppercase leading-none">
                     {revision.problemTitle}
                   </h1>
                   <div className="flex items-center gap-2">
@@ -64,7 +64,7 @@ function RevisionHeader({ revision }) {
       <div className="flex items-center gap-3">
         <div className="flex flex-col items-end">
            <div className="text-[10px] font-black text-dark-500 uppercase tracking-widest leading-none mb-1">Last Sync</div>
-           <div className="text-xs font-bold text-white uppercase tracking-tighter">
+           <div className="text-xs font-bold text-dark-100 uppercase tracking-tighter">
              {new Date(revision.updatedAt).toLocaleDateString()}
            </div>
         </div>
