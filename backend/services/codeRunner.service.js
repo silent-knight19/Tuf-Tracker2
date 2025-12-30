@@ -12,11 +12,16 @@ class CodeRunnerService {
    */
   async runJava(source, stdin = '') {
     let tempDir = null;
+    const debug = []; // Collect debug info to return
     
     try {
       // First, check if Java is available
+      debug.push({ step: 'javaCheck', time: new Date().toISOString() });
       const javaCheck = await this.executeCommand('java -version', process.cwd(), '', 5000);
+      debug.push({ step: 'javaCheckDone', result: { exitCode: javaCheck.exitCode, stderrLen: javaCheck.stderr?.length } });
+      
       const javacCheck = await this.executeCommand('javac -version', process.cwd(), '', 5000);
+      debug.push({ step: 'javacCheckDone', result: { exitCode: javacCheck.exitCode, stderrLen: javacCheck.stderr?.length } });
       
       console.log('Java check:', { 
         javaExitCode: javaCheck.exitCode, 
@@ -31,7 +36,8 @@ class CodeRunnerService {
           stdout: '',
           stderr: 'Java compiler (javac) is not available on this server. Please contact support.',
           exitCode: 1,
-          timedOut: false
+          timedOut: false,
+          debug: debug
         };
       }
       
@@ -61,12 +67,14 @@ class CodeRunnerService {
       
       // Compile the Java code
       console.log('Compiling Java code...');
+      debug.push({ step: 'compileStart', tempDir: tempDir });
       const compileResult = await this.executeCommand(
         `javac Main.java`,
         tempDir,
         '',
         5000 // 5 second timeout for compilation
       );
+      debug.push({ step: 'compileDone', exitCode: compileResult.exitCode, hasStderr: !!compileResult.stderr });
       console.log('Compilation result:', { exitCode: compileResult.exitCode, hasStderr: !!compileResult.stderr });
       
       if (compileResult.exitCode !== 0) {
@@ -89,12 +97,14 @@ class CodeRunnerService {
           stdout: compileResult.stdout,
           stderr: cleanError, // Return the actual compiler error
           exitCode: compileResult.exitCode,
-          timedOut: false
+          timedOut: false,
+          debug: debug
         };
       }
       
       // Run the compiled Java program
       console.log('Running compiled Java program...');
+      debug.push({ step: 'runStart' });
       const runResult = await this.executeCommand(
         `java Main`,
         tempDir,
@@ -107,21 +117,25 @@ class CodeRunnerService {
         stderrLength: runResult.stderr?.length,
         timedOut: runResult.timedOut 
       });
+      debug.push({ step: 'runDone', exitCode: runResult.exitCode, stdoutLen: runResult.stdout?.length });
       
       return {
         stdout: runResult.stdout,
         stderr: runResult.stderr,
         exitCode: runResult.exitCode,
-        timedOut: runResult.timedOut
+        timedOut: runResult.timedOut,
+        debug: debug
       };
       
     } catch (error) {
       console.error('Error running Java code:', error);
+      debug.push({ step: 'error', message: error.message });
       return {
         stdout: '',
         stderr: `Internal error: ${error.message}`,
         exitCode: 1,
-        timedOut: false
+        timedOut: false,
+        debug: debug
       };
     } finally {
       // Clean up temp directory
