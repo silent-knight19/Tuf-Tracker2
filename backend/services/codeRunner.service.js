@@ -135,7 +135,7 @@ class CodeRunnerService {
     try {
       console.log('[CodeRunner] Compiling in:', tempDir);
       
-      await execPromise('javac Main.java', {
+      await execPromise('javac -encoding UTF-8 Main.java', {
         cwd: tempDir,
         timeout: this.timeout.compile,
         maxBuffer: this.maxBuffer
@@ -183,10 +183,15 @@ class CodeRunnerService {
     try {
       console.log('[CodeRunner] Executing in:', tempDir);
       
-      const result = await execPromise('java Main', {
+      const result = await execPromise('java -Xmx128m Main', {
         cwd: tempDir,
         timeout: this.timeout.run,
-        maxBuffer: this.maxBuffer
+        maxBuffer: this.maxBuffer,
+        env: {
+          PATH: process.env.PATH,
+          JAVA_HOME: process.env.JAVA_HOME,
+          LANG: process.env.LANG
+        }
       });
 
       return {
@@ -263,6 +268,13 @@ class CodeRunnerService {
     const cleanedSolution = solutionCode.replace(/public\s+class\s+Solution/g, 'class Solution');
 
     return `import java.util.*;
+import java.util.concurrent.*;
+import java.util.regex.*;
+import java.util.stream.*;
+import java.util.function.*;
+import java.math.*;
+import java.text.*;
+import java.time.*;
 import java.lang.reflect.*;
 
 ${cleanedSolution}
