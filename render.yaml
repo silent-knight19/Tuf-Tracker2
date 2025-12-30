@@ -1,0 +1,14 @@
+# Render Blueprint Configuration
+services:
+  # Backend API Service - Uses Docker for Java support
+  - type: web
+    name: tuftracker-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+    healthCheckPath: /api/problems

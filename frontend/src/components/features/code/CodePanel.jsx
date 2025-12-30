@@ -106,19 +106,32 @@ function CodePanel({ problemId, onRunCode, edgeCases, onGenerateEdgeCases, isGen
     setTimedOut(false);
 
     try {
+      console.log('Running code with stdin:', stdin);
       const result = await onRunCode(code, stdin, problemId);
+      console.log('Code execution result:', result);
       
       if (result.timedOut) {
         setTimedOut(true);
         setOutput(result.stdout || '');
-        setError(`Execution timed out after ${result.timeout}ms`);
+        setError(`Execution timed out after ${result.timeout || 3000}ms`);
       } else {
-        setOutput(result.stdout || result.output || '');
+        // Capture all possible output fields
+        const outputText = result.stdout || result.output || result.result || '';
+        console.log('Setting output to:', outputText);
+        setOutput(outputText);
+        
         if (result.stderr) {
+          console.log('Setting error to:', result.stderr);
           setError(result.stderr);
+        }
+        
+        // If both output and error are empty, show a message
+        if (!outputText && !result.stderr && result.exitCode === 0) {
+          setOutput('Code executed successfully with no output.');
         }
       }
     } catch (err) {
+      console.error('Code execution error:', err);
       setError(err.message || 'Failed to execute code');
     } finally {
       setIsRunning(false);
