@@ -399,7 +399,7 @@ RULES:
     }
   }
 
-  // Generate hints, solutions, AND edge cases for a problem (Sequential Strategy)
+  // Generate hints, solutions, AND edge cases for a problem (PARALLEL Strategy)
   async generateProblemHelp(title, description, difficulty, pattern = null, examples = [], constraints = [], functionSignature = null) {
     try {
       const patternRequirement = pattern 
@@ -421,8 +421,8 @@ Examples: ${JSON.stringify(examples)}
         solutions: { optimal: null, better: null, brute: null }
       };
 
-      // STEP 1: GENERATE HINTS (Complex)
-      try {
+      // --- STEP 1 & 2: GENERATE HINTS AND SOLUTIONS IN PARALLEL ---
+      const hintPromise = (async () => {
         console.log('Generating Hints...');
         const hintPrompt = `You are an expert coding tutor.
 TASK: Generate 10 progressive, high-quality hints for this problem.${pattern ? `\nIMPORTANT: Hints should guide toward solving with the "${pattern}" technique.` : ''}
@@ -434,13 +434,10 @@ RULE:
 OUTPUT: JSON { "hints": ["Hint 1", ..., "Hint 10"] }`;
 
         const hintText = await this.callCerebras(hintPrompt, 'complex', false);
-        const hintJson = this.parseJSONSafe(hintText);
-        result.hints = hintJson.hints || [];
-      } catch (e) { console.error('Hint generation failed', e); }
+        return this.parseJSONSafe(hintText);
+      })();
 
-      // STEP 2: GENERATE SOLUTIONS FIRST (needed for computing edge case outputs)
-      let solutionCode = null;
-      try {
+      const solutionPromise = (async () => {
         console.log('Generating Solutions...');
         const solPrompt = `You are a FAANG Interviewer.${patternRequirement}
 
@@ -475,12 +472,37 @@ RULES:
 3. approachSteps must be 5-8 NUMBERED steps with clear reasoning for each.
 4. The solution MUST use ${pattern ? `"${pattern}"` : 'the best approach'} as the primary technique.`;
         const solText = await this.callCerebras(solPrompt, 'complex', false);
-        const solJson = this.parseJSONSafe(solText);
-        result.solutions = solJson.solutions || result.solutions;
-        solutionCode = result.solutions?.optimal?.code || null;
-      } catch (e) { console.error('Solution generation failed', e); }
+        return this.parseJSONSafe(solText);
+      })();
 
-      // STEP 3: GENERATE EDGE CASES WITH COMPUTED OUTPUTS
+      // Wait for both in parallel with 45-second timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Hints/Solutions generation timed out')), 45000)
+      );
+
+      try {
+        const [hintResult, solResult] = await Promise.race([
+          Promise.all([hintPromise, solutionPromise]),
+          timeoutPromise
+        ]);
+        result.hints = hintResult?.hints || [];
+        result.solutions = solResult?.solutions || result.solutions;
+      } catch (parallelErr) {
+        console.error('Parallel hint/solution generation failed:', parallelErr.message);
+        // Try to salvage whichever completed
+        try {
+          const hintJson = await Promise.race([hintPromise, Promise.resolve(null)]);
+          if (hintJson?.hints) result.hints = hintJson.hints;
+        } catch {}
+        try {
+          const solJson = await Promise.race([solutionPromise, Promise.resolve(null)]);
+          if (solJson?.solutions) result.solutions = solJson.solutions;
+        } catch {}
+      }
+
+      const solutionCode = result.solutions?.optimal?.code || null;
+
+      // --- STEP 3: GENERATE EDGE CASES WITH COMPUTED OUTPUTS ---
       try {
         console.log('Generating Edge Cases...');
         const edgeCaseInputs = await this.generateEdgeCaseInputs(title, description, examples, constraints, functionSignature);
@@ -628,12 +650,9 @@ Return ONLY a valid JSON array. No commentary. Example format:
         }
       };
 
-      // Run batches SERIALLY to reduce API load
-      let allCases = [];
-      for (const cat of categories) {
-        const cases = await fetchCategory(cat);
-        allCases = allCases.concat(cases);
-      }
+      // Run batches in PARALLEL for faster response
+      const batchResults = await Promise.all(categories.map(cat => fetchCategory(cat)));
+      let allCases = batchResults.flat();
       
       // Filter out invalid ones
       allCases = allCases.filter(c => c && c.input !== undefined && c.expectedOutput !== undefined);
@@ -694,7 +713,7 @@ Format: [{"name":"TestName","input":{...},"category":"Category"}]
     }
   }
 
-  // Compute expected outputs by running solution code
+  // Compute expected outputs by running solution code (PARALLEL)
   async computeEdgeCaseOutputs(solutionCode, edgeCaseInputs, functionSignature) {
     const codeRunnerService = require('./codeRunner.service');
     
@@ -705,7 +724,7 @@ Format: [{"name":"TestName","input":{...},"category":"Category"}]
       if (match && match[1]) methodName = match[1];
     }
 
-    console.log(`Computing outputs for ${edgeCaseInputs.length} inputs using method: ${methodName}`);
+    console.log(`Computing outputs for ${edgeCaseInputs.length} inputs using method: ${methodName} (PARALLEL)`);
 
     // Wrap solution code in class Solution if not already wrapped
     let wrappedCode = solutionCode;
@@ -713,33 +732,33 @@ Format: [{"name":"TestName","input":{...},"category":"Category"}]
       wrappedCode = `class Solution {\n${solutionCode}\n}`;
     }
 
-    const computedCases = [];
-    
-    // Process each input
-    for (let i = 0; i < edgeCaseInputs.length; i++) {
-      const testCase = edgeCaseInputs[i];
+    // Helper function to compute output for a single test case with timeout
+    const computeOne = async (testCase, index) => {
       try {
-        // Prepare stdin JSON for the code runner
         const stdin = JSON.stringify({
           method: methodName,
           tests: [{ args: Object.values(testCase.input), expected: null }]
         });
 
-        const result = await codeRunnerService.runJava(wrappedCode, stdin);
+        // Timeout: 10 seconds per test case
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), 10000)
+        );
+        
+        const result = await Promise.race([
+          codeRunnerService.runJava(wrappedCode, stdin),
+          timeoutPromise
+        ]);
         
         // Parse output to extract the computed value
-        // Format: "Test 1: [0, 1]" from the test harness
         let expectedOutput = null;
         if (result.stdout) {
-          // Match "Test N: <result>" format
           const outputMatch = result.stdout.match(/Test \d+:\s*(.+)/);
           if (outputMatch) {
             const rawOutput = outputMatch[1].trim();
             try {
-              // Parse arrays like [0, 1] into JSON
               expectedOutput = JSON.parse(rawOutput.replace(/\[/g, '[').replace(/\]/g, ']'));
             } catch {
-              // If not valid JSON, try parsing as raw value
               if (rawOutput === 'true') expectedOutput = true;
               else if (rawOutput === 'false') expectedOutput = false;
               else if (!isNaN(rawOutput)) expectedOutput = Number(rawOutput);
@@ -748,28 +767,32 @@ Format: [{"name":"TestName","input":{...},"category":"Category"}]
           }
         }
         
-        computedCases.push({
-          name: testCase.name || `Test ${i + 1}`,
+        console.log(`[Compute ${index+1}/${edgeCaseInputs.length}] => ${JSON.stringify(expectedOutput)}`);
+        
+        return {
+          name: testCase.name || `Test ${index + 1}`,
           input: testCase.input,
           expectedOutput: expectedOutput,
           explanation: `Computed by running the optimal solution.`,
           category: testCase.category || 'Computed'
-        });
-        
-        console.log(`[Compute ${i+1}/${edgeCaseInputs.length}] Input: ${JSON.stringify(testCase.input).slice(0,50)}... => ${JSON.stringify(expectedOutput)}`);
+        };
         
       } catch (err) {
-        console.error(`Failed to compute output for test ${i+1}:`, err.message);
-        // Still include the test case but mark output as unknown
-        computedCases.push({
-          name: testCase.name || `Test ${i + 1}`,
+        console.error(`Failed to compute output for test ${index+1}:`, err.message);
+        return {
+          name: testCase.name || `Test ${index + 1}`,
           input: testCase.input,
           expectedOutput: null,
           explanation: `Could not compute: ${err.message}`,
           category: testCase.category || 'Error'
-        });
+        };
       }
-    }
+    };
+
+    // Run all computations in PARALLEL
+    const computedCases = await Promise.all(
+      edgeCaseInputs.map((testCase, i) => computeOne(testCase, i))
+    );
     
     // Filter out cases with null outputs
     const validCases = computedCases.filter(c => c.expectedOutput !== null);

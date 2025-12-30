@@ -42,14 +42,24 @@ class CodeRunnerService {
           maxBuffer: 1024 * 1024 
         });
       } catch (compileError) {
-        // Compilation failed
-        const cleanError = (compileError.stderr || compileError.message || 'Compilation failed')
-          .replace(new RegExp(tempDir, 'g'), '')
-          .replace(/\/Main\.java/g, 'Line');
+        // Compilation failed - stderr contains the actual error message
+        console.error('Compilation error:', compileError);
+        
+        // The actual javac error is in stderr
+        let errorMessage = compileError.stderr || '';
+        if (!errorMessage && compileError.message) {
+          errorMessage = compileError.message;
+        }
+        
+        // Clean up the error message
+        const cleanError = errorMessage
+          .replace(new RegExp(tempDir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '')
+          .replace(/\/Main\.java:/g, 'Line ')
+          .replace(/Main\.java:/g, 'Line ');
         
         return {
           stdout: compileError.stdout || '',
-          stderr: cleanError,
+          stderr: cleanError || 'Compilation failed',
           exitCode: compileError.code || 1,
           timedOut: false
         };
