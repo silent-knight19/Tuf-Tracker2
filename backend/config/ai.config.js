@@ -9,12 +9,12 @@ const cerebrasClient = new Cerebras({
 
 const models = {
   cerebras: {
-    fast: 'llama-4-scout-17b-16e-instruct',   // Small fast model for test cases (17B)
-    complex: 'qwen-3-235b-a22b-instruct-2507', // Large model for solutions (235B)
+    fast: 'gpt-oss-120b',     // GPT OSS 120B for test cases
+    complex: 'gpt-oss-120b',  // GPT OSS 120B for solutions
   },
   gemini: {
-    general: 'gemini-3-flash-preview', // Using valid latest model
-    reasoning: 'gemini-3-flash-preview', // Using valid latest model
+    general: 'gemini-3-flash-preview',
+    reasoning: 'gemini-3-flash-preview',
   }
 };
 
