@@ -939,102 +939,109 @@ CRITICAL: Replace ALL <placeholders> with REAL content about ${subject}. Do NOT 
   }
 
   // ============================================================
-  // NEW: Generate 20 Test Cases using Cerebras ONLY
+  // Generate 20 Test Cases using Cerebras (FAST model for speed)
   // ============================================================
   async generateTestCases(title, description, constraints = [], functionSignature = null) {
     try {
-      const prompt = `You are an expert software tester. Generate exactly 20 HIGH-QUALITY test cases for this coding problem.
+      // Parse function signature to understand parameters
+      let paramInfo = 'unknown parameters';
+      if (functionSignature) {
+        const match = functionSignature.match(/\(([^)]*)\)/);
+        if (match) paramInfo = match[1] || 'no parameters';
+      }
 
-Problem: ${title}
-Description: ${typeof description === 'string' ? description : description?.description || ''}
-Function Signature: ${functionSignature || 'solve(...)'}
-Constraints: ${constraints.join(', ') || 'Standard constraints'}
+      const prompt = `Generate 20 test cases for this coding problem. Be concise.
 
-REQUIREMENTS:
-1. Generate EXACTLY 20 unique test cases
-2. Cover ALL categories:
-   - Happy Path (5 cases): Standard valid inputs
-   - Boundary (5 cases): Min/Max values, empty inputs, single elements
-   - Edge Cases (5 cases): Duplicates, negatives, sorted/reverse, all same
-   - Tricky (5 cases): Logic edge cases, potential overflow, corner cases
+PROBLEM: ${title}
+SIGNATURE: ${functionSignature || 'public int solve(int[] nums)'}
+PARAMETERS: ${paramInfo}
+CONSTRAINTS: ${constraints.slice(0, 3).join('; ') || 'standard'}
 
-OUTPUT FORMAT - JSON array:
-[
-  {"name": "Basic Case 1", "input": {"nums": [1,2,3], "target": 5}, "expected": 2, "category": "Happy Path"},
-  {"name": "Empty Array", "input": {"nums": [], "target": 0}, "expected": -1, "category": "Boundary"}
-]
+OUTPUT: JSON array with exactly 20 objects. Each object has:
+- "name": short descriptive name
+- "input": object with parameter names as keys (matching the signature)
+- "expected": the correct output value
+- "category": one of "Basic", "Boundary", "Edge", "Tricky"
 
-RULES:
-1. Input should match function parameters
-2. Expected should be the correct output for each input
-3. Use realistic values based on constraints
-4. Return ONLY valid JSON array, no markdown`;
+Example for twoSum(int[] nums, int target):
+[{"name":"Basic 1","input":{"nums":[2,7,11,15],"target":9},"expected":[0,1],"category":"Basic"}]
 
-      console.log('Generating 20 test cases with Cerebras...');
-      const text = await this.callCerebras(prompt, 'complex', true);
+Generate 5 Basic, 5 Boundary (empty/single/min/max), 5 Edge (duplicates/negatives), 5 Tricky cases.
+Return ONLY the JSON array, no explanation.`;
+
+      console.log('Generating 20 test cases with Cerebras (fast)...');
+      // Use FAST model to avoid timeout
+      const text = await this.callCerebras(prompt, 'fast', true);
       const parsed = this.parseJSONSafe(text);
       
       if (Array.isArray(parsed)) {
-        console.log(`Generated ${parsed.length} test cases.`);
+        console.log(`✅ Generated ${parsed.length} test cases.`);
         return parsed;
       }
       
+      console.warn('Failed to parse test cases, returning empty array');
       return [];
     } catch (error) {
-      console.error('Error generating test cases:', error);
+      console.error('Error generating test cases:', error.message);
       return [];
     }
   }
 
   // ============================================================
-  // NEW: Generate Solution & Hints using Cerebras ONLY
+  // Generate Solution & Hints using Cerebras (uses function signature)
   // ============================================================
   async generateSolutionOnly(title, description, difficulty = 'Medium', functionSignature = null, testCases = []) {
     try {
-      const testCaseContext = testCases.length > 0 
-        ? `\n\nTest Cases to handle:\n${JSON.stringify(testCases.slice(0, 5), null, 2)}`
+      // Extract method name and return type from signature
+      let methodName = 'solve';
+      let returnType = 'int';
+      let params = 'int[] nums';
+      
+      if (functionSignature) {
+        const sigMatch = functionSignature.match(/public\s+(\S+)\s+(\w+)\s*\(([^)]*)\)/);
+        if (sigMatch) {
+          returnType = sigMatch[1];
+          methodName = sigMatch[2];
+          params = sigMatch[3];
+        }
+      }
+
+      const testContext = testCases.length > 0 
+        ? `Must handle these inputs: ${JSON.stringify(testCases.slice(0, 3).map(t => t.input))}`
         : '';
 
-      const prompt = `You are a FAANG Senior Engineer providing interview coaching.
+      const prompt = `You are a coding interview expert. Generate hints and solution for this problem.
 
-TASK: Generate hints and an optimal solution for this problem.
+PROBLEM: ${title}
+DIFFICULTY: ${difficulty}
+DESCRIPTION: ${typeof description === 'string' ? description.slice(0, 500) : (description?.description || '').slice(0, 500)}
 
-Problem: "${title}"
-Difficulty: ${difficulty}
-Description: ${typeof description === 'string' ? description : description?.description || ''}
-Function Signature: ${functionSignature || 'N/A'}
-${testCaseContext}
+REQUIRED SIGNATURE: ${functionSignature || `public ${returnType} ${methodName}(${params})`}
+${testContext}
 
 OUTPUT FORMAT - JSON object:
 {
-  "hints": [
-    "Hint 1: Start by thinking about...",
-    "Hint 2: Consider using...",
-    "Hint 3: The key insight is...",
-    "Hint 4: For optimization...",
-    "Hint 5: Edge case to watch..."
-  ],
+  "hints": ["Hint 1...", "Hint 2...", "Hint 3...", "Hint 4...", "Hint 5..."],
   "solution": {
-    "approach": "Brief 2-3 sentence description of the approach",
-    "timeComplexity": "O(n) - explanation",
-    "spaceComplexity": "O(1) - explanation",
-    "code": "public class Solution {\\n    public int methodName(int[] nums) {\\n        // Complete working Java code\\n    }\\n}"
+    "approach": "Brief 2 sentence approach",
+    "timeComplexity": "O(?)",
+    "spaceComplexity": "O(?)",
+    "code": "class Solution {\\n    ${functionSignature || `public ${returnType} ${methodName}(${params})`} {\\n        // COMPLETE WORKING CODE HERE\\n    }\\n}"
   }
 }
 
-RULES:
-1. Generate 5 progressive hints (vague to specific)
-2. Solution code must be complete, working Java
-3. Code must handle all edge cases
-4. Use \\n for newlines in code
-5. Return ONLY valid JSON`;
+CRITICAL RULES:
+1. The code MUST use EXACTLY this signature: ${functionSignature || `public ${returnType} ${methodName}(${params})`}
+2. The code must be complete and compilable Java
+3. Use \\n for newlines in the code string
+4. Return ONLY valid JSON`;
 
-      console.log('Generating solution with Cerebras...');
-      const text = await this.callCerebras(prompt, 'complex', true);
+      console.log('Generating solution with Cerebras (fast)...');
+      const text = await this.callCerebras(prompt, 'fast', true);
       return this.parseJSONSafe(text);
     } catch (error) {
-      console.error('Error generating solution:', error);
-      throw new Error('Failed to generate solution');
+      console.error('Error generating solution:', error.message);
+      throw new Error('Failed to generate solution: ' + error.message);
     }
   }
 
