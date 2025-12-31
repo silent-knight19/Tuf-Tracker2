@@ -950,14 +950,14 @@ CRITICAL: Replace ALL <placeholders> with REAL content about ${subject}. Do NOT 
         if (match) paramInfo = match[1] || 'no parameters';
       }
 
-      const prompt = `Generate 20 test cases for this coding problem. Be concise.
+      const prompt = `You MUST generate EXACTLY 20 test cases for this coding problem. Not less, not more - EXACTLY 20.
 
 PROBLEM: ${title}
 SIGNATURE: ${functionSignature || 'public int solve(int[] nums)'}
 PARAMETERS: ${paramInfo}
-CONSTRAINTS: ${constraints.slice(0, 3).join('; ') || 'standard'}
+CONSTRAINTS: ${constraints.join('; ') || 'standard constraints'}
 
-OUTPUT: JSON array with exactly 20 objects. Each object has:
+OUTPUT: JSON array with EXACTLY 20 objects. Each object has:
 - "name": short descriptive name
 - "input": object with parameter names as keys (matching the signature)
 - "expected": the correct output value
@@ -966,8 +966,13 @@ OUTPUT: JSON array with exactly 20 objects. Each object has:
 Example for twoSum(int[] nums, int target):
 [{"name":"Basic 1","input":{"nums":[2,7,11,15],"target":9},"expected":[0,1],"category":"Basic"}]
 
-Generate 5 Basic, 5 Boundary (empty/single/min/max), 5 Edge (duplicates/negatives), 5 Tricky cases.
-Return ONLY the JSON array, no explanation.`;
+MANDATORY BREAKDOWN (EXACTLY 20 total):
+- 5 Basic cases: Standard valid inputs
+- 5 Boundary cases: Empty arrays, single elements, min/max values per constraints
+- 5 Edge cases: Duplicates, negatives, all same values, sorted/reverse sorted
+- 5 Tricky cases: Corner cases, potential overflow, special patterns
+
+Return ONLY the JSON array with EXACTLY 20 test cases, no explanation.`;
 
       console.log('Generating 20 test cases with Cerebras (fast)...');
       // Use FAST model to avoid timeout
