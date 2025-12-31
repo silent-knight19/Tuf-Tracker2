@@ -844,10 +844,10 @@ Return a JSON object with this EXACT structure. EVERY field must be detailed and
   ],
   
   "goldenRules": {
-    "dataStructures": ["List 3-5 specific data structures (e.g., 'Sorted Array', 'String', 'Linked List') that strongly indicate ${subject} should be used. Each should be a single phrase without explanation."],
-    "keywords": ["List 5-7 problem keywords/phrases (e.g., 'find a pair', 'contiguous subarray', 'in-place') that are 90% confidence signals for ${subject}. Single phrases only."],
-    "operations": ["List 3-4 specific operations/constraints (e.g., 'O(1) space required', 'minimize time from O(n^2)', 'compare elements from both ends') that hint at ${subject}."],
-    "constraints": ["List 2-3 constraint patterns (e.g., 'n <= 10^5', 'input is sorted') that almost guarantee ${subject} is optimal."]
+    "dataStructures": ["List 3-5 data structure scenarios (e.g., 'Sorted Array -> Binary Search/Two Pointers', 'String -> Sliding Window/Hashing'). Explain the connection."],
+    "keywords": ["List 5-7 keyword-to-action mappings (e.g., 'Find a pair -> Two Pointers', 'Contiguous subarray -> Sliding Window'). Explain WHY the keyword triggers the pattern."],
+    "operations": ["List 3-4 operational cues (e.g., 'O(1) space required -> In-place modification', 'Minimize O(n^2) -> Optimization pattern'). Explain the constraint implication."],
+    "constraints": ["List 2-3 constraint patterns (e.g., 'n <= 10^5 -> O(n) or O(n log n) required'). Explain how constraints dictate the approach."]
   },
   
   "unconventionalUse": [
@@ -894,7 +894,7 @@ Return a JSON object with this EXACT structure. EVERY field must be detailed and
       "companies": ["Google", "Amazon"],
       "description": "Standard easy-level problem description.",
       "intuition": "DETAILED EXPLANATION (3-4 sentences): Specifically explain HOW the ${subject} pattern is applied step-by-step to solve this specific problem. Why is it the optimal choice here?",
-      "code": "// EASY PROBLEM - LINE-BY-LINE EXPLANATION\\n// Every single line must have a comment explaining:\\n// (1) WHAT it does, (2) WHY it's needed, (3) HOW it applies the ${subject} pattern.\\n// Example for Two Pointers:\\n// int left = 0;  // Initialize left pointer at start - we begin with smallest element in sorted array\\n// int right = n - 1;  // Initialize right pointer at end - we begin with largest element\\n// Complete compilable Java solution with EVERY LINE commented."
+      "code": "// DIFFICULTY: EASY - PARAGRAPH-STYLE COMMENTS REQUIRED\\n// You MUST use block comments (/* ... */) to explain the logic before each major section.\\n// Inside the code, use line comments (//) to explain the 'WHY' and 'HOW'.\\n// Example:\\n// /*\\n//  * INITIALIZATION STRATEGY:\\n//  * We use two pointers starting at opposite ends because the array is sorted.\\n//  * This allows us to eliminate one element at every step based on the sum.\\n//  */\\n// int left = 0; // Start at the smallest element\\n// int right = n - 1; // Start at the largest element\\n// Complete compilable Java solution with DEEP explanatory comments."
     },
     {
       "name": "MEDIUM: Real LeetCode-style Problem Title",
@@ -902,7 +902,7 @@ Return a JSON object with this EXACT structure. EVERY field must be detailed and
       "companies": ["Meta", "Microsoft"],
       "description": "Standard medium-level problem description.",
       "intuition": "DETAILED EXPLANATION (3-4 sentences): Deep dive into HOW the ${subject} pattern handles the increased complexity of this medium problem. Explain the specific transformation or logic move.",
-      "code": "// MEDIUM PROBLEM - LINE-BY-LINE EXPLANATION\\n// Every single line must have a comment explaining:\\n// (1) WHAT it does, (2) WHY it's needed, (3) HOW it applies the ${subject} pattern.\\n// Complete compilable Java solution with EVERY LINE commented."
+      "code": "// DIFFICULTY: MEDIUM - PARAGRAPH-STYLE COMMENTS REQUIRED\\n// You MUST use block comments (/* ... */) to explain the logic before each major section.\\n// Inside the code, use line comments (//) to explain the 'WHY' and 'HOW'.\\n// Example:\\n// /*\\n//  * SLIDING WINDOW STRATEGY:\\n//  * We expand the right pointer to include elements until the constraint is violated.\\n//  * Then we shrink from the left to restore validity, updating the max/min length.\\n//  */\\n// while (validityCondition == false) {\\n//     left++; // Shrink window from the left\\n// }\\n// Complete compilable Java solution with DEEP explanatory comments."
     },
     {
       "name": "HARD: Real LeetCode-style Problem Title",
@@ -910,7 +910,7 @@ Return a JSON object with this EXACT structure. EVERY field must be detailed and
       "companies": ["Apple", "Netflix"],
       "description": "Advanced hard-level problem description.",
       "intuition": "DETAILED EXPLANATION (4-5 sentences): Complex breakdown of HOW the ${subject} pattern is mastered here, perhaps in combination with other techniques or to handle extreme constraints.",
-      "code": "// HARD PROBLEM - LINE-BY-LINE EXPLANATION\\n// Every single line must have a comment explaining:\\n// (1) WHAT it does, (2) WHY it's needed, (3) HOW it applies the ${subject} pattern.\\n// Complete compilable Java solution with EVERY LINE commented."
+      "code": "// DIFFICULTY: HARD - PARAGRAPH-STYLE COMMENTS REQUIRED\\n// You MUST use block comments (/* ... */) to explain the logic before each major section.\\n// Inside the code, use line comments (//) to explain the 'WHY' and 'HOW'.\\n// Focus on explaining the OPTIMIZATION or TRICK used here.\\n// Example:\\n// /*\\n//  * OPTIMIZATION:\\n//  * Instead of re-calculating sum O(K), we use a running sum in O(1).\\n//  * We also use a Deque to maintain monotonicity for O(1) retrieval.\\n//  */\\n// Complete compilable Java solution with DEEP explanatory comments."
     }
   ],
   
@@ -950,7 +950,9 @@ CRITICAL: Generate REAL, DETAILED content for "${subject}". Every field must be 
         coreApproach: notes.coreApproach || { intuition: '', steps: [], edgeCases: [], pseudocode: '' },
         exampleProblems: notes.exampleProblems || [],
         commonMistakes: notes.commonMistakes || [],
-        proTips: notes.proTips || []
+        proTips: notes.proTips || [],
+        goldenRules: notes.goldenRules || null,
+        unconventionalUse: notes.unconventionalUse || []
       };
     } catch (e) {
       console.error('Learning notes generation failed:', e.message);

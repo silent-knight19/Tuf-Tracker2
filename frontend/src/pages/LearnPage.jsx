@@ -299,15 +299,87 @@ function LearnPage() {
                   <p className="text-[10px] font-bold text-dark-500 uppercase tracking-widest mt-1">When to initialize this protocol</p>
                </div>
                
+               <div className="space-y-8">
+                  {/* RED GLOWING - Golden Rules (90% Confidence) */}
+                  {learningNotes.goldenRules && (
+                    <div className="relative p-1 rounded-2xl bg-gradient-to-r from-red-500/50 via-red-500/10 to-red-500/50 animate-pulse-slow">
+                      <div className="bg-dark-950/90 backdrop-blur-xl rounded-xl p-8 border border-red-500/30 shadow-[0_0_50px_rgba(239,68,68,0.15)]">
+                         <div className="flex items-center gap-4 mb-6 border-b border-red-500/20 pb-4">
+                            <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center shrink-0 animate-pulse">
+                               <Sparkles className="w-5 h-5 text-red-400 fill-current" />
+                            </div>
+                            <div>
+                               <h3 className="text-lg font-black text-red-400 uppercase tracking-widest leading-none">90% Confidence Signals</h3>
+                               <p className="text-[10px] font-bold text-red-400/60 uppercase tracking-widest mt-1">Presence of these guarantees pattern applicability</p>
+                            </div>
+                         </div>
+                         
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="space-y-3">
+                               <h4 className="text-[10px] font-black text-dark-500 uppercase tracking-widest border-b border-white/[0.05] pb-2">Data Structures</h4>
+                               <div className="flex flex-wrap gap-2">
+                                  {learningNotes.goldenRules.dataStructures?.map((ds, i) => (
+                                    <span key={i} className="px-2 py-1 rounded bg-red-500/10 border border-red-500/20 text-[10px] font-bold text-red-300 uppercase tracking-wider">{ds}</span>
+                                  ))}
+                               </div>
+                            </div>
+                            <div className="space-y-3">
+                               <h4 className="text-[10px] font-black text-dark-500 uppercase tracking-widest border-b border-white/[0.05] pb-2">Keywords</h4>
+                               <div className="flex flex-wrap gap-2">
+                                  {learningNotes.goldenRules.keywords?.map((kw, i) => (
+                                    <span key={i} className="px-2 py-1 rounded bg-red-500/10 border border-red-500/20 text-[10px] font-bold text-red-300 uppercase tracking-wider">{kw}</span>
+                                  ))}
+                               </div>
+                            </div>
+                            <div className="space-y-3">
+                               <h4 className="text-[10px] font-black text-dark-500 uppercase tracking-widest border-b border-white/[0.05] pb-2">Operations</h4>
+                               <div className="flex flex-wrap gap-2">
+                                  {learningNotes.goldenRules.operations?.map((op, i) => (
+                                    <span key={i} className="px-2 py-1 rounded bg-red-500/10 border border-red-500/20 text-[10px] font-bold text-red-300 uppercase tracking-wider">{op}</span>
+                                  ))}
+                               </div>
+                            </div>
+                         </div>
+                      </div>
+                    </div>
+                  )}
+               
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {learningNotes.whenToUse?.map((signal, i) => (
                     <div key={i} className="flex items-start gap-4 p-5 bg-dark-950/40 border border-white/[0.03] rounded-2xl group/sig transition-all hover:bg-white/[0.02]">
                        <div className="w-2 h-2 rounded-full bg-green-500 mt-2 shrink-0 group-hover/sig:scale-150 transition-transform shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
                        <span className="text-dark-100 text-[13.5px] font-medium leading-relaxed">
-                         {signal.replace(/^(90% Confidence Rule \d+|Detailed Signal \d+):\s*/i, '')}
+                         {signal.replace(/^(90% Confidence Rule \d+|Signal \d+):\s*/i, '')}
                        </span>
                     </div>
                   ))}
+               </div>
+
+                  {/* YELLOW GLOWING - Unconventional Use */}
+                  {learningNotes.unconventionalUse && (
+                    <div className="relative p-1 rounded-2xl bg-gradient-to-r from-yellow-500/50 via-yellow-500/10 to-yellow-500/50">
+                       <div className="bg-dark-950/90 backdrop-blur-xl rounded-xl p-8 border border-yellow-500/30 shadow-[0_0_50px_rgba(234,179,8,0.15)]">
+                          <div className="flex items-center gap-4 mb-6 border-b border-yellow-500/20 pb-4">
+                             <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center shrink-0">
+                                <Zap className="w-5 h-5 text-yellow-400 fill-current" />
+                             </div>
+                             <div>
+                                <h3 className="text-lg font-black text-yellow-400 uppercase tracking-widest leading-none">Unconventional Warfare</h3>
+                                <p className="text-[10px] font-bold text-yellow-400/60 uppercase tracking-widest mt-1">Using the pattern without standard prerequisites</p>
+                             </div>
+                          </div>
+                          
+                          <div className="space-y-4">
+                             {learningNotes.unconventionalUse?.map((use, i) => (
+                               <div key={i} className="flex items-start gap-4">
+                                  <span className="text-yellow-500 font-black text-lg">⚠</span>
+                                  <p className="text-sm font-medium text-dark-200 leading-relaxed">{use}</p>
+                               </div>
+                             ))}
+                          </div>
+                       </div>
+                    </div>
+                  )}
                </div>
             </section>
 
