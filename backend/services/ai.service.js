@@ -833,16 +833,27 @@ Return a JSON object with this EXACT structure. EVERY field must be detailed and
   "overview": "Write a DETAILED 5-6 sentence overview that covers: (1) What ${subject} is and its formal definition, (2) The core principle or invariant that makes it work, (3) Why it's crucial for coding interviews and which companies love it, (4) How it compares to brute force approaches, (5) The key insight that distinguishes experts from beginners. This should read like an engaging introduction that hooks the reader and establishes foundational understanding.",
   
   "whenToUse": [
-    "90% Confidence Rule 1: Describe a specific hint, constraint, or observation that almost guarantees (90%+) this pattern applies. Explain WHY this is such a strong signal. Provide 2-3 lines of deep technical reasoning. Do NOT include labels like 'SIGNAL 1:' in the string.",
-    "90% Confidence Rule 2: Another high-probability observation (e.g., 'Moving window with sum property'). Explain the logic behind the 90% confidence here. Provide 2-3 lines of depth. No literal headers.",
-    "90% Confidence Rule 3: A third high-confidence pattern match clue with detailed explanation of why it works. Provide 2-3 lines of depth.",
-    "Detailed Signal 4: Explain a standard scenario where this pattern is the primary candidate. Describe the signal and the underlying transformation it allows. Provide 2-3 lines of depth.",
-    "Detailed Signal 5: Another common interview scenario with 2-3 lines of detailed explanation.",
-    "Detailed Signal 6: A scenario involving specific data structure interactions (e.g., strings or linked lists). Provide 2-3 lines of depth.",
-    "Detailed Signal 7: A scenario focusing on space optimization (e.g., reducing O(n) space to O(1)). Provide 2-3 lines of depth.",
-    "Detailed Signal 8: An advanced scenario involving multi-pass or nested applications of the pattern. Provide 2-3 lines of depth.",
-    "Detailed Signal 9: A niche or 'hidden' application of the pattern in less obvious problems. Provide 2-3 lines of depth.",
-    "Detailed Signal 10: A scenario where this pattern is combined with another technique (e.g., sorting, hashing). Provide 2-3 lines of depth."
+    "Signal 1: A specific scenario where this pattern is the primary candidate. Describe the signal and the underlying transformation it allows. Provide 2-3 lines of depth.",
+    "Signal 2: Another common interview scenario with 2-3 lines of detailed explanation.",
+    "Signal 3: A scenario involving specific data structure interactions (e.g., strings or linked lists). Provide 2-3 lines of depth.",
+    "Signal 4: A scenario focusing on space optimization (e.g., reducing O(n) space to O(1)). Provide 2-3 lines of depth.",
+    "Signal 5: An advanced scenario involving multi-pass or nested applications of the pattern. Provide 2-3 lines of depth.",
+    "Signal 6: A niche or 'hidden' application of the pattern in less obvious problems. Provide 2-3 lines of depth.",
+    "Signal 7: A scenario where this pattern is combined with another technique (e.g., sorting, hashing). Provide 2-3 lines of depth.",
+    "Signal 8: Another scenario focusing on the time complexity advantage. Provide 2-3 lines of depth."
+  ],
+  
+  "goldenRules": {
+    "dataStructures": ["List 3-5 specific data structures (e.g., 'Sorted Array', 'String', 'Linked List') that strongly indicate ${subject} should be used. Each should be a single phrase without explanation."],
+    "keywords": ["List 5-7 problem keywords/phrases (e.g., 'find a pair', 'contiguous subarray', 'in-place') that are 90% confidence signals for ${subject}. Single phrases only."],
+    "operations": ["List 3-4 specific operations/constraints (e.g., 'O(1) space required', 'minimize time from O(n^2)', 'compare elements from both ends') that hint at ${subject}."],
+    "constraints": ["List 2-3 constraint patterns (e.g., 'n <= 10^5', 'input is sorted') that almost guarantee ${subject} is optimal."]
+  },
+  
+  "unconventionalUse": [
+    "Unconventional Scenario 1: 2-3 lines explaining a case where ${subject} is applied WITHOUT the typical prerequisite (e.g., Two Pointers without sorting). Explain WHEN, WHY, and HOW this works.",
+    "Unconventional Scenario 2: 2-3 lines on another advanced/edge case where the pattern is used non-traditionally.",
+    "Unconventional Scenario 3: 2-3 lines on combining ${subject} with an unexpected technique or applying it to an unusual data structure."
   ],
   
   "complexity": {
@@ -878,28 +889,28 @@ Return a JSON object with this EXACT structure. EVERY field must be detailed and
   
   "exampleProblems": [
     {
-      "name": "EASY: Problem Title",
+      "name": "EASY: Real LeetCode-style Problem Title",
       "difficulty": "Easy",
       "companies": ["Google", "Amazon"],
       "description": "Standard easy-level problem description.",
       "intuition": "DETAILED EXPLANATION (3-4 sentences): Specifically explain HOW the ${subject} pattern is applied step-by-step to solve this specific problem. Why is it the optimal choice here?",
-      "code": "// Complete compilable Java solution"
+      "code": "// EASY PROBLEM - LINE-BY-LINE EXPLANATION\\n// Every single line must have a comment explaining:\\n// (1) WHAT it does, (2) WHY it's needed, (3) HOW it applies the ${subject} pattern.\\n// Example for Two Pointers:\\n// int left = 0;  // Initialize left pointer at start - we begin with smallest element in sorted array\\n// int right = n - 1;  // Initialize right pointer at end - we begin with largest element\\n// Complete compilable Java solution with EVERY LINE commented."
     },
     {
-      "name": "MEDIUM: Problem Title",
+      "name": "MEDIUM: Real LeetCode-style Problem Title",
       "difficulty": "Medium",
       "companies": ["Meta", "Microsoft"],
       "description": "Standard medium-level problem description.",
       "intuition": "DETAILED EXPLANATION (3-4 sentences): Deep dive into HOW the ${subject} pattern handles the increased complexity of this medium problem. Explain the specific transformation or logic move.",
-      "code": "// Complete compilable Java solution"
+      "code": "// MEDIUM PROBLEM - LINE-BY-LINE EXPLANATION\\n// Every single line must have a comment explaining:\\n// (1) WHAT it does, (2) WHY it's needed, (3) HOW it applies the ${subject} pattern.\\n// Complete compilable Java solution with EVERY LINE commented."
     },
     {
-      "name": "HARD: Problem Title",
+      "name": "HARD: Real LeetCode-style Problem Title",
       "difficulty": "Hard",
       "companies": ["Apple", "Netflix"],
       "description": "Advanced hard-level problem description.",
       "intuition": "DETAILED EXPLANATION (4-5 sentences): Complex breakdown of HOW the ${subject} pattern is mastered here, perhaps in combination with other techniques or to handle extreme constraints.",
-      "code": "// Complete compilable Java solution"
+      "code": "// HARD PROBLEM - LINE-BY-LINE EXPLANATION\\n// Every single line must have a comment explaining:\\n// (1) WHAT it does, (2) WHY it's needed, (3) HOW it applies the ${subject} pattern.\\n// Complete compilable Java solution with EVERY LINE commented."
     }
   ],
   
