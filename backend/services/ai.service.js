@@ -1,50 +1,44 @@
-const { cerebrasClient, models, rateLimiter } = require('../config/ai.config');
+const { cerebrasClient, models, qwenConfig, rateLimiter } = require('../config/ai.config');
 
 class AIService {
   
-  // Helper to make Cerebras API calls with Retry Logic and Timeout
-  async callCerebras(prompt, modelType = 'fast', jsonMode = true, retries = 3) {
+  // Cerebras API call with Qwen 3 235B optimized settings
+  async callCerebras(prompt, jsonMode = true, retries = 3) {
     try {
       await rateLimiter.checkAndWait();
       
-      const model = modelType === 'complex' ? models.cerebras.complex : models.cerebras.fast;
-      console.log(`🤖 Calling Cerebras (${modelType}): ${model}`);
+      const model = models.cerebras.default;
+      console.log(`🤖 Qwen 235B: ${prompt.slice(0, 50)}...`);
       
-      // Create the API call promise
       const apiCall = cerebrasClient.chat.completions.create({
         messages: [{ role: 'user', content: prompt }],
         model: model,
         response_format: jsonMode ? { type: "json_object" } : undefined,
-        temperature: 0.7,
-        max_tokens: 4096, // Reduced for faster response
-        top_p: 1
+        ...qwenConfig // Spread optimized settings: temp 0.7, top_p 0.8, top_k 20, max_tokens 4096
       });
       
-      // Create timeout promise (30 seconds)
+      // 30 second timeout
       const timeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Cerebras API timeout after 30s')), 30000)
+        setTimeout(() => reject(new Error('API timeout after 30s')), 30000)
       );
       
-      // Race between API call and timeout
       const response = await Promise.race([apiCall, timeout]);
-
-      console.log(`✅ Cerebras response received`);
+      console.log(`✅ Response received`);
       return response.choices[0].message.content;
     } catch (error) {
-      if (retries > 0 && (error.status === 429 || error.message?.includes('429') || error.code === 429)) {
-        const waitTime = 2000 * (4 - retries); // 2s, 4s, 6s...
-        console.warn(`⚠️ Cerebras 429 Rate Limit. Retrying in ${waitTime}ms... (${retries} left)`);
+      if (retries > 0 && (error.status === 429 || error.message?.includes('429'))) {
+        const waitTime = 2000 * (4 - retries);
+        console.warn(`⚠️ Rate limit. Retrying in ${waitTime}ms...`);
         await new Promise(r => setTimeout(r, waitTime));
-        return this.callCerebras(prompt, modelType, jsonMode, retries - 1);
+        return this.callCerebras(prompt, jsonMode, retries - 1);
       }
       
-      // If timeout, retry once with same model
       if (retries > 0 && error.message?.includes('timeout')) {
-        console.warn(`⚠️ Timeout. Retrying... (${retries} left)`);
-        return this.callCerebras(prompt, modelType, jsonMode, retries - 1);
+        console.warn(`⚠️ Timeout. Retrying...`);
+        return this.callCerebras(prompt, jsonMode, retries - 1);
       }
       
-      console.error(`❌ Cerebras API Error (${modelType}):`, error.message);
+      console.error(`❌ Cerebras Error:`, error.message);
       throw error;
     }
   }
@@ -78,7 +72,7 @@ RULES:
 2. Use standard CS topic names for topics
 3. Include known companies that ask this problem`;
 
-      const text = await this.callCerebras(prompt, 'fast', true);
+      const text = await this.callCerebras(prompt, true);
       const parsedData = this.parseJSONSafe(text);
 
       return {
@@ -127,7 +121,7 @@ RULES:
 4. Skip if not mentioned in notes`;
 
       // Not JSON mode
-      const text = await this.callCerebras(prompt, 'fast', false);
+      const text = await this.callCerebras(prompt, false);
       return text.trim();
     } catch (error) {
       console.error('Error summarizing notes:', error);
@@ -175,7 +169,7 @@ RULES:
 2. Provide 3 actionable recommendations
 3. Return ONLY valid JSON`;
 
-      const text = await this.callCerebras(prompt, 'complex', true); // Reasoning needed
+      const text = await this.callCerebras(prompt, true); // Reasoning needed
       return this.parseJSONSafe(text);
     } catch (error) {
       console.error('Error detecting weaknesses:', error);
@@ -209,7 +203,7 @@ RULES:
 3. Keep reasons under 10 words
 4. Return ONLY valid JSON array`;
 
-      const text = await this.callCerebras(prompt, 'fast', true);
+      const text = await this.callCerebras(prompt, true);
       return this.parseJSONSafe(text);
     } catch (error) {
       console.error('Error suggesting related problems:', error);
@@ -260,7 +254,7 @@ CONTENT RULES:
 5. Escape special characters properly for valid JSON.
 `;
 
-      const text = await this.callCerebras(prompt, 'complex', true); // Needs deep reasoning
+      const text = await this.callCerebras(prompt, true); // Needs deep reasoning
       return this.parseJSONSafe(text);
     } catch (error) {
       console.error('Error generating study notes:', error);
@@ -297,7 +291,7 @@ RULES:
 5. Plain text only - no markdown in strings
 6. Return ONLY valid JSON`;
 
-      const text = await this.callCerebras(prompt, 'fast', true);
+      const text = await this.callCerebras(prompt, true);
       return this.parseJSONSafe(text);
     } catch (error) {
       console.error('Error generating problem description:', error);
@@ -339,7 +333,7 @@ RULES:
 6. Return ONLY JSON.`;
 
       console.log('Generating similar problem definition with Cerebras:', originalTitle);
-      const text = await this.callCerebras(prompt, 'fast', true);
+      const text = await this.callCerebras(prompt, true);
       const parsedProblem = this.parseJSONSafe(text);
 
       // Initialize empty arrays for the frontend to fetch later
@@ -403,7 +397,7 @@ RULES:
 8. Return ONLY valid JSON, no markdown.`;
 
       console.log('Generating interview-style problem definition from criteria with Cerebras...');
-      const text = await this.callCerebras(prompt, 'fast', true);
+      const text = await this.callCerebras(prompt, true);
       const parsedProblem = this.parseJSONSafe(text);
       
       // Add criteria metadata
@@ -503,7 +497,7 @@ RULE:
 - Return VALID JSON.
 OUTPUT: JSON { "hints": ["Hint 1", ..., "Hint 10"] }`;
 
-        const hintText = await this.callCerebras(hintPrompt, 'complex', false);
+        const hintText = await this.callCerebras(hintPrompt, false);
         return this.parseJSONSafe(hintText);
       })();
 
@@ -543,7 +537,7 @@ RULES:
 3. approachSteps must be 5-8 NUMBERED steps with clear reasoning for each.
 4. The solution MUST use ${pattern ? `"${pattern}"` : 'the best approach'} as the primary technique.
 5. Ensure the code handles the Edge Cases mentioned above (null checks, empty inputs, bounds, etc).`;
-        const solText = await this.callCerebras(solPrompt, 'complex', false);
+        const solText = await this.callCerebras(solPrompt, false);
         return this.parseJSONSafe(solText);
       })();
 
@@ -657,7 +651,7 @@ RULES:
 7. Return ONLY valid JSON, no markdown.`;
 
       console.log('Generating company-specific interview problem with Cerebras:', company);
-      const text = await this.callCerebras(prompt, 'fast', true);
+      const text = await this.callCerebras(prompt, true);
       const parsedProblem = this.parseJSONSafe(text);
 
       // Initialize empty arrays
@@ -704,7 +698,7 @@ Return ONLY JSON array.`;
 
       console.log('⚡ Generating edge case inputs with Cerebras...');
       
-      const text = await this.callCerebras(prompt, 'fast', true);
+      const text = await this.callCerebras(prompt, true);
       const parsed = this.parseJSONSafe(text);
       
       if (Array.isArray(parsed) && parsed.length > 0) {
@@ -902,7 +896,7 @@ OUTPUT: Return ONLY a valid JSON object with this structure (replace placeholder
 CRITICAL: Replace ALL <placeholders> with REAL content about ${subject}. Do NOT return the angle brackets or placeholder text.`;
 
       console.log('Generating detailed learning notes with Cerebras (Llama-3.3-70b)...');
-      const text = await this.callCerebras(prompt, 'complex', true); // Heavy reasoning
+      const text = await this.callCerebras(prompt, true); // Heavy reasoning
       return this.parseJSONSafe(text);
     } catch (error) {
       console.error('Error generating learning notes:', error);
@@ -930,7 +924,7 @@ Include: basic, boundary (empty/min/max), edge cases, tricky inputs.
 Return ONLY JSON array.`;
 
       console.log('⚡ Generating test cases with Qwen 235B...');
-      const text = await this.callCerebras(prompt, 'fast', true);
+      const text = await this.callCerebras(prompt, true);
       const parsed = this.parseJSONSafe(text);
       
       if (Array.isArray(parsed)) {
@@ -995,7 +989,7 @@ CRITICAL RULES:
 4. Return ONLY valid JSON`;
 
       console.log('Generating solution with Cerebras (fast)...');
-      const text = await this.callCerebras(prompt, 'fast', true);
+      const text = await this.callCerebras(prompt, true);
       return this.parseJSONSafe(text);
     } catch (error) {
       console.error('Error generating solution:', error.message);
