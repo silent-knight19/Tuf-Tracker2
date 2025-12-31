@@ -18,7 +18,7 @@ const qwenConfig = {
   temperature: 0.7,
   top_p: 0.8,
   top_k: 20,
-  max_tokens: 4096, // Reduced for faster responses
+  max_tokens: 8192, // Full output capacity
 };
 
 // Rate limiting for AI calls
