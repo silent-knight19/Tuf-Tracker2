@@ -9,8 +9,8 @@ const cerebrasClient = new Cerebras({
 
 const models = {
   cerebras: {
-    fast: 'gpt-oss-120b',     // GPT OSS 120B for test cases
-    complex: 'gpt-oss-120b',  // GPT OSS 120B for solutions
+    fast: 'qwen-3-235b-a22b-instruct-2507',    // Qwen 3 235B for everything
+    complex: 'qwen-3-235b-a22b-instruct-2507', // Qwen 3 235B for everything
   },
   gemini: {
     general: 'gemini-3-flash-preview',

@@ -956,55 +956,36 @@ CRITICAL: Replace ALL <placeholders> with REAL content about ${subject}. Do NOT 
   }
 
   // ============================================================
-  // Generate 20 Test Cases using Cerebras (FAST model for speed)
+  // Generate Test Cases using Cerebras
   // ============================================================
   async generateTestCases(title, description, constraints = [], functionSignature = null) {
     try {
-      // Parse function signature to understand parameters
-      let paramInfo = 'unknown parameters';
+      // Extract param names from signature
+      let params = '';
       if (functionSignature) {
         const match = functionSignature.match(/\(([^)]*)\)/);
-        if (match) paramInfo = match[1] || 'no parameters';
+        if (match) params = match[1];
       }
 
-      const prompt = `You MUST generate EXACTLY 20 test cases for this coding problem. Not less, not more - EXACTLY 20.
+      // SUPER SHORT PROMPT for speed
+      const prompt = `Generate 20 test cases as JSON array for: ${title}
+Signature: ${functionSignature || 'solve(int[] arr)'}
+Format: [{"name":"test1","input":{"param1":value},"expected":result,"category":"Basic|Edge"}]
+Include: basic, boundary (empty/min/max), edge cases, tricky inputs.
+Return ONLY JSON array.`;
 
-PROBLEM: ${title}
-SIGNATURE: ${functionSignature || 'public int solve(int[] nums)'}
-PARAMETERS: ${paramInfo}
-CONSTRAINTS: ${constraints.join('; ') || 'standard constraints'}
-
-OUTPUT: JSON array with EXACTLY 20 objects. Each object has:
-- "name": short descriptive name
-- "input": object with parameter names as keys (matching the signature)
-- "expected": the correct output value
-- "category": one of "Basic", "Boundary", "Edge", "Tricky"
-
-Example for twoSum(int[] nums, int target):
-[{"name":"Basic 1","input":{"nums":[2,7,11,15],"target":9},"expected":[0,1],"category":"Basic"}]
-
-MANDATORY BREAKDOWN (EXACTLY 20 total):
-- 5 Basic cases: Standard valid inputs
-- 5 Boundary cases: Empty arrays, single elements, min/max values per constraints
-- 5 Edge cases: Duplicates, negatives, all same values, sorted/reverse sorted
-- 5 Tricky cases: Corner cases, potential overflow, special patterns
-
-Return ONLY the JSON array with EXACTLY 20 test cases, no explanation.`;
-
-      console.log('Generating 20 test cases with Cerebras (fast)...');
-      // Use FAST model to avoid timeout
+      console.log('⚡ Generating test cases with Qwen 235B...');
       const text = await this.callCerebras(prompt, 'fast', true);
       const parsed = this.parseJSONSafe(text);
       
       if (Array.isArray(parsed)) {
-        console.log(`✅ Generated ${parsed.length} test cases.`);
+        console.log(`✅ Generated ${parsed.length} test cases`);
         return parsed;
       }
       
-      console.warn('Failed to parse test cases, returning empty array');
       return [];
     } catch (error) {
-      console.error('Error generating test cases:', error.message);
+      console.error('❌ Test case generation failed:', error.message);
       return [];
     }
   }
