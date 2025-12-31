@@ -303,7 +303,9 @@ function LearnPage() {
                   {learningNotes.whenToUse?.map((signal, i) => (
                     <div key={i} className="flex items-start gap-4 p-5 bg-dark-950/40 border border-white/[0.03] rounded-2xl group/sig transition-all hover:bg-white/[0.02]">
                        <div className="w-2 h-2 rounded-full bg-green-500 mt-2 shrink-0 group-hover/sig:scale-150 transition-transform shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
-                       <span className="text-dark-200 font-bold leading-relaxed">{signal}</span>
+                       <span className="text-dark-100 text-[13.5px] font-medium leading-relaxed">
+                         {signal.replace(/^(90% Confidence Rule \d+|Detailed Signal \d+):\s*/i, '')}
+                       </span>
                     </div>
                   ))}
                </div>

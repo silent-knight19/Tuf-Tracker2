@@ -283,41 +283,50 @@ function AIInterviewPage() {
     const paramNames = parseParamNames(problem.functionSignature);
 
     const tests = edgeCases.map(edgeCase => {
-      let args = [];
-      const input = edgeCase.input;
-
-      // Logic to map input object to ordered args array
-      if (paramNames.length > 0 && typeof input === 'object' && input !== null && !Array.isArray(input)) {
-        // Map keys to param names in order
-        args = paramNames.map(name => {
-          // Try exact match
-          if (input[name] !== undefined) return input[name];
-          // Try case-insensitive match
-          const key = Object.keys(input).find(k => k.toLowerCase() === name.toLowerCase());
-          return key ? input[key] : null; 
-        });
-        
-        // If mapping seemingly failed (all nulls) or input has keys not matching params, 
-        // fallback to just values if the counts match
-        const validArgs = args.filter(a => a !== null);
-        if (validArgs.length === 0 && Object.keys(input).length > 0) {
-           args = Object.values(input);
-        }
-      } else {
-        // Fallback for array or primitive input
-        // If we know there is exactly 1 parameter and input is an array, wrap it!
-        if (paramNames.length === 1 && Array.isArray(input)) {
-           args = [input];
-        } else {
-           args = parseInputToArgs(input);
-        }
-      }
-      
+    // 1. If 'args' already exists from the backend, use it directly!
+    // This avoids the 'triple nesting' bug where we re-wrap already wrapped args.
+    if (edgeCase.args && Array.isArray(edgeCase.args)) {
       return {
-        args: args,
-        expected: edgeCase.expectedOutput
+        args: edgeCase.args,
+        expected: edgeCase.expected || edgeCase.expectedOutput
       };
-    });
+    }
+
+    let args = [];
+    const input = edgeCase.input;
+
+    // Logic to map input object to ordered args array
+    if (paramNames.length > 0 && typeof input === 'object' && input !== null && !Array.isArray(input)) {
+      // Map keys to param names in order
+      args = paramNames.map(name => {
+        // Try exact match
+        if (input[name] !== undefined) return input[name];
+        // Try case-insensitive match
+        const key = Object.keys(input).find(k => k.toLowerCase() === name.toLowerCase());
+        return key ? input[key] : null; 
+      });
+      
+      // If mapping seemingly failed (all nulls) or input has keys not matching params, 
+      // fallback to just values if the counts match
+      const validArgs = args.filter(a => a !== null);
+      if (validArgs.length === 0 && Object.keys(input).length > 0) {
+         args = Object.values(input);
+      }
+    } else {
+      // Fallback for array or primitive input
+      // If we know there is exactly 1 parameter and input is an array, wrap it!
+      if (paramNames.length === 1 && Array.isArray(input)) {
+         args = [input];
+      } else {
+         args = parseInputToArgs(input);
+      }
+    }
+    
+    return {
+      args: args,
+      expected: edgeCase.expected || edgeCase.expectedOutput
+    };
+  });
 
     return JSON.stringify({
       method: methodName,
@@ -634,30 +643,34 @@ function AIInterviewPage() {
                               </div>
                             </div>
 
-                            {/* Intuition */}
-                            {(helpData.solutions[activeSolutionTab].intuition || helpData.solutions[activeSolutionTab].explanation) && (
-                              <div>
-                                <h4 className="text-xs font-bold text-dark-400 uppercase tracking-wider mb-1">Core Intuition</h4>
-                                <p className="text-dark-200 leading-relaxed text-sm bg-dark-950/50 p-3 rounded-lg border border-dark-800">
-                                  {helpData.solutions[activeSolutionTab].intuition || helpData.solutions[activeSolutionTab].explanation}
+                             {/* Intuition & Logic */}
+                             {(helpData.solutions[activeSolutionTab].intuition || helpData.solutions[activeSolutionTab].explanation || helpData.solutions[activeSolutionTab].approach) && (
+                               <div>
+                                <h4 className="text-[10px] font-black text-dark-500 uppercase tracking-widest mb-2">Intuition & Pattern</h4>
+                                <p className="text-dark-200 leading-relaxed text-xs bg-brand-orange/5 p-3 rounded-r border-l-2 border-brand-orange">
+                                  {helpData.solutions[activeSolutionTab].intuition || helpData.solutions[activeSolutionTab].explanation || helpData.solutions[activeSolutionTab].approach}
                                 </p>
-                              </div>
-                            )}
-
-                            {/* Approach Steps */}
-                            {helpData.solutions[activeSolutionTab].approachSteps?.length > 0 && (
-                              <div>
-                                <h4 className="text-xs font-bold text-dark-400 uppercase tracking-wider mb-2">Step-by-Step Approach</h4>
-                                <ol className="space-y-2 text-sm text-dark-200">
+                               </div>
+                             )}
+ 
+                             {/* Approach Steps */}
+                             {helpData.solutions[activeSolutionTab].approachSteps?.length > 0 && (
+                               <div>
+                                <h4 className="text-[10px] font-black text-dark-500 uppercase tracking-widest mb-3">Wait... How it works? (Step-by-Step)</h4>
+                                <div className="space-y-3">
                                   {helpData.solutions[activeSolutionTab].approachSteps.map((step, i) => (
-                                    <li key={i} className="flex gap-3 bg-dark-950/30 p-2 rounded border-l-2 border-brand-orange">
-                                      <span className="font-bold text-brand-orange min-w-[24px]">{i + 1}.</span>
-                                      <span>{step.replace(/^\d+\.\s*/, '')}</span>
-                                    </li>
+                                    <div key={i} className="flex gap-4 text-[13.5px] font-medium group">
+                                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-dark-800 border border-dark-700 flex items-center justify-center text-[10px] font-bold text-brand-orange group-hover:border-brand-orange/50 transition-colors shadow-sm">
+                                        {i + 1}
+                                      </span>
+                                      <p className="text-dark-100 pt-0.5 leading-relaxed">
+                                        {step.replace(/^\w+\s+\d+:\s*/, '')}
+                                      </p>
+                                    </div>
                                   ))}
-                                </ol>
-                              </div>
-                            )}
+                                </div>
+                               </div>
+                             )}
 
                             {/* Code with Syntax Highlighting */}
                             <div>

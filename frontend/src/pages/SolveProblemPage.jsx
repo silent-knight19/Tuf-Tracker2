@@ -654,11 +654,31 @@ function SolveProblemPage() {
                             </div>
                           </div>
                           
-                          <div className="space-y-2">
-                             <h4 className="text-[10px] font-black text-dark-500 uppercase tracking-widest">Logic</h4>
-                            <p className="text-dark-200 text-xs leading-relaxed border-l-2 border-dark-700 pl-3">
-                              {helpData.solutions[activeSolutionTab].explanation}
-                            </p>
+                          <div className="space-y-4">
+                             <div>
+                                <h4 className="text-[10px] font-black text-dark-500 uppercase tracking-widest mb-2">Intuition & Pattern</h4>
+                                <p className="text-dark-200 text-xs leading-relaxed border-l-2 border-brand-orange pl-3 py-1 bg-brand-orange/5 rounded-r">
+                                  {helpData.solutions[activeSolutionTab].intuition || helpData.solutions[activeSolutionTab].explanation || helpData.solutions[activeSolutionTab].approach}
+                                </p>
+                             </div>
+
+                             {helpData.solutions[activeSolutionTab].approachSteps?.length > 0 && (
+                               <div>
+                                 <h4 className="text-[10px] font-black text-dark-500 uppercase tracking-widest mb-3">Wait... How it works? (Step-by-Step)</h4>
+                                 <div className="space-y-3">
+                                   {helpData.solutions[activeSolutionTab].approachSteps.map((step, idx) => (
+                                     <div key={idx} className="flex gap-4 text-[13.5px] font-medium group">
+                                       <span className="flex-shrink-0 w-6 h-6 rounded-full bg-dark-800 border border-dark-700 flex items-center justify-center text-[10px] font-bold text-brand-orange group-hover:border-brand-orange/50 transition-colors shadow-sm">
+                                         {idx + 1}
+                                       </span>
+                                       <p className="text-dark-100 pt-0.5 leading-relaxed">
+                                         {step.replace(/^\w+\s+\d+:\s*/, '')}
+                                       </p>
+                                     </div>
+                                   ))}
+                                 </div>
+                               </div>
+                             )}
                           </div>
 
                           <div className="space-y-2">

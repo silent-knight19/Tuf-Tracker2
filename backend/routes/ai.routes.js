@@ -225,17 +225,28 @@ router.post('/edge-cases', verifyToken, async (req, res) => {
 // Generate comprehensive learning notes for a pattern/topic
 router.post('/learning-notes', verifyToken, async (req, res) => {
   try {
-    const { pattern, topic } = req.body;
+    const { pattern, topic, forceRefresh } = req.body;
 
     if (!pattern && !topic) {
       return res.status(400).json({ error: 'At least one of pattern or topic is required' });
     }
 
-    // Create cache key based on pattern and topic
+    // Create cache key based on pattern and topic (v2 prefix for new detailed format)
     const cacheKeyParts = [];
     if (pattern) cacheKeyParts.push(`p_${cacheService.normalizeKey(pattern)}`);
     if (topic) cacheKeyParts.push(`t_${cacheService.normalizeKey(topic)}`);
-    const cacheKey = `learn_${cacheKeyParts.join('_')}`;
+    const cacheKey = `learn_v2_${cacheKeyParts.join('_')}`;
+
+    // If forceRefresh, delete existing cache first
+    if (forceRefresh) {
+      try {
+        const { db } = require('../config/firebase.config');
+        await db.collection('ai_cache_learning').doc(cacheKey).delete();
+        console.log(`Learning cache cleared for: ${cacheKey}`);
+      } catch (cacheErr) {
+        console.warn('Failed to clear learning cache:', cacheErr);
+      }
+    }
 
     const learningNotes = await cacheService.getCachedOrGenerate(
       'ai_cache_learning',
@@ -259,13 +270,24 @@ router.post('/learning-notes', verifyToken, async (req, res) => {
 // ============================================================
 router.post('/test-cases', verifyToken, async (req, res) => {
   try {
-    const { title, description, constraints, functionSignature } = req.body;
+    const { title, description, constraints, functionSignature, forceRefresh } = req.body;
     
     if (!title) {
       return res.status(400).json({ error: 'Title is required' });
     }
     
     const cacheKey = `testcases_${cacheService.normalizeKey(title)}`;
+    
+    // Clear cache if forceRefresh
+    if (forceRefresh) {
+      try {
+        const { db } = require('../config/firebase.config');
+        await db.collection('ai_cache_testcases').doc(cacheKey).delete();
+        console.log(`Test cases cache cleared for: ${cacheKey}`);
+      } catch (e) {
+        console.warn('Failed to clear test case cache:', e.message);
+      }
+    }
 
     const testCases = await cacheService.getCachedOrGenerate(
       'ai_cache_testcases',

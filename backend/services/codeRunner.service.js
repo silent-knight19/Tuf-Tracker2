@@ -1,13 +1,3 @@
-/**
- * CodeRunner Service - Robust Java Code Execution
- * 
- * This service handles Java code compilation and execution with:
- * - Comprehensive error handling at every step
- * - Support for LeetCode-style Solution classes
- * - Proper temp directory management
- * - Strict resource limits (Memory & Time)
- */
-
 const { exec } = require('child_process');
 const { promisify } = require('util');
 const fs = require('fs').promises;
@@ -19,52 +9,35 @@ const execPromise = promisify(exec);
 class CodeRunnerService {
   constructor() {
     this.timeout = {
-      // 25s for compile (give it time even with low memory GC pauses)
       compile: 25000,
       run: 10000
     };
-    this.maxBuffer = 1024 * 1024; // 1MB buffer
+    this.maxBuffer = 1024 * 1024;
   }
 
-  /**
-   * Main entry point - Execute Java code
-   */
   async runJava(source, stdin = '') {
     const startTime = Date.now();
     let tempDir = null;
     
-    console.log('[CodeRunner] Starting Java execution...');
-    console.log('[CodeRunner] Source length:', source?.length || 0);
-
     try {
-      // Step 1: Determine if this is a Solution class that needs wrapping
-      const needsWrapper = this.needsSolutionWrapper(source);
-
-      // Step 2: Generate final source code
-      let finalSource;
-      if (needsWrapper) {
-        finalSource = this.createWrappedSource(source, stdin);
-        stdin = ''; // Clear stdin since test cases are embedded
-      } else {
-        finalSource = source;
-      }
-      
-      // Step 3: Create temp directory
       tempDir = await this.createTempDir();
-      console.log('[CodeRunner] Temp dir created:', tempDir);
+      const isDirectMain = source.includes('public static void main(String[] args)');
 
-      // Step 4: Write source file
-      const sourceFile = path.join(tempDir, 'Main.java');
-      await fs.writeFile(sourceFile, finalSource, 'utf8');
+      if (isDirectMain) {
+        // Direct Path: Use user's code as Main.java
+        await fs.writeFile(path.join(tempDir, 'Main.java'), source, 'utf8');
+      } else {
+        // Wrapped Path: Use Reflection Runner (Permanent Fix)
+        const solutionInfo = this.prepareSolutionFile(source);
+        await fs.writeFile(path.join(tempDir, 'Solution.java'), solutionInfo.code, 'utf8');
+        await fs.writeFile(path.join(tempDir, 'Main.java'), this.getRunnerCode(), 'utf8');
+        await fs.writeFile(path.join(tempDir, 'input.json'), stdin, 'utf8');
+        stdin = ''; // JSON data is in input.json now
+      }
 
-      // Step 5: Compile
-      const compileResult = await this.compile(tempDir);
+      // Compile (all .java files in tempDir)
+      const compileResult = await this.compile(tempDir, isDirectMain);
       if (!compileResult.success) {
-        // Immediate cleanup on error
-        await this.cleanup(tempDir);
-        tempDir = null;
-        
-        console.log('[CodeRunner] Compilation failed');
         return {
           stdout: '',
           stderr: compileResult.error,
@@ -73,14 +46,10 @@ class CodeRunnerService {
           stage: 'compile'
         };
       }
-      console.log('[CodeRunner] Compilation successful');
 
-      // Step 6: Execute
-      const runResult = await this.execute(tempDir, stdin);
+      // Execute
+      const runResult = await this.execute(tempDir, stdin, isDirectMain);
       
-      const elapsed = Date.now() - startTime;
-      console.log('[CodeRunner] Execution complete in', elapsed, 'ms');
-
       return {
         stdout: runResult.stdout,
         stderr: runResult.stderr,
@@ -90,7 +59,6 @@ class CodeRunnerService {
       };
 
     } catch (error) {
-      console.error('[CodeRunner] Unexpected error:', error.message);
       return {
         stdout: '',
         stderr: `Server Error: ${error.message}`,
@@ -99,15 +67,33 @@ class CodeRunnerService {
         stage: 'error'
       };
     } finally {
-      // Cleanup temp directory
       if (tempDir) {
         await this.cleanup(tempDir);
       }
     }
   }
 
-  needsSolutionWrapper(source) {
-    return source.includes('class Solution') && !source.includes('public class Main');
+  prepareSolutionFile(source) {
+    let code = source.trim();
+    
+    // Find class name
+    const classMatch = code.match(/(?:public\s+)?class\s+(\w+)/);
+    if (classMatch) {
+      const originalName = classMatch[1];
+      if (originalName !== 'Solution') {
+        // Rename to Solution so file name 'Solution.java' matches
+        code = code.replace(new RegExp(`(?:public\\s+)?class\\s+${originalName}`, 'g'), 'class Solution');
+        // Rename constructors
+        code = code.replace(new RegExp(`public\\s+${originalName}\\s*\\(`, 'g'), 'public Solution(');
+      }
+    } else {
+      // If it's just a method, wrap it
+      if (!code.includes('class Solution')) {
+        code = `class Solution {\n${code}\n}`;
+      }
+    }
+    
+    return { code };
   }
 
   async createTempDir() {
@@ -115,62 +101,36 @@ class CodeRunnerService {
     return await fs.mkdtemp(prefix);
   }
 
-  async compile(tempDir) {
+  async compile(tempDir, isDirectMain) {
     try {
-      console.log('[CodeRunner] Compiling in:', tempDir);
-      
-      // CRITICAL MEMORY LIMITS for Render Free Tier (512MB RAM total)
-      // -J-Xmx128m: Limit javac heap to 128MB.
-      // -J-Xms16m: Start small.
-      await execPromise('javac -J-Xmx128m -J-Xms16m -encoding UTF-8 Main.java', {
+      // Compile all java files in the directory
+      const cmd = 'javac -J-Xmx128m -J-Xms16m -encoding UTF-8 *.java';
+      await execPromise(cmd, {
         cwd: tempDir,
         timeout: this.timeout.compile,
         maxBuffer: this.maxBuffer
       });
-
       return { success: true };
     } catch (error) {
-      let errorMessage = '';
-
-      // Check for timeout specifically
-      if (error.killed && error.signal === 'SIGTERM') {
-        return {
-          success: false,
-          error: "Compilation Timed Out. The server is under heavy load."
-        };
-      }
-
-      if (error.stderr) errorMessage = error.stderr;
-      else if (error.stdout) errorMessage = error.stdout;
-      else errorMessage = error.message || 'Unknown compilation error';
-
-      if (error.code) errorMessage = `(Exit Code: ${error.code}) ` + errorMessage;
-
-      // Clean up the error message
-      const cleaned = this.cleanErrorMessage(errorMessage, tempDir);
-      
-      return { 
-        success: false, 
-        error: cleaned 
-      };
+      let msg = error.stderr || error.stdout || error.message || 'Compilation failed';
+      // Clean up error message to hide internal paths
+      const escapedPath = tempDir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      msg = msg.replace(new RegExp(escapedPath + '/?', 'g'), '');
+      return { success: false, error: msg.trim() };
     }
   }
 
-  async execute(tempDir, stdin) {
+  async execute(tempDir, stdin, isDirectMain) {
     try {
-      console.log('[CodeRunner] Executing in:', tempDir);
+      // If direct main, use stdin. If wrapped, use the input file.
+      const cmd = isDirectMain ? 'java -Xmx64m -Xms16m Main' : 'java -Xmx64m -Xms16m Main input.json';
       
-      // STRICT MEMORY LIMIT:
-      // -Xmx64m: Max heap 64MB.
-      const result = await execPromise('java -Xmx64m -Xms16m Main', {
+      const result = await execPromise(cmd, {
         cwd: tempDir,
         timeout: this.timeout.run,
         maxBuffer: this.maxBuffer,
-        env: {
-          PATH: process.env.PATH,
-          JAVA_HOME: process.env.JAVA_HOME,
-          LANG: process.env.LANG
-        }
+        env: { ...process.env },
+        input: isDirectMain ? stdin : undefined
       });
 
       return {
@@ -180,271 +140,233 @@ class CodeRunnerService {
         timedOut: false
       };
     } catch (error) {
-      if (error.killed || error.signal === 'SIGTERM') {
-        return {
-          stdout: error.stdout || '',
-          stderr: 'Execution Timed Out (10s limit)',
-          exitCode: 1,
-          timedOut: true
-        };
-      }
-
-      return {
+       return {
         stdout: error.stdout || '',
-        stderr: error.stderr || error.message || 'Runtime Error',
+        stderr: error.killed ? 'Execution Timed Out' : (error.stderr || error.message),
         exitCode: error.code || 1,
-        timedOut: false
+        timedOut: !!error.killed
       };
     }
-  }
-
-  cleanErrorMessage(message, tempDir) {
-    if (!message) return 'Unknown error';
-    const escapedPath = tempDir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    let clean = message.replace(new RegExp(escapedPath + '/?', 'g'), '');
-    clean = clean.replace(/Main\.java:/g, 'Line ');
-    clean = clean.replace(/\/Main\.java:/g, 'Line ');
-    return clean.trim();
   }
 
   async cleanup(tempDir) {
     try {
       await fs.rm(tempDir, { recursive: true, force: true });
-    } catch (error) {
-      console.error('[CodeRunner] Cleanup failed:', error.message);
-    }
+    } catch (error) {}
   }
 
-  escapeForJavaString(str) {
-    if (!str) return '';
-    return str
-      .replace(/\\/g, '\\\\')
-      .replace(/"/g, '\\"')
-      .replace(/\n/g, '\\n')
-      .replace(/\r/g, '\\r')
-      .replace(/\t/g, '\\t');
-  }
-
-  createWrappedSource(solutionCode, testInput) {
-    const escapedJson = this.escapeForJavaString(testInput || '');
-    const cleanedSolution = solutionCode.replace(/public\s+class\s+Solution/g, 'class Solution');
-
-    return `import java.util.*;
-import java.util.concurrent.*;
-import java.util.regex.*;
-import java.util.stream.*;
-import java.util.function.*;
-import java.math.*;
-import java.text.*;
-import java.time.*;
+  getRunnerCode() {
+    // Pure Java runner code - No interpolation except for things that are 100% static
+    return `
+import java.util.*;
+import java.io.*;
 import java.lang.reflect.*;
-
-${cleanedSolution}
+import java.nio.file.*;
 
 public class Main {
     public static void main(String[] args) {
         try {
-            String jsonInput = "${escapedJson}";
+            if (args.length == 0) return;
             
-            if (jsonInput.length() < 10 || !jsonInput.contains("method")) {
-                System.out.println("No test cases provided.");
+            // 1. Read JSON from file (Permanent fix for escaping)
+            String jsonInput = new String(Files.readAllBytes(Paths.get(args[0])));
+            
+            String methodName = extractJSONValue(jsonInput, "method");
+            String testsJSON = extractJSONArray(jsonInput, "tests");
+            
+            if (methodName == null || testsJSON == null) {
+                System.out.println("Error: Could not parse method or tests from input.");
                 return;
             }
+
+            // 2. Instantiate User's Class
+            Solution sol = new Solution();
             
-            runTests(jsonInput);
+            // 3. Find target method
+            Method target = findMethod(methodName);
+            if (target == null) {
+                System.out.println("Error: Method not found in Solution class.");
+                return;
+            }
+            target.setAccessible(true);
+            
+            // 4. Run Tests
+            runTests(testsJSON, target, sol);
+            
         } catch (Exception e) {
-            System.err.println("Wrapper Error: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    private static void runTests(String jsonInput) throws Exception {
-        // Strip whitespace for robust JSON parsing
-        jsonInput = jsonInput.replaceAll("\\\\s+", "");
-        
-        String quote = String.valueOf('"');
-        
-        // Parse method name
-        String methodKey = quote + "method" + quote + ":" + quote;
-        int methodStart = jsonInput.indexOf(methodKey);
-        
-        if (methodStart == -1) {
-            System.err.println("Error: Could not find method name in test input");
-            return;
-        }
-        
-        methodStart += methodKey.length();
-        int methodEnd = jsonInput.indexOf(quote, methodStart);
-        String methodName = jsonInput.substring(methodStart, methodEnd);
-        
-        // Find method via reflection
-        Solution solution = new Solution();
-        Method method = null;
+    private static Method findMethod(String name) {
         for (Method m : Solution.class.getDeclaredMethods()) {
-            if (m.getName().equals(methodName)) {
-                method = m;
-                break;
+            if (m.getName().equals(name)) return m;
+        }
+        // Fallbacks
+        String[] fallbacks = {"solve", "processOperations", "minWindowLength", "maxArea", "rangeSum"};
+        for (String f : fallbacks) {
+            for (Method m : Solution.class.getDeclaredMethods()) {
+                if (m.getName().equals(f)) return m;
             }
         }
-        
-        if (method == null) {
-            System.err.println("Method not found: " + methodName);
-            return;
-        }
-        
-        // Parse args
-        int testNum = 1;
-        int argsIndex = 0;
-        String argsKey = quote + "args" + quote + ":";
-        
-        while ((argsIndex = jsonInput.indexOf(argsKey, argsIndex)) != -1) {
-            try {
-                int bracketStart = jsonInput.indexOf("[", argsIndex + 7);
-                int depth = 1;
-                int i = bracketStart + 1;
-                
-                while (depth > 0 && i < jsonInput.length()) {
-                    char c = jsonInput.charAt(i);
-                    if (c == '[') depth++;
-                    else if (c == ']') depth--;
-                    i++;
+        return null;
+    }
+
+    private static void runTests(String json, Method method, Object instance) {
+        int depth = 0;
+        int start = -1;
+        int count = 1;
+        for (int i = 0; i < json.length(); i++) {
+            char c = json.charAt(i);
+            if (c == '{') {
+                if (depth == 0) start = i;
+                depth++;
+            } else if (c == '}') {
+                depth--;
+                if (depth == 0 && start != -1) {
+                    runSingle(json.substring(start, i + 1), count++, method, instance);
+                    start = -1;
                 }
-                
-                String argsStr = jsonInput.substring(bracketStart, i);
-                Object[] parsedArgs = parseArgs(argsStr, method.getParameterTypes());
-                
-                Object result = method.invoke(solution, parsedArgs);
-                System.out.println("Test " + testNum + ": " + formatResult(result));
-                
-            } catch (Exception e) {
-                Throwable cause = e instanceof InvocationTargetException ? e.getCause() : e;
-                System.out.println("Test " + testNum + ": ERROR - " + cause.getClass().getSimpleName());
             }
-            
-            testNum++;
-            argsIndex++;
         }
     }
-    
-    private static Object[] parseArgs(String argsStr, Class<?>[] paramTypes) throws Exception {
-        List<Object> args = new ArrayList<>();
-        // Remove outer []
-        if (argsStr.length() > 2) {
-            argsStr = argsStr.substring(1, argsStr.length() - 1);
-        } else {
-            return new Object[0];
+
+    private static void runSingle(String json, int id, Method method, Object instance) {
+        try {
+            String argsKey = "\\"args\\":";
+            int keyIdx = json.indexOf(argsKey);
+            if (keyIdx == -1) return;
+            
+            int start = json.indexOf("[", keyIdx + argsKey.length());
+            int end = -1;
+            int depth = 0;
+            for (int i = start; i < json.length(); i++) {
+                if (json.charAt(i) == '[') depth++;
+                else if (json.charAt(i) == ']') depth--;
+                if (depth == 0) { end = i + 1; break; }
+            }
+            
+            String argsStr = json.substring(start, end);
+            Object[] params = parseArgs(argsStr, method.getParameterTypes());
+            Object result = method.invoke(instance, params);
+            System.out.println("Test " + id + ": " + format(result));
+            
+        } catch (InvocationTargetException e) {
+            Throwable t = e.getCause();
+            System.out.println("Test " + id + ": ERROR - " + (t != null ? t.getClass().getSimpleName() : "Exception"));
+        } catch (Exception e) {
+            System.out.println("Test " + id + ": ERROR - " + e.getClass().getSimpleName());
         }
+    }
+
+    // --- Minimal JSON / Arg Utils ---
+
+    private static String extractJSONValue(String json, String key) {
+        int kIdx = json.indexOf("\\"" + key + "\\"");
+        if (kIdx == -1) return null;
+        int colon = json.indexOf(":", kIdx);
+        int s = json.indexOf("\\"", colon + 1);
+        int e = json.indexOf("\\"", s + 1);
+        return (s != -1 && e != -1) ? json.substring(s + 1, e) : null;
+    }
+
+    private static String extractJSONArray(String json, String key) {
+        int kIdx = json.indexOf("\\"" + key + "\\"");
+        if (kIdx == -1) return null;
+        int start = json.indexOf("[", kIdx);
+        int depth = 0;
+        for (int i = start; i < json.length(); i++) {
+            if (json.charAt(i) == '[') depth++;
+            else if (json.charAt(i) == ']') depth--;
+            if (depth == 0) return json.substring(start, i + 1);
+        }
+        return null;
+    }
+
+    private static Object[] parseArgs(String str, Class<?>[] types) throws Exception {
+        String content = str.trim();
+        if (content.startsWith("[")) content = content.substring(1, content.length() - 1);
         
+        List<Object> list = new ArrayList<>();
         int depth = 0;
         int start = 0;
-        int paramIndex = 0;
+        int typeIdx = 0;
         
-        for (int i = 0; i <= argsStr.length(); i++) {
-            char c = (i < argsStr.length()) ? argsStr.charAt(i) : ',';
-            
-            if (c == '[') depth++;
-            else if (c == ']') depth--;
+        for (int i = 0; i <= content.length(); i++) {
+            char c = (i < content.length()) ? content.charAt(i) : ',';
+            if (c == '[' || c == '{') depth++;
+            else if (c == ']' || c == '}') depth--;
             else if (c == ',' && depth == 0) {
-                if (i > start) {
-                    processArg(args, argsStr.substring(start, i), paramTypes, paramIndex++);
+                String sub = content.substring(start, i).trim();
+                if (!sub.isEmpty() && typeIdx < types.length) {
+                    list.add(map(sub, types[typeIdx++]));
                 }
                 start = i + 1;
             }
         }
-        // Last arg
-        if (start < argsStr.length()) {
-             processArg(args, argsStr.substring(start), paramTypes, paramIndex++);
-        }
-        
-        return args.toArray();
+        return list.toArray();
     }
 
-    private static void processArg(List<Object> args, String argStr, Class<?>[] paramTypes, int idx) throws Exception {
-        if (argStr.trim().isEmpty() || idx >= paramTypes.length) return;
-        args.add(parseValue(argStr, paramTypes[idx]));
-    }
-    
-    private static Object parseValue(String str, Class<?> type) throws Exception {
-        str = str.trim();
-        if (str.equals("null")) return null;
+    private static Object map(String val, Class<?> type) throws Exception {
+        val = val.trim();
+        if (val.equals("null")) return null;
         
-        if (type == int.class || type == Integer.class) return Integer.parseInt(str);
-        if (type == long.class || type == Long.class) return Long.parseLong(str);
-        if (type == double.class || type == Double.class) return Double.parseDouble(str);
-        if (type == boolean.class || type == Boolean.class) return Boolean.parseBoolean(str);
-        
+        if (type == int.class || type == Integer.class) return (int)Double.parseDouble(val.replaceAll("[^0-9.-]", ""));
+        if (type == long.class || type == Long.class) return (long)Double.parseDouble(val.replaceAll("[^0-9.-]", ""));
+        if (type == double.class || type == Double.class) return Double.parseDouble(val.replaceAll("[^0-9.E-]", ""));
+        if (type == boolean.class || type == Boolean.class) return Boolean.parseBoolean(val);
         if (type == String.class) {
-            if (str.startsWith("\\"") && str.endsWith("\\"")) {
-                return str.substring(1, str.length() - 1);
-            }
-            return str;
+            String s = val;
+            if (s.startsWith("\\\"") && s.endsWith("\\\"")) s = s.substring(1, s.length() - 1);
+            return s;
         }
-        
-        if (type == int[].class) return parseIntArray(str);
-        if (type == boolean[].class) return parseBooleanArray(str);
-        if (type == int[][].class) return parseInt2DArray(str);
-        
+        if (type == int[].class) return toArr(val);
+        if (type == int[][].class) return toArr2D(val);
+        if (type == String[].class) return toStringArr(val);
         return null;
     }
-    
-    private static int[] parseIntArray(String str) {
-        str = str.trim();
-        if (str.equals("[]") || str.equals("null")) return new int[0];
-        if (str.startsWith("[")) str = str.substring(1, str.length() - 1);
-        
-        String[] parts = str.split(",");
-        int[] result = new int[parts.length];
-        for (int i = 0; i < parts.length; i++) {
-            String p = parts[i].trim();
-            if (!p.isEmpty()) result[i] = Integer.parseInt(p);
-        }
-        return result;
+
+    private static int[] toArr(String s) {
+        String c = s.replace("[", "").replace("]", "").replace(" ", "");
+        if (c.isEmpty()) return new int[0];
+        String[] p = c.split(",");
+        int[] r = new int[p.length];
+        for (int i = 0; i < p.length; i++) r[i] = (int)Double.parseDouble(p[i]);
+        return r;
     }
-    
-    private static boolean[] parseBooleanArray(String str) {
-        str = str.trim();
-        if (str.equals("[]") || str.equals("null")) return new boolean[0];
-        if (str.startsWith("[")) str = str.substring(1, str.length() - 1);
-        
-        String[] parts = str.split(",");
-        boolean[] result = new boolean[parts.length];
-        for (int i = 0; i < parts.length; i++) {
-            String p = parts[i].trim();
-            if (!p.isEmpty()) result[i] = Boolean.parseBoolean(p);
+
+    private static int[][] toArr2D(String s) {
+        String in = s.trim();
+        if (in.startsWith("[")) in = in.substring(1, in.length() - 1);
+        List<int[]> l = new ArrayList<>();
+        int d = 0, st = -1;
+        for (int i = 0; i < in.length(); i++) {
+            if (in.charAt(i) == '[') { if (d == 0) st = i; d++; }
+            else if (in.charAt(i) == ']') { d--; if (d == 0) l.add(toArr(in.substring(st, i + 1))); }
         }
-        return result;
+        return l.toArray(new int[0][]);
     }
-    
-    private static int[][] parseInt2DArray(String str) {
-        str = str.trim();
-        if (str.equals("[]") || str.equals("null")) return new int[0][];
-        if (str.startsWith("[")) str = str.substring(1, str.length() - 1);
-        
-        List<int[]> rows = new ArrayList<>();
-        int depth = 0;
-        int start = 0;
-        for (int i = 0; i < str.length(); i++) {
-            char c = str.charAt(i);
-            if (c == '[') {
-                if (depth == 0) start = i;
-                depth++;
-            } else if (c == ']') {
-                depth--;
-                if (depth == 0) {
-                    rows.add(parseIntArray(str.substring(start, i + 1)));
-                }
-            }
+
+    private static String[] toStringArr(String s) {
+        String c = s.trim();
+        if (c.startsWith("[")) c = c.substring(1, c.length() - 1);
+        if (c.isEmpty()) return new String[0];
+        String[] p = c.split(",");
+        for (int i = 0; i < p.length; i++) {
+            String v = p[i].trim();
+            if (v.startsWith("\\\"") && v.endsWith("\\\"")) v = v.substring(1, v.length() - 1);
+            p[i] = v;
         }
-        return rows.toArray(new int[0][]);
+        return p;
     }
-    
-    private static String formatResult(Object obj) {
-        if (obj == null) return "null";
-        if (obj instanceof int[]) return Arrays.toString((int[]) obj);
-        if (obj instanceof long[]) return Arrays.toString((long[]) obj);
-        if (obj instanceof double[]) return Arrays.toString((double[]) obj);
-        if (obj instanceof boolean[]) return Arrays.toString((boolean[]) obj);
-        if (obj instanceof Object[]) return Arrays.deepToString((Object[]) obj);
-        return obj.toString();
+
+    private static String format(Object o) {
+        if (o == null) return "null";
+        if (o instanceof int[]) return Arrays.toString((int[]) o);
+        if (o instanceof int[][]) return Arrays.deepToString((int[][]) o);
+        if (o instanceof long[]) return Arrays.toString((long[]) o);
+        if (o instanceof String[]) return Arrays.toString((String[]) o);
+        return String.valueOf(o);
     }
 }
 `;

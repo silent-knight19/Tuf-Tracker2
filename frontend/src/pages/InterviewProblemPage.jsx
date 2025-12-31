@@ -127,7 +127,8 @@ function InterviewProblemPage() {
         title: problem.problemTitle,
         description: description.description || description,
         constraints: description.constraints || [],
-        functionSignature: description.functionSignature || null
+        functionSignature: description.functionSignature || null,
+        forceRefresh: true // Always get fresh test cases with computed expected values
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -194,10 +195,20 @@ function InterviewProblemPage() {
 
   const convertTestCasesToJsonFormat = (cases) => {
     const methodName = getMethodName(problem.problemTitle, description?.functionSignature);
-    const tests = cases.map(tc => ({
-      args: parseInputToArgs(tc.input),
-      expected: tc.expected
-    }));
+    const tests = cases.map(tc => {
+      // Priority 1: Use pre-formatted args if they exist to prevent triple-nesting
+      if (tc.args && Array.isArray(tc.args)) {
+        return {
+          args: tc.args,
+          expected: tc.expected || tc.expectedOutput
+        };
+      }
+      // Priority 2: Use input and parse it
+      return {
+        args: parseInputToArgs(tc.input),
+        expected: tc.expected || tc.expectedOutput
+      };
+    });
     return JSON.stringify({ method: methodName, tests }, null, 2);
   };
 

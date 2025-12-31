@@ -1,53 +1,56 @@
+/**
+ * Cerebras AI Configuration
+ * Optimized for Qwen 3 235B model
+ * 
+ * Supported params: model, messages, temperature, top_p, max_tokens, response_format, stop, seed
+ * NOT supported: top_k, presence_penalty, frequency_penalty
+ */
+
 require('dotenv').config();
 const Cerebras = require('@cerebras/cerebras_cloud_sdk');
 
-// --- CEREBRAS CONFIGURATION (Qwen 3 235B) ---
+// Cerebras Client
 const cerebrasClient = new Cerebras({
   apiKey: process.env.CEREBRAS_API_KEY,
 });
 
-// Qwen 3 235B model - optimized settings based on official recommendations
-const models = {
-  cerebras: {
-    default: 'qwen-3-235b-a22b-instruct-2507', // Qwen 3 235B for all tasks
-  }
-};
+// Model Configuration
+const MODEL = 'gpt-oss-120b';
 
-// Optimal generation config for Qwen 3 235B
-const qwenConfig = {
+// Generation Config (only Cerebras-supported params)
+const generationConfig = {
   temperature: 0.7,
-  top_p: 0.8,
-  max_tokens: 8192,
+  top_p: 0.9,
+  max_tokens: 16384, // Increased for comprehensive learning notes
 };
 
-// Rate limiting for AI calls
-class AIRateLimiter {
-  constructor() {
+// Rate Limiter
+class RateLimiter {
+  constructor(maxPerMinute = 60) {
     this.calls = [];
-    this.maxCallsPerMinute = 60; // Cerebras has high throughput
+    this.max = maxPerMinute;
   }
 
-  async checkAndWait() {
+  async wait() {
     const now = Date.now();
-    this.calls = this.calls.filter(time => now - time < 60000);
-
-    if (this.calls.length >= this.maxCallsPerMinute) {
-      const oldestCall = this.calls[0];
-      const waitTime = 60000 - (now - oldestCall);
-      console.log(`⏳ Rate limit reached. Waiting ${waitTime}ms...`);
-      await new Promise(resolve => setTimeout(resolve, waitTime));
-      return this.checkAndWait();
+    this.calls = this.calls.filter(t => now - t < 60000);
+    
+    if (this.calls.length >= this.max) {
+      const waitMs = 60000 - (now - this.calls[0]);
+      console.log(`⏳ Rate limit. Waiting ${Math.round(waitMs/1000)}s...`);
+      await new Promise(r => setTimeout(r, waitMs));
+      return this.wait();
     }
-
+    
     this.calls.push(now);
   }
 }
 
-const rateLimiter = new AIRateLimiter();
+const rateLimiter = new RateLimiter(60);
 
-module.exports = { 
-  cerebrasClient, 
-  models, 
-  qwenConfig,
-  rateLimiter 
+module.exports = {
+  cerebrasClient,
+  MODEL,
+  generationConfig,
+  rateLimiter,
 };
