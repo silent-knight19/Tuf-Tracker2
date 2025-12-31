@@ -457,7 +457,7 @@ Examples: ${JSON.stringify(examples)}
             category: ec.category
         }));
       } else {
-        console.log('Step 1: Generating Edge Cases (Gemini 3.0)...');
+        console.log('Step 1: Generating Edge Cases with Cerebras...');
         try {
           edgeCaseInputs = await this.generateEdgeCaseInputs(title, description, examples, constraints, functionSignature);
         } catch (e) {
@@ -675,7 +675,7 @@ RULES:
   // Generate edge cases for a problem (Legacy Wrapper -> Uses Gemini now)
   async generateEdgeCases(title, description, examples = [], constraints = [], functionSignature = null) {
     try {
-      console.log('Legacy generateEdgeCases called. Redirecting to Gemini 3.0 generation...');
+      console.log('Legacy generateEdgeCases called. Using Cerebras...');
       // STRICTLY use Gemini for edge cases as per user request
       const inputs = await this.generateEdgeCaseInputs(title, description, examples, constraints, functionSignature);
       
@@ -695,73 +695,28 @@ RULES:
   // Generate edge case INPUTS ONLY (no expected output - will be computed)
   async generateEdgeCaseInputs(title, description, examples = [], constraints = [], functionSignature = null) {
     try {
-      const examplesText = examples?.length > 0 
-        ? `Examples: ${examples.map((ex, i) => `Input: ${JSON.stringify(ex.input)}`).join(', ')}`
-        : '';
+      // Use short prompt for Cerebras (same as generateTestCases)
+      const prompt = `Generate 15 test cases as JSON array for: ${title}
+Signature: ${functionSignature || 'solve(int[] arr)'}
+Format: [{"name":"test1","input":{"param1":value},"category":"Basic|Edge"}]
+Include: basic, boundary, edge cases, tricky inputs.
+Return ONLY JSON array.`;
 
-      const prompt = `You are an expert software tester. Generate 15 UNIQUE and COMPREHENSIVE test inputs for this coding problem.
+      console.log('⚡ Generating edge case inputs with Cerebras...');
       
-Problem: ${title}
-Function Signature: ${functionSignature || 'solve'}
-${examplesText}
-
-REQUIREMENTS:
-1.  **Quantity**: Exactly 15 unique test inputs.
-2.  **Completeness**: Cover ALL categories:
-    *   **Happy Path**: Standard valid inputs.
-    *   **Boundary Conditions**: Minimum/Maximum values (as per constraints), Empty inputs, Single elements.
-    *   **Edge Cases**: Duplicates, Negative numbers, Sorted/Reverse sorted, All same elements.
-    *   **Tricky Cases**: Logic intersections, inputs that might cause overflow or TLE if not handled.
-3.  **Format**: Return ONLY a valid JSON array of objects.
-4.  **Structure**: Each object MUST have:
-    *   \`name\`: Descriptive name (e.g., "Max Value Input", "Empty Array").
-    *   \`input\`: The input arguments matching the function signature.
-    *   \`category\`: One of "Happy Path", "Boundary", "Edge Case", "Tricky".
-
-JSON FORMAT EXAMPLE:
-[
-  {"name": "Basic Case", "input": {"nums": [1, 2], "target": 3}, "category": "Happy Path"},
-  {"name": "Empty Array", "input": {"nums": [], "target": 0}, "category": "Boundary"}
-]
-
-Constraints (Respect these strictly):
-${constraints.join('\n')}
-
-DO NOT include expected outputs. DO NOT include markdown code blocks. RETURN RAW JSON ONLY.`;
-
-      console.log('Generating 15 edge case inputs using Gemini 3.0 Flash...');
-      
-      const { geminiEdgeCaseModel } = require('../config/ai.config');
-      
-      // Add timeout to prevent infinite spinning - 30 second max
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Gemini API timeout after 30s')), 30000)
-      );
-      
-      const result = await Promise.race([
-        geminiEdgeCaseModel.generateContent(prompt),
-        timeoutPromise
-      ]);
-      
-      let text = result.response.text();
-      
-      // Clean up Markdown code blocks if present (Gemini loves to add them)
-      text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-
+      const text = await this.callCerebras(prompt, 'fast', true);
       const parsed = this.parseJSONSafe(text);
       
       if (Array.isArray(parsed) && parsed.length > 0) {
-        console.log(`Generated ${parsed.length} edge case inputs.`);
+        console.log(`✅ Generated ${parsed.length} edge case inputs`);
         return parsed.filter(c => c && c.input !== undefined);
       }
       
-      console.warn('Failed to parse Gemini response or empty array. Raw text:', text.substring(0, 500));
-      // Fallback: Return at least one valid input from examples to prevent total failure
+      console.warn('Failed to parse edge case inputs');
       return [{ name: "Example Input", input: examples[0]?.input || {}, category: "Fallback" }];
 
     } catch (error) {
-      console.error('Error generating edge case inputs (Gemini):', error.message);
-      // Fallback
+      console.error('❌ Error generating edge case inputs:', error.message);
       return [{ name: "Example Input", input: examples[0]?.input || {}, category: "Fallback (Error)" }];
     }
   }
