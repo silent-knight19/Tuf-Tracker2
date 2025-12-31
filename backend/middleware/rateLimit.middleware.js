@@ -10,7 +10,7 @@ const aiLimiter = rateLimit({
   max: 20, // Limit to 20 requests per hour combined
   standardHeaders: true, // Return RateLimit headers
   legacyHeaders: false, // Disable X-RateLimit headers
-  validate: { trustProxy: false }, // Disable strict IP validation (fixes IPv6 error)
+  validate: { trustProxy: false, ip: false }, // Disable strict IP validation (fixes IPv6 error)
   message: {
     error: 'AI Usage Limit Reached (20/hour). Please wait for your quota to reset.',
     status: 429
