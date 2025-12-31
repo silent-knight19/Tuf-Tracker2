@@ -27,10 +27,25 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor for error handling
+
+
+import { useRateLimitStore } from '../stores/rateLimitStore';
+
+// Response interceptor for error handling and rate limiting
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Check for Rate Limit Headers on every response
+    if (response.headers) {
+      useRateLimitStore.getState().updateFromHeaders(response.headers);
+    }
+    return response;
+  },
   async (error) => {
+    // Also check headers on error responses (like 429)
+    if (error.response && error.response.headers) {
+      useRateLimitStore.getState().updateFromHeaders(error.response.headers);
+    }
+    
     if (error.response) {
       // Server responded with error
       console.error('API Error:', error.response.data);
@@ -55,5 +70,7 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+
 
 export default api;

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { auth, db } = require('../config/firebase.config');
+// Note: authLimiter removed from /me route - Firebase handles actual login client-side
 
 // Middleware to verify Firebase token
 const verifyToken = async (req, res, next) => {
@@ -21,6 +22,7 @@ const verifyToken = async (req, res, next) => {
 };
 
 // GET /api/auth/me - Get current user with stats
+// Note: This is a session check, NOT a login attempt. Limiter removed to avoid blocking page loads.
 router.get('/me', verifyToken, async (req, res) => {
   try {
     const userDoc = await db.collection('users').doc(req.user.uid).get();

@@ -363,8 +363,9 @@ router.post('/:id/generate-notes', verifyToken, async (req, res) => {
   }
 });
 
-// POST /api/problems/generate-notes-preview - Generate AI study notes without authentication (for preview)
-router.post('/generate-notes-preview', async (req, res) => {
+// POST /api/problems/generate-notes-preview - Generate AI study notes
+// SECURED: Requires authentication to protect AI quota
+router.post('/generate-notes-preview', verifyToken, async (req, res) => {
   try {
     const { title, platform, platformUrl, difficulty, topics, patterns } = req.body;
 
@@ -406,8 +407,9 @@ router.post('/generate-notes-preview', async (req, res) => {
   }
 });
 
-// POST /api/problems/generate-description-preview - Generate description without authentication (for preview)
-router.post('/generate-description-preview', async (req, res) => {
+// POST /api/problems/generate-description-preview - Generate description
+// SECURED: Requires authentication to protect AI quota
+router.post('/generate-description-preview', verifyToken, async (req, res) => {
   try {
     const { title, platform, difficulty, topics, patterns } = req.body;
 

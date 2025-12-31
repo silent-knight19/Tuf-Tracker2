@@ -13,6 +13,16 @@ class CodeRunnerService {
       run: 10000
     };
     this.maxBuffer = 1024 * 1024;
+    
+    // Platform detection: ulimit/timeout work on Linux but not macOS
+    this.isLinux = os.platform() === 'linux';
+    
+    // Security limits for sandboxed execution (applied on Linux/production only)
+    this.limits = {
+      maxProcesses: 50,       // Prevents fork bombs during runtime (-u)
+      maxFileSizeKB: 10240,   // 10MB max file writes (-f)
+      timeoutSeconds: 10       // Kernel-level timeout
+    };
   }
 
   async runJava(source, stdin = '') {
@@ -103,8 +113,13 @@ class CodeRunnerService {
 
   async compile(tempDir, isDirectMain) {
     try {
-      // Compile all java files in the directory
-      const cmd = 'javac -J-Xmx128m -J-Xms16m -encoding UTF-8 *.java';
+      // On Linux (production): Use ulimit for file size limit + timeout
+      // On macOS (development): Just run javac with Node.js timeout
+      const javaCmd = 'javac -J-Xmx128m -J-Xms16m -encoding UTF-8 *.java';
+      const cmd = this.isLinux 
+        ? `sh -c "ulimit -f ${this.limits.maxFileSizeKB} && timeout 25s ${javaCmd}"`
+        : javaCmd;
+      
       await execPromise(cmd, {
         cwd: tempDir,
         timeout: this.timeout.compile,
@@ -122,12 +137,21 @@ class CodeRunnerService {
 
   async execute(tempDir, stdin, isDirectMain) {
     try {
-      // If direct main, use stdin. If wrapped, use the input file.
-      const cmd = isDirectMain ? 'java -Xmx64m -Xms16m Main' : 'java -Xmx64m -Xms16m Main input.json';
+      const javaArgs = isDirectMain ? 'Main' : 'Main input.json';
+      const javaCmd = `java -Xmx64m -Xms16m ${javaArgs}`;
+      
+      // On Linux (production): SANDBOXED EXECUTION with ulimit + timeout
+      // - ulimit -u: Limits max processes (fork bomb protection)
+      // - ulimit -f: Limits file size (disk abuse protection)
+      // - timeout: Kernel-level timeout (more reliable than Node.js)
+      // On macOS (development): Just run java with Node.js timeout
+      const cmd = this.isLinux
+        ? `sh -c "ulimit -u ${this.limits.maxProcesses} -f ${this.limits.maxFileSizeKB} && timeout ${this.limits.timeoutSeconds}s ${javaCmd}"`
+        : javaCmd;
       
       const result = await execPromise(cmd, {
         cwd: tempDir,
-        timeout: this.timeout.run,
+        timeout: this.timeout.run + 2000, // Node timeout slightly longer for safety
         maxBuffer: this.maxBuffer,
         env: { ...process.env },
         input: isDirectMain ? stdin : undefined
@@ -140,11 +164,13 @@ class CodeRunnerService {
         timedOut: false
       };
     } catch (error) {
-       return {
+      // Exit code 124 = timeout command killed the process (Linux only)
+      const timedOut = error.killed || error.code === 124;
+      return {
         stdout: error.stdout || '',
-        stderr: error.killed ? 'Execution Timed Out' : (error.stderr || error.message),
+        stderr: timedOut ? 'Execution Timed Out' : (error.stderr || error.message),
         exitCode: error.code || 1,
-        timedOut: !!error.killed
+        timedOut
       };
     }
   }

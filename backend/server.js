@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 
 // Routes
 const authRoutes = require('./routes/auth.routes');
@@ -27,19 +26,19 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['Content-Type', 'Authorization']
+  exposedHeaders: ['Content-Type', 'Authorization', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset', 'RateLimit-Limit', 'RateLimit-Remaining', 'RateLimit-Reset']
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiting - TEMPORARILY DISABLED FOR DEVELOPMENT
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 1000, // 15 minutes
-//   max: 100, // limit each IP to 100 requests per windowMs
-//   message: 'Too many requests from this IP, please try again later.'
-// });
-// app.use('/api/', limiter);
+
+
+// Rate limiting (applied to all other /api/ routes)
+// Apply soft auth first so rate limiter sees the user email
+const { softVerifyToken } = require('./middleware/auth.middleware');
+const { standardLimiter } = require('./middleware/rateLimit.middleware');
+app.use('/api/', softVerifyToken, standardLimiter);
 
 // Health check - used for cold start detection and keep-alive pings
 app.get('/health', (req, res) => {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BookOpen, Zap, X, Target, Brain, Sparkles, ChevronRight, Activity, Code2, Clock, Terminal, Lightbulb, Trophy, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import api from '../utils/api';
@@ -19,8 +19,22 @@ function LearnPage() {
   // Content State
   const [learningNotes, setLearningNotes] = useState(null);
 
+  // Cooldown State
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    let timer;
+    if (cooldown > 0) {
+      timer = setInterval(() => {
+        setCooldown(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
   const handleGenerateLearningNotes = async () => {
     if (!learnPattern && !learnTopic) return;
+    if (cooldown > 0) return;
 
     setLoading(true);
     try {
@@ -33,6 +47,14 @@ function LearnPage() {
       });
 
       setLearningNotes(response.data);
+      
+      // Only apply cooldown for non-whitelisted users
+      const whitelist = (import.meta.env.VITE_WHITELISTED_EMAILS || '').split(',').map(e => e.trim());
+      const isWhitelisted = user?.email && whitelist.includes(user.email);
+      
+      if (!isWhitelisted) {
+        setCooldown(30); // 30s cooldown for regular users
+      }
     } catch (error) {
       console.error('Failed to generate learning notes:', error);
     } finally {
@@ -130,13 +152,18 @@ function LearnPage() {
                 <div className="mt-4">
                    <button
                     onClick={handleGenerateLearningNotes}
-                    disabled={loading || (!learnPattern && !learnTopic)}
+                    disabled={loading || (!learnPattern && !learnTopic) || cooldown > 0}
                     className="group relative w-full h-[44px] bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl overflow-hidden transition-all hover:scale-[1.01] hover:shadow-[0_0_20px_rgba(6,182,212,0.2)] active:scale-[0.99] disabled:opacity-30 disabled:cursor-not-allowed shadow-lg"
                   >
                     <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="relative h-full flex items-center justify-center gap-2.5">
                       {loading ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : cooldown > 0 ? (
+                        <>
+                          <Clock className="w-4 h-4 text-white/70" />
+                          <span className="text-white/70 font-black text-[10px] uppercase tracking-[0.25em]">Wait {cooldown}s</span>
+                        </>
                       ) : (
                         <>
                           <Zap className="w-4 h-4 text-white fill-current group-hover:scale-110 transition-transform" />

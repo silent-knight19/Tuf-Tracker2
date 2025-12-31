@@ -1,7 +1,9 @@
 import { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './stores/authStore';
+
 import BackendHealthCheck from './components/layout/BackendHealthCheck';
+import RateLimitToast from './components/ui/RateLimitToast';
 import './index.css';
 
 // Lazy load all pages for code splitting
@@ -39,9 +41,17 @@ function App() {
     return <PageLoader />;
   }
 
+  // Note: Rate limiting is enforced by the BACKEND returning 429 errors.
+  // Frontend blocking was removed because it can be bypassed via DevTools.
+  // If a user hits the rate limit, their API requests simply fail.
+  const canAccessProtectedRoute = !!user;
+
   return (
-    <BackendHealthCheck>
-      <Router>
+    <>
+
+      <BackendHealthCheck>
+        <RateLimitToast />
+        <Router>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route 
@@ -50,57 +60,58 @@ function App() {
             />
             <Route 
               path="/problem/:id" 
-              element={user ? <ProblemViewPage /> : <Navigate to="/login" />} 
+              element={canAccessProtectedRoute ? <ProblemViewPage /> : <Navigate to="/login" />} 
             />
             <Route 
               path="/revision/:id" 
-              element={user ? <RevisionProblemDetailPage /> : <Navigate to="/login" />} 
+              element={canAccessProtectedRoute ? <RevisionProblemDetailPage /> : <Navigate to="/login" />} 
             />
             <Route 
               path="/revision/:id/review" 
-              element={user ? <RevisionProblemDetailPage autoOpenReview={true} /> : <Navigate to="/login" />} 
+              element={canAccessProtectedRoute ? <RevisionProblemDetailPage autoOpenReview={true} /> : <Navigate to="/login" />} 
             />
             <Route 
               path="/interview/ai" 
-              element={user ? <AIInterviewPage /> : <Navigate to="/login" />} 
+              element={canAccessProtectedRoute ? <AIInterviewPage /> : <Navigate to="/login" />} 
             />
             <Route 
               path="/interview/:id" 
-              element={user ? <InterviewProblemPage /> : <Navigate to="/login" />} 
+              element={canAccessProtectedRoute ? <InterviewProblemPage /> : <Navigate to="/login" />} 
             />
             <Route 
               path="/solve/:id" 
-              element={user ? <SolveProblemPage /> : <Navigate to="/login" />} 
+              element={canAccessProtectedRoute ? <SolveProblemPage /> : <Navigate to="/login" />} 
             />
             <Route 
               path="/solve/:id" 
-              element={user ? <SolveProblemPage /> : <Navigate to="/login" />} 
+              element={canAccessProtectedRoute ? <SolveProblemPage /> : <Navigate to="/login" />} 
             />
             {/* Practice Routes - Note the '/*' to allow nested routes if needed, though here we render specific children */}
             <Route 
               path="/practice/patterns/*" 
-              element={user ? <DashboardPage><PatternPracticePage /></DashboardPage> : <Navigate to="/login" />} 
+              element={canAccessProtectedRoute ? <DashboardPage><PatternPracticePage /></DashboardPage> : <Navigate to="/login" />} 
             />
             <Route 
               path="/practice/interview/*" 
-              element={user ? <DashboardPage><InterviewPracticePage /></DashboardPage> : <Navigate to="/login" />} 
+              element={canAccessProtectedRoute ? <DashboardPage><InterviewPracticePage /></DashboardPage> : <Navigate to="/login" />} 
             />
             <Route 
               path="/practice/companies/*" 
-              element={user ? <DashboardPage><CompanyPracticePage /></DashboardPage> : <Navigate to="/login" />} 
+              element={canAccessProtectedRoute ? <DashboardPage><CompanyPracticePage /></DashboardPage> : <Navigate to="/login" />} 
             />
             <Route 
               path="/practice/solve/*" 
-              element={user ? <DashboardPage><SolveProblemsPage /></DashboardPage> : <Navigate to="/login" />} 
+              element={canAccessProtectedRoute ? <DashboardPage><SolveProblemsPage /></DashboardPage> : <Navigate to="/login" />} 
             />
             <Route 
               path="/*" 
-              element={user ? <DashboardPage /> : <Navigate to="/login" />} 
+              element={canAccessProtectedRoute ? <DashboardPage /> : <Navigate to="/login" />} 
             />
           </Routes>
-        </Suspense>
-      </Router>
-    </BackendHealthCheck>
+          </Suspense>
+        </Router>
+      </BackendHealthCheck>
+    </>
   );
 }
 
