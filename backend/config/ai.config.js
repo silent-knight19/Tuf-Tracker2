@@ -9,8 +9,8 @@ const cerebrasClient = new Cerebras({
 
 const models = {
   cerebras: {
-    fast: 'qwen-3-235b-a22b-instruct-2507',     // User requested Qwen-3-235b
-    complex: 'qwen-3-235b-a22b-instruct-2507',  // For reasoning (Study notes, solutions)
+    fast: 'llama-4-scout-17b-16e-instruct',   // Small fast model for test cases (17B)
+    complex: 'qwen-3-235b-a22b-instruct-2507', // Large model for solutions (235B)
   },
   gemini: {
     general: 'gemini-3-flash-preview', // Using valid latest model

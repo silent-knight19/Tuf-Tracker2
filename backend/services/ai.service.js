@@ -2,22 +2,33 @@ const { cerebrasClient, models, rateLimiter } = require('../config/ai.config');
 
 class AIService {
   
-  // Helper to make Cerebras API calls with Retry Logic
+  // Helper to make Cerebras API calls with Retry Logic and Timeout
   async callCerebras(prompt, modelType = 'fast', jsonMode = true, retries = 3) {
     try {
       await rateLimiter.checkAndWait();
       
       const model = modelType === 'complex' ? models.cerebras.complex : models.cerebras.fast;
+      console.log(`🤖 Calling Cerebras (${modelType}): ${model}`);
       
-      const response = await cerebrasClient.chat.completions.create({
+      // Create the API call promise
+      const apiCall = cerebrasClient.chat.completions.create({
         messages: [{ role: 'user', content: prompt }],
         model: model,
         response_format: jsonMode ? { type: "json_object" } : undefined,
         temperature: 0.7,
-        max_tokens: 8192,
+        max_tokens: 4096, // Reduced for faster response
         top_p: 1
       });
+      
+      // Create timeout promise (30 seconds)
+      const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Cerebras API timeout after 30s')), 30000)
+      );
+      
+      // Race between API call and timeout
+      const response = await Promise.race([apiCall, timeout]);
 
+      console.log(`✅ Cerebras response received`);
       return response.choices[0].message.content;
     } catch (error) {
       if (retries > 0 && (error.status === 429 || error.message?.includes('429') || error.code === 429)) {
@@ -27,7 +38,13 @@ class AIService {
         return this.callCerebras(prompt, modelType, jsonMode, retries - 1);
       }
       
-      console.error(`Cerebras API Error (${modelType}):`, error);
+      // If timeout, retry once with same model
+      if (retries > 0 && error.message?.includes('timeout')) {
+        console.warn(`⚠️ Timeout. Retrying... (${retries} left)`);
+        return this.callCerebras(prompt, modelType, jsonMode, retries - 1);
+      }
+      
+      console.error(`❌ Cerebras API Error (${modelType}):`, error.message);
       throw error;
     }
   }
