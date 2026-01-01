@@ -997,6 +997,110 @@ CRITICAL: Generate REAL, DETAILED content for "${subject}". Every field must be 
       return null;
     }
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ANALYZE USER CODE - Comprehensive code analysis with feedback
+  // ═══════════════════════════════════════════════════════════════
+  async analyzeUserCode(userCode, problemDescription, examples = [], constraints = [], optimalComplexity = null, executionFeedback = null) {
+    const optimalInfo = optimalComplexity 
+      ? `\n\nOPTIMAL SOLUTION COMPLEXITY (for reference):
+- Time: ${optimalComplexity.time || 'Unknown'}
+- Space: ${optimalComplexity.space || 'Unknown'}`
+      : '';
+
+    const executionInfo = executionFeedback
+      ? `\n\nUSER'S EXECUTION RESULT:
+- Status: ${executionFeedback.success ? 'PASSED' : 'FAILED'}
+- Error/Output: ${executionFeedback.error || executionFeedback.output || 'No output'}`
+      : `\n\nUSER'S EXECUTION RESULT: Not available (static analysis only)`;
+
+    const prompt = `You are a Senior Software Engineer acting as a mentor. Analyze the following user-submitted code.
+Your goal is to be genuinely helpful, pointing out mistakes constructively and guiding them toward better engineering practices.
+
+PROBLEM DESCRIPTION:
+${problemDescription}
+
+EXAMPLES:
+${examples.length > 0 ? examples.map((ex, i) => `Example ${i + 1}: ${JSON.stringify(ex)}`).join('\n') : 'None provided'}
+
+CONSTRAINTS:
+${constraints.length > 0 ? constraints.join('\n') : 'None provided'}
+${optimalInfo}
+${executionInfo}
+
+USER'S CODE:
+\`\`\`java
+${userCode}
+\`\`\`
+
+Provide a comprehensive analysis in JSON format:
+
+{
+  "timeComplexity": {
+    "value": "O(n)", 
+    "explanation": "Brief explanation"
+  },
+  "spaceComplexity": {
+    "value": "O(1)",
+    "explanation": "Brief explanation"
+  },
+  "codeQuality": {
+    "score": 8,
+    "summary": "2-3 sentence assessment of readability, style, and best practices."
+  },
+  "keyInsights": [
+    "Genuine positive observation (e.g., 'Good use of two-pointer technique')",
+    "Another strength",
+    "Recognition of clean code or logic"
+  ],
+  "improvementTips": [
+    "Specific tip to reach 10/10 (only if score < 10)",
+    "Another actionable step"
+  ],
+  "improvements": ${optimalComplexity || executionFeedback ? `null OR {
+    "complexityMismatch": true,
+    "suggestions": [
+      {
+        "issue": "Specific problem (e.g., Runtime Error, Logic Bug, Suboptimal O(n^2))",
+        "impact": "Why this matters (e.g., 'Causes stack overflow on large inputs')",
+        "fix": "Actionable advice or corrected code snippet. Be specific!"
+      }
+    ],
+    "betterApproach": "Brief description of the optimal approach (if applicable)"
+  }` : 'null'},
+  "summary": "3-4 sentence helpful summary, like a mentor talking to a junior dev."
+}
+
+CRITICAL RULES:
+1. **SCORING**: Be GENEROUS. Start from 10/10. Only deduct points for clear violations (bugs, very poor naming, dangerous code). 
+2. **TIPS**: If score < 10, you MUST provide "improvementTips". These should be specific steps to get to 10/10.
+3. **PRIORITY**: If "USER'S EXECUTION RESULT" is FAILED, score should automatically be low, and "improvements" must fix the error.
+4. If code is optimal, clean, and passes, give it 10/10 and set "improvementTips" to null or empty array.
+5. Return ONLY the JSON.`;
+
+    try {
+      console.log('🔍 Analyzing user code...');
+      const text = await this.callCerebras(prompt, true);
+      const analysis = this.parseJSON(text);
+      
+      if (!analysis) {
+        throw new Error('Failed to parse code analysis');
+      }
+      
+      return {
+        timeComplexity: analysis.timeComplexity || { value: 'Unknown', explanation: 'Could not determine' },
+        spaceComplexity: analysis.spaceComplexity || { value: 'Unknown', explanation: 'Could not determine' },
+        codeQuality: analysis.codeQuality || { score: 5, summary: 'Analysis incomplete' },
+        keyInsights: analysis.keyInsights || [],
+        improvementTips: analysis.improvementTips || [],
+        improvements: analysis.improvements || null,
+        summary: analysis.summary || 'Analysis completed.'
+      };
+    } catch (e) {
+      console.error('Code analysis failed:', e.message);
+      throw e;
+    }
+  }
 }
 
 module.exports = new AIService();
