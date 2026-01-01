@@ -117,7 +117,7 @@ function AddProblemModal({ isOpen, onClose }) {
           <div className="bg-brand-orange/10 border border-brand-orange/20 rounded-lg p-3">
             <p className="text-sm text-brand-orange flex items-center gap-2">
               <Sparkles className="w-4 h-4" />
-              AI will automatically analyze and categorize this problem (difficulty, topics, patterns, companies)
+              AI will search LeetCode, GfG, and trusted platforms to ensure accurate description, constraints, and company tags.
             </p>
           </div>
 

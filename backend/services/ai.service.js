@@ -354,7 +354,12 @@ Return JSON:
   // Generate Problem Description
   // ═══════════════════════════════════════════════════════════════
   async generateProblemDescription(title, platform = 'LeetCode', difficulty = 'Medium', topics = [], patterns = []) {
-    const prompt = `Generate problem description for: "${title}"
+    const prompt = `Generate a highly accurate problem description for: "${title}"
+    
+SEARCH REQUIREMENT:
+1. Search your knowledge base for this problem on LeetCode, GeeksforGeeks (GfG), and other trusted platforms.
+2. Ensure the "description" and "constraints" are EXACTLY as they appear on these platforms.
+3. If this is a known problem, use the formal problem name and standard constraints.
 
 Return JSON:
 {
@@ -675,13 +680,19 @@ CRITICAL RULES FOR "args":
   // Analyze Problem
   // ═══════════════════════════════════════════════════════════════
   async analyzeProblem(title, platform = 'LeetCode', url = '') {
-    const prompt = `Analyze coding problem: "${title}"
+    const prompt = `Analyze the coding problem: "${title}"
+
+DATA SOURCE PRIORITY:
+1. Reference LeetCode and GeeksforGeeks (GfG) for defining difficulty, topics, and algorithmic patterns.
+2. For "companies", PRIORITIZE GeeksforGeeks (GfG) data. If GfG doesn't list companies, search other prominent free interview preparation websites.
+3. Ensure the metadata is based on the most common versions of this problem.
 
 Return JSON:
 {
   "difficulty": "Easy|Medium|Hard",
   "topics": ["Array", "Hash Table"],
   "patterns": ["Two Pointers", "Sliding Window"],
+  "companies": ["Google", "Amazon", "Microsoft"],
   "timeComplexity": "O(n)",
   "spaceComplexity": "O(1)"
 }`;
@@ -761,19 +772,46 @@ Return JSON: {"suggestions": [{"title": "Problem Name", "reason": "Why similar"}
   // Generate Study Notes
   // ═══════════════════════════════════════════════════════════════
   async generateStudyNotes(title, platform = 'LeetCode', url = '', difficulty = 'Medium', topics = [], patterns = []) {
-    const prompt = `Generate study notes for: "${title}" (${difficulty})
+    const prompt = `Generate comprehensive study notes for: "${title}" (${difficulty})
 
 Topics: ${topics?.join(', ') || 'General'}
 Patterns: ${patterns?.join(', ') || 'General'}
 
-Return JSON:
+Return JSON exactly in this format:
 {
-  "keyInsights": ["Insight 1", "Insight 2"],
-  "approach": "How to approach this problem",
-  "commonMistakes": ["Mistake 1"],
-  "relatedProblems": ["Problem 1"],
-  "practiceRecommendations": ["Recommendation 1"]
-}`;
+  "keyInsights": ["Point-wise insight 1", "Point-wise insight 2"],
+  "approach": ["Step 1 of high-level logic", "Step 2 of high-level logic"],
+  "solutions": {
+    "brute": {
+      "explanation": ["Step 1...", "Step 2..."],
+      "code": "// Heavily commented Java code",
+      "complexity": "O(n^2) Time, O(1) Space"
+    },
+    "better": {
+      "explanation": ["Step 1...", "Step 2..."],
+      "code": "// Heavily commented Java code",
+      "complexity": "O(n log n) Time, O(n) Space"
+    },
+    "optimal": {
+      "explanation": ["Step 1...", "Step 2..."],
+      "code": "// Heavily commented Java code",
+      "complexity": "O(n) Time, O(1) Space"
+    }
+  },
+  "commonMistakes": ["Mistake 1", "Mistake 2"],
+  "relatedProblems": [
+    {"title": "Two Sum (LeetCode) - brief reason why", "url": "https://leetcode.com/problems/two-sum"},
+    {"title": "3Sum (LeetCode) - brief reason why", "url": "https://leetcode.com/problems/3sum"}
+  ],
+  "practiceRecommendations": ["Specific tip 1", "Specific tip 2"]
+}
+
+Rules:
+1. Solutions must have heavily commented code (nearly every line explained).
+2. ALL explanations (approach, solution.explanation) must be point-wise (arrays of strings).
+3. "relatedProblems" must include valid URLs from LeetCode or GeeksforGeeks.
+4. SEARCH REQUIREMENT: Cross-reference with LeetCode/GfG to ensure accuracy of complexity and related problems.
+5. Do not include markdown code blocks inside the JSON strings.`;
 
     try {
       const text = await this.callCerebras(prompt, true);

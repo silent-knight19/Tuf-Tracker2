@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { useProblemStore } from '../../stores/problemStore';
@@ -203,12 +203,12 @@ function SolvedProblemsStats({ customProblems, onShowAddModal }) {
               {expandedSection === 'topics' ? (
                 stats.topics.length > 0 ? (
                   stats.topics.map(t => {
-                    const isActive = filters.topic === t.name;
+                    const isActive = (filters.topics || []).includes(t.name);
                     return (
                       <button
                         key={t.name}
-                        onClick={() => setFilters({ topic: t.name })}
-                        className={`group/tag px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 border flex items-center gap-3 active:scale-95 hover:scale-110 hover:z-20 ${
+                        onClick={() => setFilters({ topics: t.name })}
+                        className={`group/tag relative px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 border flex items-center gap-3 active:scale-95 hover:scale-110 hover:z-20 ${
                           isActive 
                             ? 'bg-brand-orange border-brand-orange text-white shadow-[0_0_20px_rgba(249,115,22,0.2)]' 
                             : 'bg-dark-950 border-dark-800 text-dark-500 hover:border-brand-orange/50 hover:bg-dark-800 hover:shadow-[0_0_15px_rgba(249,115,22,0.3)]'
@@ -220,6 +220,18 @@ function SolvedProblemsStats({ customProblems, onShowAddModal }) {
                         }`}>
                           {t.count}
                         </span>
+                        
+                        {isActive && (
+                          <div 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFilters({ topics: t.name }); // Toggles off in the store
+                            }}
+                            className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-white text-brand-orange rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-transform cursor-pointer border-2 border-brand-orange"
+                          >
+                            <X className="w-3 h-3 stroke-[4]" />
+                          </div>
+                        )}
                       </button>
                     );
                   })
@@ -231,14 +243,14 @@ function SolvedProblemsStats({ customProblems, onShowAddModal }) {
               ) : (
                 stats.patterns.length > 0 ? (
                   stats.patterns.map(p => {
-                    const isActive = filters.pattern === p.name;
+                    const isActive = (filters.patterns || []).includes(p.name);
                     return (
                       <button
                         key={p.name}
-                        onClick={() => setFilters({ pattern: p.name })}
-                        className={`group/tag px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 border flex items-center gap-3 active:scale-95 hover:scale-110 hover:z-20 ${
+                        onClick={() => setFilters({ patterns: p.name })}
+                        className={`group/tag relative px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 border flex items-center gap-3 active:scale-95 hover:scale-110 hover:z-20 ${
                           isActive 
-                            ? 'bg-blue-600 border-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.2)]' 
+                            ? 'bg-blue-600 border-blue-600 text-white shadow-[0_0_20_rgba(37,99,235,0.2)]' 
                             : 'bg-dark-950 border-dark-800 text-dark-500 hover:border-blue-500/50 hover:bg-dark-800 hover:shadow-[0_0_15px_rgba(59,130,246,0.3)]'
                         }`}
                       >
@@ -248,6 +260,18 @@ function SolvedProblemsStats({ customProblems, onShowAddModal }) {
                         }`}>
                           {p.count}
                         </span>
+
+                        {isActive && (
+                          <div 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFilters({ patterns: p.name }); // Toggles off
+                            }}
+                            className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-white text-blue-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-90 transition-transform cursor-pointer border-2 border-blue-600"
+                          >
+                            <X className="w-3 h-3 stroke-[4]" />
+                          </div>
+                        )}
                       </button>
                     );
                   })
