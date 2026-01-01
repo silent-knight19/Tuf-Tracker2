@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle, Circle, Clock } from 'lucide-react';
+import { CheckCircle, Circle, Clock, Activity, Target } from 'lucide-react';
 
 function RevisionContent({ revision, onLogTime }) {
   // Timeline Logic

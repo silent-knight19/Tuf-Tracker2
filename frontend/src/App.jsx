@@ -14,6 +14,7 @@ const RevisionProblemDetailPage = lazy(() => import('./pages/RevisionProblemDeta
 const InterviewProblemPage = lazy(() => import('./pages/InterviewProblemPage'));
 const AIInterviewPage = lazy(() => import('./pages/AIInterviewPage'));
 const SolveProblemPage = lazy(() => import('./pages/SolveProblemPage'));
+const SolveUserProblemPage = lazy(() => import('./pages/SolveUserProblemPage'));
 const PatternPracticePage = lazy(() => import('./pages/practice/PatternPracticePage'));
 const InterviewPracticePage = lazy(() => import('./pages/practice/InterviewPracticePage'));
 const CompanyPracticePage = lazy(() => import('./pages/practice/CompanyPracticePage'));
@@ -80,11 +81,7 @@ function App() {
             />
             <Route 
               path="/solve/:id" 
-              element={canAccessProtectedRoute ? <SolveProblemPage /> : <Navigate to="/login" />} 
-            />
-            <Route 
-              path="/solve/:id" 
-              element={canAccessProtectedRoute ? <SolveProblemPage /> : <Navigate to="/login" />} 
+              element={canAccessProtectedRoute ? <SolveUserProblemPage /> : <Navigate to="/login" />} 
             />
             {/* Practice Routes - Note the '/*' to allow nested routes if needed, though here we render specific children */}
             <Route 

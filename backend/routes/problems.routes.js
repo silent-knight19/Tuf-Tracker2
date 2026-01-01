@@ -94,6 +94,23 @@ router.post('/', verifyToken, async (req, res) => {
       return res.status(400).json({ error: 'Title is required' });
     }
 
+    // Check for existing problem by URL to avoid duplicates if user clicks twice or on retry
+    if (platformUrl) {
+      const existingProblem = await db.collection('problems')
+        .where('userId', '==', req.user.uid)
+        .where('platformUrl', '==', platformUrl)
+        .limit(1)
+        .get();
+
+      if (!existingProblem.empty) {
+        return res.status(200).json({ 
+          id: existingProblem.docs[0].id, 
+          ...existingProblem.docs[0].data(),
+          message: 'Already exists' 
+        });
+      }
+    }
+
     // Analyze the problem (hybrid: cache -> preloaded -> AI)
     let analysis = await problemAnalyzer.analyzeProblem(
       title,
@@ -125,7 +142,7 @@ router.post('/', verifyToken, async (req, res) => {
     // Create problem document
     const problemData = {
       userId: req.user.uid,
-      title: analysis.title || title,
+      title: title || analysis.title,
       platform: analysis.platform || platform || 'LeetCode',
       platformUrl: analysis.platformUrl || platformUrl || '',
       difficulty: analysis.difficulty || 'Medium',
@@ -152,7 +169,7 @@ router.post('/', verifyToken, async (req, res) => {
         req.user.uid,
         docRef.id,
         {
-          title: analysis.title,
+          title: title || analysis.title,
           pattern: analysis.patterns?.[0],
           patterns: analysis.patterns || [],
           topics: analysis.topics || [],

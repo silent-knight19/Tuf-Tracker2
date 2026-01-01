@@ -12,14 +12,54 @@ router.get('/', verifyToken, async (req, res) => {
       .get();
 
     const revisions = [];
+    const problemIdsToFetch = [];
+    const revisionDataList = [];
+
+    // First pass: collect data and identify missing titles
     snapshot.forEach(doc => {
       const data = doc.data();
+      revisionDataList.push({ id: doc.id, data });
+      
+      // If problemTitle is missing but problemId exists, we'll need to fetch it
+      if (!data.problemTitle && data.problemId) {
+        problemIdsToFetch.push(data.problemId);
+      }
+    });
+
+    // Batch fetch missing titles from problems collection
+    const problemTitles = {};
+    if (problemIdsToFetch.length > 0) {
+      const uniqueIds = [...new Set(problemIdsToFetch)];
+      // Firestore 'in' query supports up to 30 items, so we may need multiple queries
+      for (let i = 0; i < uniqueIds.length; i += 30) {
+        const batch = uniqueIds.slice(i, i + 30);
+        const problemsSnapshot = await db.collection('problems')
+          .where('__name__', 'in', batch)
+          .get();
+        
+        problemsSnapshot.forEach(doc => {
+          problemTitles[doc.id] = doc.data().title || '';
+        });
+      }
+    }
+
+    // Second pass: build final revisions array with enriched data
+    for (const { id, data } of revisionDataList) {
       const overdueDays = data.nextDueDate ? 
         spacedRepetitionService.calculateOverdueDays(data.nextDueDate) : 0;
       
+      // Use existing problemTitle, or fetch from problems, or default
+      let title = data.problemTitle;
+      if (!title && data.problemId && problemTitles[data.problemId]) {
+        title = problemTitles[data.problemId];
+        // Update the revision record with the correct title (lazy migration)
+        db.collection('revisions').doc(id).update({ problemTitle: title }).catch(() => {});
+      }
+      
       revisions.push({
-        id: doc.id,
+        id,
         ...data,
+        problemTitle: title || 'Untitled Problem',
         nextDueDate: data.nextDueDate?.toDate ? data.nextDueDate.toDate() : data.nextDueDate,
         lastReviewedAt: data.lastReviewedAt?.toDate ? data.lastReviewedAt.toDate() : data.lastReviewedAt,
         createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
@@ -28,9 +68,10 @@ router.get('/', verifyToken, async (req, res) => {
         bucket: spacedRepetitionService.getBucketStatus(data),
         healthScore: spacedRepetitionService.calculateHealthScore(data)
       });
-    });
+    }
 
     res.json({ revisions });
+
   } catch (error) {
     console.error('Error fetching revisions:', error);
     res.status(500).json({ error: 'Failed to fetch revisions' });

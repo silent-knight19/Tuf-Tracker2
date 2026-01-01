@@ -1,6 +1,13 @@
-import { Play, Wand2, Target, Activity, Clock } from 'lucide-react';
+import { Play, Wand2, Target, Activity, Clock, Terminal } from 'lucide-react';
 
 function RevisionSidebar({ revision, onStartReview, onGuidedReview }) {
+  const handleSolveWithAI = () => {
+    // Open the code editor experience using the problemId
+    if (revision.problemId) {
+      window.open(`/solve/${revision.problemId}`, '_blank');
+    }
+  };
+
   return (
     <div className="space-y-10">
       {/* Action Protocol Container */}
@@ -29,6 +36,15 @@ function RevisionSidebar({ revision, onStartReview, onGuidedReview }) {
             >
               <Wand2 className="w-5 h-5 text-purple-400 group-hover:animate-pulse" /> 
               Guided Debrief
+            </button>
+
+            {/* Solve with AI Button */}
+            <button 
+              onClick={handleSolveWithAI}
+              className="w-full py-4 rounded-xl bg-dark-950 border border-dark-800 text-dark-400 hover:text-brand-orange hover:border-brand-orange/30 transition-all flex items-center justify-center gap-3 font-black text-[11px] uppercase tracking-widest leading-none group/solve"
+            >
+              <Terminal className="w-5 h-5 text-brand-orange group-hover/solve:animate-pulse" /> 
+              Solve with AI
             </button>
           </div>
         </div>
