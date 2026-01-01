@@ -821,7 +821,7 @@ CRITICAL RULES FOR "args":
    - **Generic Weighted Graph**: [[u, v, w]] (length 3) - ONLY if no other data is specified.
      - **Custom Tuples**: If problem says edges are [u, v, time, energy], YOU MUST GENERATE 4 integers.
        - *CRITICAL*: Generating [u, v, w] (length 3) for a 4-value edge problem causes ArrayIndexOutOfBoundsException.
-       - ALWAYS check constraints for `edges[i].length`.
+       - ALWAYS check constraints for \`edges[i].length\`.
      - **Coordinates**: [[r, c], [r, c]] (length 2)
      - **Time/Window definitions**: If problem says [u, v, cost, time], YOU MUST GENERATE 4 integers.
      - **Coordinates**: [[r, c], [r, c]] (length 2)
