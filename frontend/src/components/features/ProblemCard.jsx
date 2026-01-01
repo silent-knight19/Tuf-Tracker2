@@ -1,4 +1,4 @@
-import { Building2, Calendar, Repeat, CheckCircle2 } from 'lucide-react';
+import { Building2, Calendar, Repeat, Terminal, Clock } from 'lucide-react';
 import { useRevisionStore } from '../../stores/revisionStore';
 import { useNavigate } from 'react-router-dom';
 
@@ -43,6 +43,7 @@ function ProblemCard({ problem, onClick }) {
     if (onClick) {
       onClick();
     } else {
+      // Default: Navigate to notes/problem view page
       window.open(`/problem/${problem.id}`, '_blank');
     }
   };
@@ -159,13 +160,13 @@ function ProblemCard({ problem, onClick }) {
           </div>
           
           <div 
-             className="w-8 h-8 rounded-full bg-dark-950 border border-dark-800 flex items-center justify-center group-hover:bg-brand-orange group-hover:border-brand-orange transition-all duration-300"
+             className="w-8 h-8 rounded-full bg-brand-orange/10 border border-brand-orange/30 flex items-center justify-center group-hover:bg-brand-orange group-hover:border-brand-orange transition-all duration-300 shadow-[0_0_15px_rgba(249,115,22,0.2)]"
              onClick={(e) => {
                e.stopPropagation();
                handleClick();
              }}
           >
-            <CheckCircle2 className="w-4 h-4 text-dark-500 group-hover:text-white transition-colors" />
+            <Terminal className="w-4 h-4 text-brand-orange group-hover:text-white transition-colors" />
           </div>
         </div>
       </div>

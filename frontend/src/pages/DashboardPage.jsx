@@ -7,6 +7,7 @@ import CompaniesPage from './CompaniesPage';
 import RevisionDashboardPage from './RevisionDashboardPage';
 import RevisionProblemDetailPage from './RevisionProblemDetailPage';
 import ProblemViewPage from './ProblemViewPage';
+import SolveUserProblemPage from './SolveUserProblemPage';
 import LearnPage from './LearnPage';
 import { useProblemStore } from '../stores/problemStore';
 import { Flame, PanelLeft, Search } from 'lucide-react';

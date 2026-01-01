@@ -300,7 +300,15 @@ function SolveProblemPage() {
       }
       return input;
     }
-    if (typeof input === 'object' && input !== null) return [input];
+    if (typeof input === 'object' && input !== null) {
+      // If it has keys that look like parameter names (e.g., from AI), extract values
+      // This is a heuristic: if it's a plain object with specific keys, use the values.
+      // But if it's like a ListNode or other custom type (though AI doesn't return that directly usually), 
+      // we might need more logic. For now, Object.values is best for multi-param methods.
+      const values = Object.values(input);
+      if (values.length > 0) return values;
+      return [input];
+    }
     
     if (typeof input === 'string') {
       const trimmed = input.trim();

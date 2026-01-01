@@ -80,7 +80,7 @@ function ConsolePanel({ output, error, timedOut, isLoading, testCases }) {
   const totalCount = testResults?.length || 0;
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col relative">
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-dark-800 bg-dark-900">
         <h3 className="text-sm font-semibold text-dark-300">Console</h3>
         <div className="flex items-center gap-2">

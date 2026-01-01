@@ -4,12 +4,10 @@ const aiService = require('../services/ai.service');
 const cacheService = require('../services/cache.service');
 const { verifyToken } = require('./auth.routes');
 const { db } = require('../config/firebase.config');
-const { aiLimiter } = require('../middleware/rateLimit.middleware');
 
-// Note: Limiters are applied individually to routes below to prevent double-limiting and mismatching messages.
 
 // POST /api/ai/similar-problem
-router.post('/similar-problem', verifyToken, aiLimiter, async (req, res) => {
+router.post('/similar-problem', verifyToken, async (req, res) => {
   try {
     const { problemId } = req.body;
 
@@ -43,7 +41,7 @@ router.post('/similar-problem', verifyToken, aiLimiter, async (req, res) => {
 });
 
 // POST /api/ai/custom-problem
-router.post('/custom-problem', verifyToken, aiLimiter, async (req, res) => {
+router.post('/custom-problem', verifyToken, async (req, res) => {
   try {
     const { pattern, topic, difficulty } = req.body;
 
@@ -66,7 +64,7 @@ router.post('/custom-problem', verifyToken, aiLimiter, async (req, res) => {
 });
 
 // POST /api/ai/company-problem
-router.post('/company-problem', verifyToken, aiLimiter, async (req, res) => {
+router.post('/company-problem', verifyToken, async (req, res) => {
   try {
     const { company, topic, pattern, difficulty } = req.body;
 
@@ -90,7 +88,7 @@ router.post('/company-problem', verifyToken, aiLimiter, async (req, res) => {
 });
 
 // POST /api/ai/problem-help
-router.post('/problem-help', verifyToken, aiLimiter, async (req, res) => {
+router.post('/problem-help', verifyToken, async (req, res) => {
   try {
     const { title, description, difficulty, forceRefresh, pattern, examples, constraints, functionSignature } = req.body;
 
@@ -142,7 +140,7 @@ router.post('/problem-help', verifyToken, aiLimiter, async (req, res) => {
 });
 
 // POST /api/ai/problem-description
-router.post('/problem-description', verifyToken, aiLimiter, async (req, res) => {
+router.post('/problem-description', verifyToken, async (req, res) => {
   try {
     const { title } = req.body;
 
@@ -168,7 +166,7 @@ router.post('/problem-description', verifyToken, aiLimiter, async (req, res) => 
 });
 
 // POST /api/ai/edge-cases
-router.post('/edge-cases', verifyToken, aiLimiter, async (req, res) => {
+router.post('/edge-cases', verifyToken, async (req, res) => {
   try {
     const { title, description, examples, constraints, functionSignature, providedSolution } = req.body;
     
@@ -219,7 +217,7 @@ router.post('/edge-cases', verifyToken, aiLimiter, async (req, res) => {
 });
 
 // POST /api/ai/learning-notes
-router.post('/learning-notes', verifyToken, aiLimiter, async (req, res) => {
+router.post('/learning-notes', verifyToken, async (req, res) => {
   try {
     const { pattern, topic, forceRefresh } = req.body;
 
@@ -264,7 +262,7 @@ router.post('/learning-notes', verifyToken, aiLimiter, async (req, res) => {
 // POST /api/ai/test-cases
 // Generate 20 high-quality test cases (Cerebras only)
 // ============================================================
-router.post('/test-cases', verifyToken, aiLimiter, async (req, res) => {
+router.post('/test-cases', verifyToken, async (req, res) => {
   try {
     const { title, description, constraints, functionSignature, forceRefresh } = req.body;
     
@@ -309,7 +307,7 @@ router.post('/test-cases', verifyToken, aiLimiter, async (req, res) => {
 // POST /api/ai/solution
 // Generate hints + solution (Cerebras only) - INDEPENDENT endpoint
 // ============================================================
-router.post('/solution', verifyToken, aiLimiter, async (req, res) => {
+router.post('/solution', verifyToken, async (req, res) => {
   try {
     const { title, description, difficulty, functionSignature, testCases } = req.body;
     

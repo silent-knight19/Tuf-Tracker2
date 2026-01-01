@@ -427,15 +427,26 @@ function ProblemViewPage() {
               if (!platformUrl) return null;
 
               return (
-                <a 
-                  href={platformUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-brand-orange hover:underline text-sm flex items-center gap-1 font-medium"
-                >
-                  View on {problem.platform}
-                  <ExternalLink className="w-4 h-4" />
-                </a>
+                <div className="flex items-center gap-4">
+                  <a 
+                    href={platformUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-brand-orange hover:underline text-sm flex items-center gap-1 font-medium"
+                  >
+                    View on {problem.platform}
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                  
+                  {/* Solve with AI Button */}
+                  <button
+                    onClick={() => window.open(`/solve/${problem.id}`, '_blank')}
+                    className="text-brand-orange hover:text-brand-yellow text-sm flex items-center gap-1.5 font-bold bg-brand-orange/10 hover:bg-brand-orange/20 px-3 py-1.5 rounded-lg border border-brand-orange/20 transition-all shadow-[0_0_15px_rgba(249,115,22,0.1)]"
+                  >
+                    <Zap className="w-4 h-4 fill-current" />
+                    Solve with AI
+                  </button>
+                </div>
               );
             })()}
           </div>
@@ -492,6 +503,46 @@ function ProblemViewPage() {
                             </li>
                           ))}
                         </ul>
+                      </div>
+                    )}
+
+                    {/* Follow ups (Related Problems) */}
+                    {aiSections?.relatedProblems && Array.isArray(aiSections.relatedProblems) && (
+                      <div className="mb-6">
+                        <h3 className="text-white font-black mb-3 flex items-center gap-2 uppercase text-xs tracking-widest">
+                          <Link className="w-4 h-4 text-brand-orange" />
+                          Follow ups
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {aiSections.relatedProblems.map((p, idx) => {
+                            const isObject = typeof p === 'object' && p !== null;
+                            const title = isObject ? p.title : p;
+                            
+                            // Try to find a matching problem in our bank to link to our solve page
+                            const matchedProblem = problems.find(bp => 
+                              bp.title?.toLowerCase() === title?.toLowerCase() || 
+                              title?.toLowerCase().includes(bp.title?.toLowerCase())
+                            );
+
+                            return (
+                              <button
+                                key={idx}
+                                onClick={() => {
+                                  if (matchedProblem) {
+                                    window.open(`/solve/${matchedProblem.id}`, '_blank');
+                                  } else {
+                                    // Fallback: search for this problem in the solve view
+                                    window.open(`/solve/search?q=${encodeURIComponent(title)}`, '_blank');
+                                  }
+                                }}
+                                className="px-3 py-2 bg-brand-orange/10 text-brand-orange rounded-xl text-[10px] border border-brand-orange/20 font-black uppercase tracking-wider hover:bg-brand-orange hover:text-white transition-all flex items-center gap-2 group shadow-lg shadow-brand-orange/5"
+                              >
+                                <Zap className="w-3.5 h-3.5 fill-current" />
+                                {title}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
 
@@ -834,42 +885,7 @@ function ProblemViewPage() {
                       </div>
                     )}
 
-                    {aiSections.relatedProblems && Array.isArray(aiSections.relatedProblems) && (
-                      <div className="bg-dark-950 rounded-lg p-4">
-                        <h3 className="text-sm font-bold text-purple-400 mb-3 flex items-center gap-2">
-                          <Link className="w-4 h-4" />
-                          Related Challenges
-                        </h3>
-                        <div className="flex flex-wrap gap-2">
-                          {aiSections.relatedProblems.map((p, idx) => {
-                            const isObject = typeof p === 'object' && p !== null;
-                            const title = isObject ? p.title : p;
-                            const url = isObject ? p.url : null;
 
-                            if (url) {
-                              return (
-                                <a 
-                                  key={idx} 
-                                  href={url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="px-2 py-1 bg-purple-500/10 text-purple-400 rounded text-[11px] border border-purple-500/20 font-medium hover:bg-purple-500/20 transition-colors flex items-center gap-1 group"
-                                >
-                                  {title}
-                                  <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                                </a>
-                              );
-                            }
-
-                            return (
-                              <span key={idx} className="px-2 py-1 bg-purple-500/10 text-purple-400 rounded text-[11px] border border-purple-500/20 font-medium">
-                                {title}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
 
                     {/* Fallback Legacy/Solution-Centric Sections (if not handled by the new logic) */}
                     {aiSections.understanding && !aiSections.keyInsights && (
