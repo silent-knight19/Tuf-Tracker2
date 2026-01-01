@@ -338,5 +338,35 @@ router.post('/solution', verifyToken, async (req, res) => {
   }
 });
 
+// ============================================================
+// POST /api/ai/analyze-code
+// Analyze user's code with comprehensive feedback
+// ============================================================
+router.post('/analyze-code', verifyToken, async (req, res) => {
+  try {
+    const { code, problemDescription, examples, constraints, optimalComplexity, executionFeedback } = req.body;
+    
+    if (!code || !problemDescription) {
+      return res.status(400).json({ error: 'Code and problem description are required' });
+    }
+    
+    console.log('📊 Analyzing user code...');
+    
+    const analysis = await aiService.analyzeUserCode(
+      code,
+      problemDescription,
+      examples || [],
+      constraints || [],
+      optimalComplexity || null,
+      executionFeedback || null // Pass runtime feedback if available
+    );
+    
+    res.json(analysis);
+  } catch (error) {
+    console.error('Error analyzing code:', error);
+    res.status(500).json({ error: error.message || 'Failed to analyze code' });
+  }
+});
+
 module.exports = router;
 
