@@ -92,27 +92,42 @@ router.post('/', verifyToken, async (req, res) => {
     }
 
     // Analyze the problem (hybrid: cache -> preloaded -> AI)
-    const analysis = await problemAnalyzer.analyzeProblem(
+    let analysis = await problemAnalyzer.analyzeProblem(
       title,
       platform || 'LeetCode',
       platformUrl || ''
     );
 
+    // Fallback if analysis fails or returns null
+    if (!analysis) {
+      console.warn(`⚠️ Analysis returned null for "${title}", using fallback values`);
+      analysis = {
+        title: title,
+        platform: platform || 'LeetCode',
+        platformUrl: platformUrl || '',
+        difficulty: 'Medium',
+        topics: [],
+        patterns: [],
+        companies: [],
+        source: 'fallback'
+      };
+    }
+
     // Calculate next revision date
     const nextRevision = await revisionService.calculateNextRevision(
-      analysis.difficulty,
+      analysis.difficulty || 'Medium',
       0
     );
 
     // Create problem document
     const problemData = {
       userId: req.user.uid,
-      title: analysis.title,
-      platform: analysis.platform,
-      platformUrl: analysis.platformUrl,
-      difficulty: analysis.difficulty,
-      topics: analysis.topics,
-      patterns: analysis.patterns,
+      title: analysis.title || title,
+      platform: analysis.platform || platform || 'LeetCode',
+      platformUrl: analysis.platformUrl || platformUrl || '',
+      difficulty: analysis.difficulty || 'Medium',
+      topics: analysis.topics || [],
+      patterns: analysis.patterns || [],
       companies: analysis.companies || [],
       notes: notes || '',
       approach: approach || '',
