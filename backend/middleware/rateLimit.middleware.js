@@ -1,4 +1,4 @@
-const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
+const { rateLimit } = require('express-rate-limit');
 
 /**
  * UNIFIED AI RATE LIMITER
@@ -24,12 +24,11 @@ const aiLimiter = rateLimit({
   },
   // Use a custom key generator that groups all AI requests by IP + 'ai_combined'
   // This ensures all endpoints verify against the SAME counter
-  // Using ipKeyGenerator to properly handle IPv6 addresses
   keyGenerator: (req) => {
-    const ip = req.ip || req.connection.remoteAddress || 'unknown';
-    const safeIp = ipKeyGenerator(ip);
-    return `ai_combined:${safeIp}`;
-  }
+    const ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    return `ai_combined:${ip}`;
+  },
+  validate: { keyGeneratorIpFallback: false } // Disable warning about using req.ip directly
 });
 
 // Simple standard limiter for other API routes (300/15min)
@@ -38,6 +37,7 @@ const standardLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 300,
   message: { error: 'Too many requests. Please slow down.' },
+  validate: { trustProxy: false },
   skip: (req) => {
     if (!req.user || !req.user.email) return false;
     const whitelist = (process.env.WHITELISTED_EMAILS || '').split(',').map(e => e.trim());
