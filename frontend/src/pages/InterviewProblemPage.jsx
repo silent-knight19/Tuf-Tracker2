@@ -5,7 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import api from '../utils/api';
 import { auth } from '../config/firebase';
 import CodePanel from '../components/features/code/CodePanel';
-import MotivationalQuote from '../components/ui/MotivationalQuote';
+
 
 function InterviewProblemPage() {
   const { id } = useParams();
@@ -516,16 +516,7 @@ function InterviewProblemPage() {
         />
       </div>
 
-      {/* Bottom Quote */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] pointer-events-none">
-        <div className="pointer-events-auto">
-          <MotivationalQuote 
-            category="Resilience" 
-            variant="ghost" 
-            className="shadow-2xl !bg-black/40 backdrop-blur-md border border-white/5 hover:border-brand-orange/30 transition-colors"
-          />
-        </div>
-      </div>
+
     </div>
   );
 }

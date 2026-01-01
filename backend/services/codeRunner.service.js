@@ -347,6 +347,8 @@ public class Main {
             return s;
         }
         if (type == int[].class) return toArr(val);
+        if (type == double[].class) return toDoubleArr(val);
+        if (type == long[].class) return toLongArr(val);
         if (type == int[][].class) return toArr2D(val);
         if (type == String[].class) return toStringArr(val);
         return null;
@@ -358,6 +360,24 @@ public class Main {
         String[] p = c.split(",");
         int[] r = new int[p.length];
         for (int i = 0; i < p.length; i++) r[i] = (int)Double.parseDouble(p[i]);
+        return r;
+    }
+
+    private static double[] toDoubleArr(String s) {
+        String c = s.replace("[", "").replace("]", "").replace(" ", "");
+        if (c.isEmpty()) return new double[0];
+        String[] p = c.split(",");
+        double[] r = new double[p.length];
+        for (int i = 0; i < p.length; i++) r[i] = Double.parseDouble(p[i]);
+        return r;
+    }
+
+    private static long[] toLongArr(String s) {
+        String c = s.replace("[", "").replace("]", "").replace(" ", "");
+        if (c.isEmpty()) return new long[0];
+        String[] p = c.split(",");
+        long[] r = new long[p.length];
+        for (int i = 0; i < p.length; i++) r[i] = (long)Double.parseDouble(p[i]);
         return r;
     }
 

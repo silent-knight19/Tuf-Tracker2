@@ -7,7 +7,7 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import api from '../utils/api';
 import { auth } from '../config/firebase';
 import CodePanel from '../components/features/code/CodePanel';
-import MotivationalQuote from '../components/ui/MotivationalQuote';
+
 
 function AIInterviewPage() {
   const location = useLocation();
@@ -772,16 +772,7 @@ function AIInterviewPage() {
         />
       </div>
       
-      
-      <div className="fixed bottom-6 right-6 z-[60] pointer-events-none">
-        <div className="pointer-events-auto">
-          <MotivationalQuote 
-            category="Resilience" 
-            variant="ghost" 
-            className="shadow-2xl !bg-black/40 backdrop-blur-md border border-white/5 hover:border-brand-orange/30 transition-colors"
-          />
-        </div>
-      </div>
+
 
     </div>
   );

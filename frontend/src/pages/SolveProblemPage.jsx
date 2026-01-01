@@ -6,7 +6,7 @@ import api from '../utils/api';
 import { auth } from '../config/firebase';
 import CodePanel from '../components/features/code/CodePanel';
 
-import MotivationalQuote from '../components/ui/MotivationalQuote';
+
 
 function SolveProblemPage() {
   const { id } = useParams();
@@ -770,16 +770,7 @@ function SolveProblemPage() {
           optimalComplexity={helpData?.solutions?.optimal?.complexity}
         />
       </div>
-      {/* Centered Bottom Quote */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] pointer-events-none">
-        <div className="pointer-events-auto">
-          <MotivationalQuote 
-            category="Resilience" 
-            variant="ghost" 
-            className="shadow-2xl !bg-black/40 backdrop-blur-md border border-white/5 hover:border-brand-orange/30 transition-colors"
-          />
-        </div>
-      </div>
+
     </div>
   );
 }
