@@ -6,8 +6,8 @@ export const useProblemStore = create((set, get) => ({
   loading: false,
   error: null,
   filters: {
-    topic: '',
-    pattern: '',
+    topics: [],
+    patterns: [],
     difficulty: '',
     company: ''
   },
@@ -17,7 +17,12 @@ export const useProblemStore = create((set, get) => ({
     console.log('Fetching problems with filters:', filters);
     set({ loading: true, error: null });
     try {
-      const params = new URLSearchParams(filters);
+      // Correctly format array filters for the API
+      const queryParams = { ...filters };
+      if (Array.isArray(queryParams.topics)) queryParams.topics = queryParams.topics.join(',');
+      if (Array.isArray(queryParams.patterns)) queryParams.patterns = queryParams.patterns.join(',');
+
+      const params = new URLSearchParams(queryParams);
       const response = await api.get(`/problems?${params}`);
       console.log('Fetched problems count:', response.data.problems.length);
       set({ problems: response.data.problems, loading: false });
@@ -115,16 +120,50 @@ export const useProblemStore = create((set, get) => ({
 
   // Set filters
   setFilters: (newFilters) => {
-    set((state) => ({
-      filters: { ...state.filters, ...newFilters }
-    }));
-    get().fetchProblems({ ...get().filters, ...newFilters });
+    set((state) => {
+      const updatedFilters = { ...state.filters };
+      
+      // Handle multi-select toggling for topics and patterns
+      if (newFilters.topics !== undefined) {
+        const topic = Array.isArray(newFilters.topics) ? newFilters.topics[0] : newFilters.topics;
+        if (topic) {
+          const index = updatedFilters.topics.indexOf(topic);
+          if (index > -1) {
+            updatedFilters.topics = updatedFilters.topics.filter(t => t !== topic);
+          } else {
+            updatedFilters.topics = [...updatedFilters.topics, topic];
+          }
+        } else {
+          updatedFilters.topics = [];
+        }
+      } else if (newFilters.patterns !== undefined) {
+        const pattern = Array.isArray(newFilters.patterns) ? newFilters.patterns[0] : newFilters.patterns;
+        if (pattern) {
+          const index = updatedFilters.patterns.indexOf(pattern);
+          if (index > -1) {
+            updatedFilters.patterns = updatedFilters.patterns.filter(p => p !== pattern);
+          } else {
+            updatedFilters.patterns = [...updatedFilters.patterns, pattern];
+          }
+        } else {
+          updatedFilters.patterns = [];
+        }
+      } else {
+        // Standard single-value filter update
+        Object.assign(updatedFilters, newFilters);
+      }
+      
+      return { filters: updatedFilters };
+    });
+    
+    get().fetchProblems(get().filters);
   },
 
   // Clear filters
   clearFilters: () => {
-    set({ filters: { topic: '', pattern: '', difficulty: '', company: '' } });
-    get().fetchProblems();
+    const defaultFilters = { topics: [], patterns: [], difficulty: '', company: '' };
+    set({ filters: defaultFilters });
+    get().fetchProblems(defaultFilters);
   },
 
   // Generate AI study notes for a problem

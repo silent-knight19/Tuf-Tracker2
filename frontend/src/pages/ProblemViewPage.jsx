@@ -13,8 +13,15 @@ import {
   List,
   Check,
   X,
-  Plus
+  Plus,
+  Zap,
+  Target,
+  AlertCircle,
+  Link,
+  CheckCircle2
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 function ProblemViewPage() {
   const { id } = useParams();
@@ -236,18 +243,16 @@ function ProblemViewPage() {
   };
 
   const parseAINotes = (notesData) => {
-    // console.log('parseAINotes input:', typeof notesData, notesData);
     if (!notesData) return null;
 
-    // If it's already an object (from JSON response), return it
-    if (typeof notesData === 'object' && notesData.understanding) {
+    // Handle already objects
+    if (typeof notesData === 'object') {
       return notesData;
     }
 
-    // Try to parse if it's a JSON string
+    // Try to parse if it's a string
     if (typeof notesData === 'string') {
       try {
-        // Clean up any potential markdown code blocks
         let cleanJson = notesData.trim();
         if (cleanJson.startsWith('```json')) cleanJson = cleanJson.slice(7);
         if (cleanJson.startsWith('```')) cleanJson = cleanJson.slice(3);
@@ -260,55 +265,35 @@ function ProblemViewPage() {
           try {
             parsed = JSON.parse(parsed);
           } catch (e) {
-            console.warn("Failed to parse double-stringified JSON", e);
+            // Keep original if second parse fails
           }
         }
         
-        // Return parsed object if it has the expected structure
-        if (parsed.understanding || parsed.bruteForce || parsed.optimal) {
-          // Helper to recursively replace \n
+        if (typeof parsed === 'object' && parsed !== null) {
+          // Helper to recursively replace \n (sometimes LLMs return literal \n instead of actual newlines)
           const replaceNewlines = (obj) => {
             if (typeof obj === 'string') return obj.replace(/\\n/g, '\n');
             if (typeof obj === 'object' && obj !== null) {
+              const newObj = Array.isArray(obj) ? [] : {};
               Object.keys(obj).forEach(key => {
-                obj[key] = replaceNewlines(obj[key]);
+                newObj[key] = replaceNewlines(obj[key]);
               });
+              return newObj;
             }
             return obj;
           };
-          return replaceNewlines(parsed);
-        }
-      } catch (e) {
-        // Try to extract JSON using regex if direct parsing failed
-        try {
-          const jsonMatch = notesData.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            const parsed = JSON.parse(jsonMatch[0]);
-            if (parsed.understanding || parsed.bruteForce || parsed.optimal) {
-              // Helper to recursively replace \n
-              const replaceNewlines = (obj) => {
-                if (typeof obj === 'string') return obj.replace(/\\n/g, '\n');
-                if (typeof obj === 'object' && obj !== null) {
-                  Object.keys(obj).forEach(key => {
-                    obj[key] = replaceNewlines(obj[key]);
-                  });
-                }
-                return obj;
-              };
-              return replaceNewlines(parsed);
-            }
-          }
-        } catch (e2) {
-          console.warn("Failed to parse extracted JSON", e2);
-        }
 
-        // If JSON parse fails, fall back to raw display (legacy support)
-        console.warn("Failed to parse AI notes JSON, treating as raw markdown", e);
-        console.log("Failed JSON string:", notesData);
+          const processed = replaceNewlines(parsed);
+          return processed;
+        }
+        
+        return { raw: typeof parsed === 'string' ? parsed : JSON.stringify(parsed, null, 2), isRaw: true };
+      } catch (e) {
+        // Not JSON, return as raw string
+        return { raw: notesData, isRaw: true };
       }
     }
 
-    // Legacy/Fallback for raw markdown
     return { raw: String(notesData), isRaw: true };
   };
 
@@ -467,15 +452,11 @@ function ProblemViewPage() {
                   <>
                     {/* Problem Statement */}
                     <div className="text-dark-200 font-medium leading-relaxed mb-6">
-                      <span dangerouslySetInnerHTML={{ 
-                        __html: (typeof problem.description === 'string' 
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {typeof problem.description === 'string' 
                           ? problem.description 
-                          : problem.description?.statement || problem.description?.description || ''
-                        ).replace(
-                          /`([^`]+)`/g, 
-                          '<code class="text-blue-400 bg-dark-800 px-1.5 py-0.5 rounded text-sm">$1</code>'
-                        )
-                      }} />
+                          : problem.description?.statement || problem.description?.description || ''}
+                      </ReactMarkdown>
                     </div>
 
                     {/* Examples */}
@@ -484,14 +465,14 @@ function ProblemViewPage() {
                         <h3 className="text-white font-bold mb-2">Example {idx + 1}:</h3>
                         <div className="bg-dark-900 rounded p-3 font-mono text-sm">
                           <div className="text-dark-300 font-medium">
-                            <span className="text-dark-400">Input:</span> {example.input}
+                            <span className="text-dark-400">Input:</span> {typeof example.input === 'object' ? JSON.stringify(example.input) : example.input}
                           </div>
                           <div className="text-dark-300 font-medium">
-                            <span className="text-dark-400">Output:</span> {example.output}
+                            <span className="text-dark-400">Output:</span> {typeof example.output === 'object' ? JSON.stringify(example.output) : example.output}
                           </div>
                           {example.explanation && (
                             <div className="text-dark-300 mt-2 font-medium">
-                              <span className="text-dark-400">Explanation:</span> {example.explanation}
+                              <span className="text-dark-400">Explanation:</span> {typeof example.explanation === 'object' ? JSON.stringify(example.explanation) : example.explanation}
                             </div>
                           )}
                         </div>
@@ -505,12 +486,9 @@ function ProblemViewPage() {
                         <ul className="list-none space-y-1">
                           {problem.description.constraints.map((constraint, idx) => (
                             <li key={idx} className="text-dark-300 text-sm font-medium">
-                              • <span dangerouslySetInnerHTML={{ 
-                                __html: constraint.replace(
-                                  /`([^`]+)`/g, 
-                                  '<code class="text-blue-400 bg-dark-800 px-1.5 py-0.5 rounded text-xs">$1</code>'
-                                )
-                              }} />
+                            • <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ p: ({children}) => <span className="inline-block">{children}</span> }}>
+                                {constraint}
+                              </ReactMarkdown>
                             </li>
                           ))}
                         </ul>
@@ -690,8 +668,211 @@ function ProblemViewPage() {
                   </div>
                 ) : (
                   <>
-                    {/* Problem Understanding */}
-                    {aiSections.understanding && (
+                    {/* Modern Educational Schema Sections */}
+                    {aiSections.keyInsights && Array.isArray(aiSections.keyInsights) && (
+                      <div className="bg-dark-950 rounded-lg p-4">
+                        <h3 className="text-sm font-bold text-brand-orange mb-3 flex items-center gap-2">
+                          <Zap className="w-4 h-4" />
+                          Key Insights
+                        </h3>
+                        <ul className="space-y-2">
+                          {aiSections.keyInsights.map((insight, idx) => (
+                            <li key={idx} className="text-sm font-medium text-dark-300 flex gap-2">
+                              <span className="text-brand-orange text-xs mt-1 shrink-0 px-1.5 py-0.5 bg-brand-orange/10 rounded">{idx + 1}</span>
+                              {insight}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {aiSections.approach && (
+                      <div className="bg-dark-950 rounded-lg p-4">
+                        <h3 className="text-sm font-bold text-blue-400 mb-2 flex items-center gap-2">
+                          <Target className="w-4 h-4" />
+                          Approach
+                        </h3>
+                        {Array.isArray(aiSections.approach) ? (
+                          <ul className="space-y-2">
+                            {aiSections.approach.map((step, idx) => (
+                              <li key={idx} className="text-sm font-medium text-dark-300 flex gap-2">
+                                <span className="text-blue-400 mt-1.5 shrink-0">•</span>
+                                {step}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div className="text-sm font-medium text-dark-300 leading-relaxed whitespace-pre-wrap">
+                            {aiSections.approach}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Shared Solution Rendering Logic (supports both legacy and new solutions object) */}
+                    {(() => {
+                      const solutions = aiSections.solutions || {
+                        brute: aiSections.bruteForce,
+                        better: aiSections.better,
+                        optimal: aiSections.optimal
+                      };
+
+                      if (!solutions.brute && !solutions.better && !solutions.optimal) return null;
+
+                      return (
+                        <div className="bg-dark-950 rounded-lg p-4">
+                          <div className="flex gap-2 mb-4">
+                            {solutions.brute?.code && (
+                              <button
+                                onClick={() => setSolutionTab('brute')}
+                                className={`px-3 py-1.5 rounded text-sm font-semibold transition-colors ${
+                                  solutionTab === 'brute' ? 'bg-brand-orange text-white' : 'bg-dark-800 text-dark-400'
+                                }`}
+                              >
+                                Brute Force
+                              </button>
+                            )}
+                            {solutions.better?.code && (
+                              <button
+                                onClick={() => setSolutionTab('better')}
+                                className={`px-3 py-1.5 rounded text-sm font-semibold transition-colors ${
+                                  solutionTab === 'better' ? 'bg-brand-orange text-white' : 'bg-dark-800 text-dark-400'
+                                }`}
+                              >
+                                Better
+                              </button>
+                            )}
+                            {solutions.optimal?.code && (
+                              <button
+                                onClick={() => setSolutionTab('optimal')}
+                                className={`px-3 py-1.5 rounded text-sm font-semibold transition-colors ${
+                                  solutionTab === 'optimal' ? 'bg-brand-orange text-white' : 'bg-dark-800 text-dark-400'
+                                }`}
+                              >
+                                Optimal
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Code Display */}
+                          {['brute', 'better', 'optimal'].map(type => {
+                            if (solutionTab !== type || !solutions[type]?.code) return null;
+                            const sol = solutions[type];
+                            return (
+                              <div key={type}>
+                                {sol.explanation && (
+                                  <div className="text-sm font-medium text-dark-300 leading-relaxed mb-4 pb-4 border-b border-dark-800">
+                                    {Array.isArray(sol.explanation) ? (
+                                      <ul className="space-y-2 mb-2">
+                                        {sol.explanation.map((step, i) => (
+                                          <li key={i} className="flex gap-2">
+                                            <span className="text-dark-500 font-bold">{i + 1}.</span>
+                                            {step}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      <div className="whitespace-pre-wrap">{sol.explanation}</div>
+                                    )}
+                                    {sol.complexity && (
+                                      <div className="mt-2 text-brand-orange font-bold text-xs uppercase tracking-wider bg-brand-orange/5 px-2 py-1 rounded w-fit">
+                                        {sol.complexity}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                <SyntaxHighlighter
+                                  language="java"
+                                  style={vscDarkPlus}
+                                  customStyle={{
+                                    margin: 0,
+                                    borderRadius: '0.5rem',
+                                    fontSize: '0.75rem',
+                                    lineHeight: '1.5'
+                                  }}
+                                  showLineNumbers={false}
+                                >
+                                  {sol.code}
+                                </SyntaxHighlighter>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+
+                    {aiSections.commonMistakes && Array.isArray(aiSections.commonMistakes) && (
+                      <div className="bg-dark-950 rounded-lg p-4">
+                        <h3 className="text-sm font-bold text-red-400 mb-3 flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4" />
+                          Common Mistakes
+                        </h3>
+                        <ul className="space-y-2">
+                          {aiSections.commonMistakes.map((mistake, idx) => (
+                            <li key={idx} className="text-sm font-medium text-dark-300 flex gap-2">
+                              <span className="text-red-400 mt-1.5 shrink-0">•</span>
+                              {mistake}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {aiSections.practiceRecommendations && Array.isArray(aiSections.practiceRecommendations) && (
+                      <div className="bg-dark-950 rounded-lg p-4">
+                        <h3 className="text-sm font-bold text-green-400 mb-3 flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4" />
+                          Practice Tips
+                        </h3>
+                        <ul className="space-y-2">
+                          {aiSections.practiceRecommendations.map((tip, idx) => (
+                            <li key={idx} className="text-sm font-medium text-dark-300 flex gap-2 border-l-2 border-green-500/20 pl-3">
+                              {tip}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {aiSections.relatedProblems && Array.isArray(aiSections.relatedProblems) && (
+                      <div className="bg-dark-950 rounded-lg p-4">
+                        <h3 className="text-sm font-bold text-purple-400 mb-3 flex items-center gap-2">
+                          <Link className="w-4 h-4" />
+                          Related Challenges
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {aiSections.relatedProblems.map((p, idx) => {
+                            const isObject = typeof p === 'object' && p !== null;
+                            const title = isObject ? p.title : p;
+                            const url = isObject ? p.url : null;
+
+                            if (url) {
+                              return (
+                                <a 
+                                  key={idx} 
+                                  href={url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="px-2 py-1 bg-purple-500/10 text-purple-400 rounded text-[11px] border border-purple-500/20 font-medium hover:bg-purple-500/20 transition-colors flex items-center gap-1 group"
+                                >
+                                  {title}
+                                  <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                                </a>
+                              );
+                            }
+
+                            return (
+                              <span key={idx} className="px-2 py-1 bg-purple-500/10 text-purple-400 rounded text-[11px] border border-purple-500/20 font-medium">
+                                {title}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Fallback Legacy/Solution-Centric Sections (if not handled by the new logic) */}
+                    {aiSections.understanding && !aiSections.keyInsights && (
                       <div className="bg-dark-950 rounded-lg p-4">
                         <h3 className="text-sm font-bold text-dark-300 mb-2">Problem Understanding</h3>
                         <div className="text-sm font-medium text-dark-300 leading-relaxed whitespace-pre-wrap">
@@ -699,125 +880,6 @@ function ProblemViewPage() {
                         </div>
                       </div>
                     )}
-
-                    {/* Solution Tabs */}
-                    <div className="bg-dark-950 rounded-lg p-4">
-                      <div className="flex gap-2 mb-4">
-                        {aiSections.bruteForce?.code && (
-                          <button
-                            onClick={() => setSolutionTab('brute')}
-                            className={`px-3 py-1.5 rounded text-sm font-semibold transition-colors ${
-                              solutionTab === 'brute' ? 'bg-brand-orange text-white' : 'bg-dark-800 text-dark-400'
-                            }`}
-                          >
-                            Brute Force
-                          </button>
-                        )}
-                        {aiSections.better?.code && (
-                          <button
-                            onClick={() => setSolutionTab('better')}
-                            className={`px-3 py-1.5 rounded text-sm font-semibold transition-colors ${
-                              solutionTab === 'better' ? 'bg-brand-orange text-white' : 'bg-dark-800 text-dark-400'
-                            }`}
-                          >
-                            Better
-                          </button>
-                        )}
-                        {aiSections.optimal?.code && (
-                          <button
-                            onClick={() => setSolutionTab('optimal')}
-                            className={`px-3 py-1.5 rounded text-sm font-semibold transition-colors ${
-                              solutionTab === 'optimal' ? 'bg-brand-orange text-white' : 'bg-dark-800 text-dark-400'
-                            }`}
-                          >
-                            Optimal
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Code Display */}
-                      {solutionTab === 'brute' && aiSections.bruteForce?.code && (
-                        <div>
-                          {aiSections.bruteForce.explanation && (
-                            <div className="text-sm font-medium text-dark-300 leading-relaxed mb-4 pb-4 border-b border-dark-800 whitespace-pre-wrap">
-                              {aiSections.bruteForce.explanation}
-                              {aiSections.bruteForce.complexity && (
-                                <div className="mt-2 text-dark-400 font-medium">
-                                  {aiSections.bruteForce.complexity}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          <SyntaxHighlighter
-                            language="java"
-                            style={vscDarkPlus}
-                            customStyle={{
-                              margin: 0,
-                              borderRadius: '0.5rem',
-                              fontSize: '0.75rem',
-                              lineHeight: '1.5'
-                            }}
-                            showLineNumbers={false}
-                          >
-                            {aiSections.bruteForce.code}
-                          </SyntaxHighlighter>
-                        </div>
-                      )}
-                      {solutionTab === 'better' && aiSections.better?.code && (
-                        <div>
-                          {aiSections.better.explanation && (
-                            <div className="text-sm font-medium text-dark-300 leading-relaxed mb-4 pb-4 border-b border-dark-800 whitespace-pre-wrap">
-                              {aiSections.better.explanation}
-                              {aiSections.better.complexity && (
-                                <div className="mt-2 text-dark-400 font-medium">
-                                  {aiSections.better.complexity}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          <SyntaxHighlighter
-                            language="java"
-                            style={vscDarkPlus}
-                            customStyle={{
-                              margin: 0,
-                              borderRadius: '0.5rem',
-                              fontSize: '0.75rem',
-                              lineHeight: '1.5'
-                            }}
-                            showLineNumbers={false}
-                          >
-                            {aiSections.better.code}
-                          </SyntaxHighlighter>
-                        </div>
-                      )}
-                      {solutionTab === 'optimal' && aiSections.optimal?.code && (
-                        <div>
-                          {aiSections.optimal.explanation && (
-                            <div className="text-sm font-medium text-dark-300 leading-relaxed mb-4 pb-4 border-b border-dark-800 whitespace-pre-wrap">
-                              {aiSections.optimal.explanation}
-                              {aiSections.optimal.complexity && (
-                                <div className="mt-2 text-dark-400 font-medium">
-                                  {aiSections.optimal.complexity}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          <SyntaxHighlighter
-                            language="java"
-                            style={vscDarkPlus}
-                            customStyle={{
-                              margin: 0,
-                              borderRadius: '0.5rem',
-                              fontSize: '0.75rem',
-                              lineHeight: '1.5'
-                            }}
-                            showLineNumbers={false}
-                          >
-                            {aiSections.optimal.code}
-                          </SyntaxHighlighter>
-                        </div>
-                      )}
-                    </div>
 
                     {/* Key Takeaways */}
                     {aiSections.takeaways && (
@@ -829,6 +891,19 @@ function ProblemViewPage() {
                         <div className="text-sm font-medium text-dark-300 leading-relaxed whitespace-pre-wrap">{aiSections.takeaways}</div>
                       </div>
                     )}
+
+                    {/* Catch-all for any other strings in the object */}
+                    {Object.keys(aiSections).filter(key => 
+                      !['raw', 'isRaw', 'keyInsights', 'approach', 'commonMistakes', 'relatedProblems', 'practiceRecommendations', 
+                        'understanding', 'bruteForce', 'optimal', 'better', 'takeaways', 'solutions'].includes(key)
+                    ).map(key => (
+                      <div key={key} className="bg-dark-950 rounded-lg p-4">
+                        <h3 className="text-sm font-bold text-dark-400 mb-2 capitalize">{key.replace(/([A-Z])/g, ' $1')}</h3>
+                        <div className="text-sm font-medium text-dark-300 leading-relaxed whitespace-pre-wrap">
+                          {typeof aiSections[key] === 'object' ? JSON.stringify(aiSections[key], null, 2) : String(aiSections[key])}
+                        </div>
+                      </div>
+                    ))}
                   </>
                 )}
               </div>

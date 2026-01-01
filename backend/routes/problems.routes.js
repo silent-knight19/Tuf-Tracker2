@@ -12,55 +12,58 @@ const companyReadiness = require('../services/company-readiness.service');
 // GET /api/problems - Get all problems for a user
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const { topic, pattern, difficulty, company } = req.query;
+    const { topic, pattern, difficulty, company, topics, patterns } = req.query;
     
     // Create query
     let query = db.collection('problems').where('userId', '==', req.user.uid);
 
-    if (topic) {
-      query = query.where('topics', 'array-contains', topic);
+    // Multi-topic support (AND logic)
+    const selectedTopics = topics ? topics.split(',').filter(t => t && t !== 'null') : (topic ? [topic] : []);
+    const selectedPatterns = patterns ? patterns.split(',').filter(p => p && p !== 'null') : (pattern ? [pattern] : []);
+
+    // Firebase only supports array-contains once, so we'll use it for the first topic if present
+    if (selectedTopics.length > 0) {
+      query = query.where('topics', 'array-contains', selectedTopics[0]);
     }
+    
     if (difficulty) {
       query = query.where('difficulty', '==', difficulty);
     }
+    
+    // Note: Firebase doesn't support array-contains for multiple arrays simultaneously,
+    // so we'll handle additional filtering in memory after fetching.
+    
     if (company) {
       query = query.where('companies', 'array-contains', company);
     }
 
-    // Explicitly select fields if using an SDK that supports it, 
-    // or just map after fetching (Firestore SDK doesn't support 'select' in client libraries usually, 
-    // but we should optimized what we send back to client)
     const snapshot = await query.get();
     
     const problems = [];
     
     snapshot.forEach(doc => {
       const data = doc.data();
-      // Optimization: Only send summary data to list view
-      // This drastically reduces payload size by ignoring 'description', 'notes', 'approach', 'code', 'aiNotes'
       problems.push({
         id: doc.id,
-        title: data.title,
-        platform: data.platform,
-        platformUrl: data.platformUrl, // Needed for "View on LeetCode" link
-        difficulty: data.difficulty,
-        status: data.status,
-        topics: data.topics,
-        patterns: data.patterns,
-        companies: data.companies,
-        revisionDates: data.revisionDates,
-        nextRevision: data.nextRevision,
-        solvedAt: data.solvedAt,
-        createdAt: data.createdAt, // Needed for sorting
-        updatedAt: data.updatedAt,
-        isAIGenerated: data.isAIGenerated
+        ...data
       });
     });
 
-    // Filter by pattern (client-side since Firestore doesn't support multiple array-contains)
+    // Apply AND logic for multiple topics and patterns in memory
     let filteredProblems = problems;
-    if (pattern) {
-      filteredProblems = filteredProblems.filter(p => p.patterns?.includes(pattern));
+
+    // Filter by additional topics (if more than 1)
+    if (selectedTopics.length > 1) {
+      filteredProblems = filteredProblems.filter(p => 
+        selectedTopics.every(t => p.topics?.includes(t))
+      );
+    }
+
+    // Filter by patterns (AND logic)
+    if (selectedPatterns.length > 0) {
+      filteredProblems = filteredProblems.filter(p => 
+        selectedPatterns.every(pat => p.patterns?.includes(pat))
+      );
     }
 
     // Filter by search query (title)
@@ -345,7 +348,7 @@ router.post('/:id/generate-notes', verifyToken, async (req, res) => {
     }
 
     const aiService = require('../services/ai.service');
-    const cacheKey = `notes_v3_${cacheService.normalizeKey(problem.title)}`;
+    const cacheKey = `notes_v4_${cacheService.normalizeKey(problem.title)}`;
     
     // Check if force refresh is requested
     const forceRefresh = req.body.forceRefresh === true;
@@ -389,7 +392,7 @@ router.post('/generate-notes-preview', verifyToken, async (req, res) => {
     }
 
     const aiService = require('../services/ai.service');
-    const cacheKey = `notes_v3_${cacheService.normalizeKey(title)}`;
+    const cacheKey = `notes_v4_${cacheService.normalizeKey(title)}`;
 
     // Check if force refresh is requested
     const forceRefresh = req.body.forceRefresh === true;
