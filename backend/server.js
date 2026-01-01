@@ -34,11 +34,11 @@ app.use(express.urlencoded({ extended: true }));
 
 
 
-// Rate limiting (applied to all other /api/ routes)
-// Apply soft auth first so rate limiter sees the user email
+
+
+// Soft auth for API routes
 const { softVerifyToken } = require('./middleware/auth.middleware');
-const { standardLimiter } = require('./middleware/rateLimit.middleware');
-app.use('/api/', softVerifyToken, standardLimiter);
+app.use('/api/', softVerifyToken);
 
 // Health check - used for cold start detection and keep-alive pings
 app.get('/health', (req, res) => {
