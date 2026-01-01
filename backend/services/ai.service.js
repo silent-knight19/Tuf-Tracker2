@@ -181,42 +181,55 @@ COMMON MISTAKES TO AVOID:
 - Incorrect boundary conditions
 - Not returning the correct type
 - *CRITICAL*: FOR IMPOSSIBLE CASES (e.g., Target not found, K distinct IDs not possible), return EXACTLY what the problem description specifies (usually -1). DO NOT return 0 or throw an exception unless explicitly asked.
-- *CRITICAL*: For string problems, DO NOT assume only lowercase 'a'-'z'. Use a Map or int[128]/int[256] array to handle ALL ASCII characters (spaces, uppercase, symbols). Avoid 's.charAt(i) - \\'a\\''.`;
+- *CRITICAL*: For string problems, DO NOT assume only lowercase 'a'-'z'. Use a Map or int[128]/int[256] array to handle ALL ASCII characters (spaces, uppercase, symbols). Avoid 's.charAt(i) - \\'a\\''.
+- *CRITICAL AMBIGUITY*: If the problem involves 'cost' and 'K' (or similar limit), determines if K is a COUNT (number of items) or a BUDGET (sum of costs).
+  - If tests/examples imply K is small but costs are large, K is likely COUNT.
+  - If tests show K >= sum of costs, K is BUDGET.
+  - *DEFAULT*: If ambiguous and costs are provided, assume K is BUDGET for 'upgrade' or 'purchase' problems.
+- *CRITICAL*: For Probability problems, if input allows 0.0, HANDLE IT (Math.log(0) is Infinity). Throw 'IllegalArgumentException' if constraints are violated (e.g. prob <= 0 but constraint says > 0).
+- *CRITICAL*: For Floating Point outputs, ROUND results to 5 decimal places (Math.round(val * 1e5) / 1e5.0) to match test expectations.`;
 
     try {
-      // Multi-attempt validation: generate 5 candidates
-      const NUM_CANDIDATES = 5;
-      const candidates = [];
+      // PROD: Use 3 candidates for Majority Voting (Optimal Balance of Cost vs Accuracy)
+      const NUM_CANDIDATES = 3;
       
-      console.log(`\n🔄 Generating ${NUM_CANDIDATES} solution candidates for validation...`);
+      console.log(`\n🔄 Generating ${NUM_CANDIDATES} solution candidates (PARALLEL) for verification...`);
       
-      for (let i = 0; i < NUM_CANDIDATES; i++) {
+      // 1. Launch all requests in parallel for speed
+      const promises = Array(NUM_CANDIDATES).fill(null).map(async (_, idx) => {
         try {
           const text = await this.callCerebras(prompt, true);
           const candidate = this.parseJSON(text);
-          
           if (candidate?.solution?.code) {
-            candidates.push({
+            return {
               ...candidate,
-              candidateId: i + 1
-            });
+              candidateId: idx + 1
+            };
           }
         } catch (e) {
-          console.warn(`Candidate ${i + 1} generation failed:`, e.message);
+          console.warn(`Candidate ${idx + 1} generation failed:`, e.message);
         }
-      }
+        return null; // Failed
+      });
+
+      // 2. Wait for all
+      const results = await Promise.all(promises);
+      const candidates = results.filter(c => c !== null);
       
       if (candidates.length === 0) {
         throw new Error('All candidates failed to generate');
       }
       
-      // If no examples, return first candidate
+      // If no examples, we can't score them, but we still return them for voting
       if (!examples || examples.length === 0) {
-        console.log('ℹ️  No examples provided, returning first candidate');
-        return candidates[0];
+        console.log('ℹ️  No examples provided, returning candidates based on generation order');
+        return {
+          bestCandidate: candidates[0],
+          allCandidates: candidates
+        };
       }
       
-      // Validate each candidate
+      // 3. Validate each candidate
       console.log(`\n✅ Validating ${candidates.length} candidates against ${examples.length} examples...`);
       const validatedCandidates = [];
       
@@ -238,11 +251,15 @@ COMMON MISTAKES TO AVOID:
       
       // Sort by score (descending)
       validatedCandidates.sort((a, b) => b.validationScore - a.validationScore);
-      
       const bestCandidate = validatedCandidates[0];
-      console.log(`\n🏆 Selected Candidate ${bestCandidate.candidateId} with score ${bestCandidate.validationScore}/${bestCandidate.validationTotal}\n`);
       
-      return bestCandidate;
+      console.log(`\n🏆 Best Candidate: #${bestCandidate.candidateId} (Score: ${bestCandidate.validationScore}/${bestCandidate.validationTotal})`);
+      
+      // Return BOTH the best one and the full list for voting
+      return {
+        bestCandidate,
+        allCandidates: validatedCandidates
+      };
       
     } catch (e) {
       console.error('Solution generation failed:', e.message);
@@ -496,6 +513,115 @@ REQUIREMENTS:
   }
 
   // ═══════════════════════════════════════════════════════════════
+  // Compute Edge Case Outputs with MAJORITY VOTING
+  // ═══════════════════════════════════════════════════════════════
+  async computeEdgeCaseOutputsWithVoting(candidates, edgeCaseInputs, functionSignature) {
+    if (!candidates || candidates.length === 0) return edgeCaseInputs;
+    
+    // Extract code from candidates
+    const codes = candidates.map(c => c.solution.code);
+    const codeRunner = require('./codeRunner.service');
+    
+    // Extract method name
+    let methodName = 'solve';
+    if (functionSignature) {
+      const match = functionSignature.match(/\s+(\w+)\s*\(/);
+      if (match) methodName = match[1];
+    }
+    
+    console.log(`🗳️  Computing outputs using Majority Voting (N=${candidates.length}) for method: ${methodName}`);
+    
+    try {
+      // 1. Prepare batch inputs ONCE
+      const tests = edgeCaseInputs.map((tc) => ({
+        args: tc.args || Object.values(tc.input || {}),
+        expected: null
+      }));
+      const argsJson = JSON.stringify({ method: methodName, tests });
+      
+      // 2. Run ALL candidates in PARALLEL against the batch
+      const runPromises = codes.map(async (code, idx) => {
+        try {
+          const result = await codeRunner.runJava(code, argsJson);
+          return {
+            id: idx + 1,
+            stdout: result.stdout?.trim() || '',
+            stderr: result.stderr?.trim() || ''
+          };
+        } catch (e) {
+          console.warn(`Voting execution failed for Candidate ${idx + 1}:`, e.message);
+          return null;
+        }
+      });
+      
+      const results = await Promise.all(runPromises);
+      const validResults = results.filter(r => r !== null && !r.stderr);
+      
+      console.log(`   ${validResults.length}/${candidates.length} candidates executed successfully.`);
+
+      if (validResults.length === 0) {
+        console.warn('❌ All candidates failed execution. Using fallback values.');
+        return edgeCaseInputs.map(tc => ({
+          ...tc,
+          expected: tc.expected || 'ERROR'
+        }));
+      }
+
+      // 3. For each test case, collect votes
+      // We parse the output of each candidate: "Test 1: Result", "Test 2: Result"
+      
+      return edgeCaseInputs.map((tc, testIdx) => {
+        const testLabel = `Test ${testIdx + 1}:`;
+        const votes = {}; // "OutputValue" -> count
+        
+        validResults.forEach(res => {
+          const matchLine = res.stdout.split('\n').find(l => l.includes(testLabel));
+          if (matchLine) {
+            const parts = matchLine.split(testLabel);
+            if (parts.length > 1) {
+              const val = parts[1].trim();
+              
+              // Validate output (ignore Errors for voting unless everyone errors)
+              const isValid = (val !== '' && !val.includes('ERROR') && !val.includes('Exception'));
+              
+              const key = isValid ? val : 'ERROR';
+              votes[key] = (votes[key] || 0) + 1;
+            }
+          }
+        });
+        
+        // 4. Find Winner
+        let winner = null;
+        let maxVotes = -1;
+        
+        Object.entries(votes).forEach(([val, count]) => {
+          if (count > maxVotes) {
+            maxVotes = count;
+            winner = val;
+          }
+        });
+        
+        // LOGGING for debug
+        // console.log(`   Test ${testIdx + 1} Votes:`, votes, '-> Winner:', winner);
+
+        // Fallback if winner is ERROR or null
+        const finalExpected = (winner && winner !== 'ERROR') ? winner : (tc.expected || 'ERROR');
+
+        return {
+          ...tc,
+          expected: finalExpected,
+          expectedOutput: finalExpected,
+          consensus: maxVotes > 0 ? (maxVotes / validResults.length) : 0 // Confidence score
+        };
+      });
+
+    } catch (e) {
+      console.error('Majority voting failed:', e.message);
+      return edgeCaseInputs;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   // Compute Edge Case Outputs (Run Java code)
   // ═══════════════════════════════════════════════════════════════
   async computeEdgeCaseOutputs(solutionCode, edgeCaseInputs, functionSignature) {
@@ -573,19 +699,35 @@ REQUIREMENTS:
     // ═══════════════════════════════════════════════════════════════
     // STEP 1: Get/Generate Solution and Hints
     // ═══════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════
+    // STEP 1: Get/Generate Solution and Hints
+    // ═══════════════════════════════════════════════════════════════
     let hints = [];
     let solution = providedSolution;
+    let allCandidates = [];
 
     if (!solution || !solution.code) {
       console.log('Step 1: Generating solution and hints...');
       const help = await this.generateSolutionOnly(title, description, difficulty, functionSignature, examples);
-      hints = help.hints;
-      solution = help.solution;
+      
+      // Handle new return structure (bestCandidate + allCandidates) or legacy single candidate
+      if (help.bestCandidate) {
+        hints = help.bestCandidate.hints;
+        solution = help.bestCandidate.solution;
+        allCandidates = help.allCandidates || [help.bestCandidate];
+      } else {
+        // Fallback for legacy behavior or failure
+        hints = help.hints;
+        solution = help.solution;
+        allCandidates = [help]; 
+      }
     } else {
       console.log('Using provided solution code.');
-      // Still generate hints if not provided
+      // Still generate hints if not provided - this path typically doesn't trigger edge case generation
+      // but if it does, we won't have multiple candidates unless we generate them.
+      // For now, if solution is provided, voting is disabled (N=1).
       const help = await this.generateSolutionOnly(title, description, difficulty, functionSignature, examples);
-      hints = help.hints;
+      hints = help.hints || help.bestCandidate?.hints || [];
     }
     
     if (!solution?.code) {
@@ -607,17 +749,24 @@ REQUIREMENTS:
     }
     
     // ═══════════════════════════════════════════════════════════════
-    // STEP 3: Compute expected values by RUNNING the solution
+    // STEP 3: Compute expected values using MAJORITY VOTING
     // ═══════════════════════════════════════════════════════════════
     let edgeCases = testInputs;
+    
     if (testInputs.length > 0) {
-      console.log('Step 3: Computing expected values by running solution...');
+      console.log('Step 3: Computing expected values with Majority Voting...');
       try {
-        edgeCases = await this.computeEdgeCaseOutputs(solution.code, testInputs, functionSignature);
+        // Use Voting if we have multiple candidates, otherwise falls back to single
+        if (allCandidates.length > 1) {
+           edgeCases = await this.computeEdgeCaseOutputsWithVoting(allCandidates, testInputs, functionSignature);
+        } else {
+           // Fallback to legacy single-execution if only 1 candidate available (e.g. providedSolution)
+           edgeCases = await this.computeEdgeCaseOutputs(solution.code, testInputs, functionSignature);
+        }
+        
         console.log(`✅ Computed expected values for ${edgeCases.filter(e => e.expected && e.expected !== 'ERROR').length}/${edgeCases.length} test cases`);
       } catch (e) {
         console.warn('⚠️ Computing expected values failed:', e.message);
-        // Fallback: Test cases already contain AI-generated fallback from step 2
         edgeCases = testInputs;
       }
     }
@@ -656,10 +805,31 @@ CRITICAL RULES FOR "args":
 3. DO NOT over-nest. 
    - solve(int[] nums) -> args: [[1,2,3]]
    - solve(int a, int b) -> args: [10, 20]
-4. Include: 3 Basic, 4 Boundary (empty/single/K > unique/large values), 4 Edge, 4 Tricky cases.
+4. Include: 3 Basic, 4 Boundary, 4 Edge, 4 Tricky cases.
+   - *CRITICAL PERFORMANCE RULE*: For numeric arguments that might dictate complexity (e.g., maxTime, K, target, capacity), KEEP VALUES REASONABLE (e.g., <= 10^5) unless the problem is purely mathematical.
+   - Do NOT generate input values > 10^9 (avoids scalar types overflow).
+   - **CONSTRAINT ADHERENCE**: 
+       - If constraints say 1 <= x, NEVER generate x=0.
+       - If constraints say 0 < x (strictly positive), NEVER generate x=0. This is common for probabilities, divisors, or dimensions.
+       - If prob is a multiplier, 0 might cause -Infinity in log-space algorithms. AVOID IT unless explicitly tested as a valid edge case.
 5. Provide a highly accurate "expected" value according to problem rules. 
    - *CRITICAL*: If the task is impossible (e.g. K > unique elements), return EXACTLY what the problem specifies (usually -1). DO NOT use string "ERROR" if the return type is int.
-   - This WILL BE USED if the backend code fails to execute. DO NOT leave it null.`;
+   - This WILL BE USED if the backend code fails to execute. DO NOT leave it null.
+6. **STRICT DATA STRUCTURE RULES**:
+   - **CRITICAL**: Check the Problem Description for exact tuple definitions (e.g., "edges are [u, v, w, t]").
+   - If the input is a 2D array (e.g., int[][] edges, int[][] planes), the INNER array length must match the problem statement EXACTLY.
+   - **Generic Weighted Graph**: [[u, v, w]] (length 3) - ONLY if no other data is specified.
+     - **Custom Tuples**: If problem says edges are [u, v, time, energy], YOU MUST GENERATE 4 integers.
+       - *CRITICAL*: Generating [u, v, w] (length 3) for a 4-value edge problem causes ArrayIndexOutOfBoundsException.
+       - ALWAYS check constraints for `edges[i].length`.
+     - **Coordinates**: [[r, c], [r, c]] (length 2)
+     - **Time/Window definitions**: If problem says [u, v, cost, time], YOU MUST GENERATE 4 integers.
+     - **Coordinates**: [[r, c], [r, c]] (length 2)
+   - CHECK THE FUNCTION SIGNATURE AND EXAMPLES. Do not guess dimensions. If constraints say portals[i].length == 4, generate 4 values.
+7. **GRAPH/TREE INDEXING**:
+   - Unless explicitly stated otherwise, assume **0-BASED INDEXING** (nodes 0 to n-1).
+   - *CRITICAL*: For input n=3, edges MUST use nodes {0, 1, 2}. Usage of node 3 is an ERROR (IndexOutOfBounds).
+   - If the example uses 1-based indexing, ONLY THEN use 1-based. Otherwise default to 0-based.`;
 
     try {
       const text = await this.callCerebras(prompt, true);

@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { Play, RotateCcw, GripHorizontal, Clock, Sparkles, Brain, CheckCircle, AlertTriangle, Lightbulb, TrendingUp, X } from 'lucide-react';
+import { Play, RotateCcw, GripHorizontal, Clock, Sparkles, Brain, CheckCircle, AlertTriangle, Lightbulb, TrendingUp, X, Star } from 'lucide-react';
 import CodeEditor from './CodeEditor';
 import ConsolePanel from './ConsolePanel';
 import InputPanel from './InputPanel';
 import EdgeCasesPanel from './EdgeCasesPanel';
 import Timer from './Timer';
-import MotivationalQuote from '../../ui/MotivationalQuote';
 
 const DEFAULT_JAVA_TEMPLATE = `import java.util.*;
 
@@ -355,16 +354,7 @@ function CodePanel({
         </div>
       </div>
 
-      {/* Quote positioned towards the right of the console column */}
-      <div className="absolute bottom-6 right-6 z-[60] pointer-events-none">
-        <div className="pointer-events-auto">
-          <MotivationalQuote 
-            category="Resilience" 
-            variant="ghost" 
-            className="shadow-2xl !bg-black/40 backdrop-blur-md border border-white/5 hover:border-brand-orange/30 transition-colors"
-          />
-        </div>
-      </div>
+
     </div>
   );
 }
