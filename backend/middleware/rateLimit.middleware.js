@@ -1,16 +1,17 @@
-const rateLimit = require('express-rate-limit');
+const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 
 /**
  * UNIFIED AI RATE LIMITER
- * Enforces a strict combined limit of 10 requests per hour for ALL AI features
+ * Enforces a strict combined limit of 20 requests per hour for ALL AI features
  * (Questions + Notes + Edge Cases + Hints = Combined Pool)
+ * 
+ * Uses ipKeyGenerator helper to properly handle IPv6 addresses
  */
 const aiLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 Hour Window
   max: 20, // Limit to 20 requests per hour combined
   standardHeaders: true, // Return RateLimit headers
   legacyHeaders: false, // Disable X-RateLimit headers
-  validate: { trustProxy: false, ip: false, keyGenerator: false }, // Disable strict IP validation (fixes IPv6 error)
   message: {
     error: 'AI Usage Limit Reached (20/hour). Please wait for your quota to reset.',
     status: 429
@@ -23,17 +24,19 @@ const aiLimiter = rateLimit({
   },
   // Use a custom key generator that groups all AI requests by IP + 'ai_combined'
   // This ensures all endpoints verify against the SAME counter
+  // Using ipKeyGenerator to properly handle IPv6 addresses
   keyGenerator: (req) => {
-    const ip = req.ip || req.connection.remoteAddress;
-    return `ai_combined:${ip}`;
+    const ip = req.ip || req.connection.remoteAddress || 'unknown';
+    const safeIp = ipKeyGenerator(ip);
+    return `ai_combined:${safeIp}`;
   }
 });
 
-// Simple standard limiter for other API routes (100/15min)
+// Simple standard limiter for other API routes (300/15min)
+// Uses default keyGenerator which handles IPv6 properly
 const standardLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 300,
-  validate: { trustProxy: false, ip: false }, // Disable strict IP validation (fixes IPv6 error)
   message: { error: 'Too many requests. Please slow down.' },
   skip: (req) => {
     if (!req.user || !req.user.email) return false;
