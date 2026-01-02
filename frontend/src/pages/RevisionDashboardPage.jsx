@@ -53,40 +53,15 @@ function RevisionDashboardPage() {
   }
 
   return (
-    <div className="p-8 h-full overflow-y-auto custom-scrollbar space-y-10 bg-dark-950/20">
+    <div className="p-6 h-full overflow-y-auto custom-scrollbar space-y-8 bg-dark-950/20">
       
       <DashboardHeader user={user} counts={counts} />
 
-      <div className="max-w-7xl mx-auto space-y-12">
+      <div className="max-w-7xl mx-auto space-y-10">
         
-        {/* Daily Intelligence Briefing */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-8 bg-dark-900/40 backdrop-blur-md border border-dark-800/60 rounded-2xl p-8 flex flex-col justify-center relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-              <Zap className="w-24 h-24 text-brand-orange" />
-            </div>
-            <span className="text-[10px] font-black text-brand-orange uppercase tracking-[0.3em] mb-3">Strategic Overview</span>
-            <h3 className="text-3xl font-black text-white leading-tight max-w-xl italic">
-              "The distance between data and mastery is covered by consistent repetition."
-            </h3>
-            <div className="flex items-center gap-4 mt-6">
-               <div className="flex items-center gap-2">
-                 <div className="w-1.5 h-1.5 rounded-full bg-brand-orange shadow-[0_0_8px_rgba(249,115,22,0.6)]" />
-                 <span className="text-[10px] font-black text-dark-500 uppercase tracking-widest">Neural Link Stable</span>
-               </div>
-               <div className="w-1 h-1 rounded-full bg-dark-800" />
-               <span className="text-[10px] font-black text-dark-500 uppercase tracking-widest">Protocol 4.0 Active</span>
-            </div>
-          </div>
-          <div className="lg:col-span-4 bg-dark-900/40 backdrop-blur-md border border-dark-800/60 rounded-2xl p-6 flex flex-col justify-center">
-            <span className="text-[10px] font-black text-dark-500 uppercase tracking-widest mb-2">Current Protocol</span>
-            <h4 className="text-lg font-black text-white leading-tight">Spaced Repetition Active</h4>
-            <p className="text-xs text-dark-400 mt-2">Maintain your streak to strengthen neural pathways for specific patterns.</p>
-          </div>
-        </div>
         
         {/* Revision Queue Groups */}
-        <div className="space-y-10">
+        <div className="space-y-8">
           
           {/* Overdue Section - High Priority */}
           {overdue.length > 0 && (
@@ -176,7 +151,7 @@ function RevisionDashboardPage() {
                   </div>
                   <div>
                     <h3 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
-                       Horizon Tasks ({upcoming.length})
+                       Upcoming ({upcoming.length})
                     </h3>
                     <p className="text-dark-500 text-sm font-bold uppercase tracking-widest mt-1">Scheduled debriefings</p>
                   </div>
@@ -200,7 +175,7 @@ function RevisionDashboardPage() {
                 onClick={() => setShowUpcoming(true)}
                 className="w-full py-4 bg-dark-900/40 border border-dark-800/60 rounded-2xl text-[11px] font-black text-dark-500 hover:text-white transition-all uppercase tracking-widest hover:bg-dark-900"
               >
-                Access all {upcoming.length} horizon records
+                Access all {upcoming.length} upcoming records
               </button>
             )}
           </div>

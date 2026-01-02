@@ -53,7 +53,7 @@ function RevisionProblemCard({ revision }) {
 
   return (
     <div 
-      className={`group relative bg-dark-900/40 backdrop-blur-3xl border rounded-[2.5rem] p-8 transition-all duration-500 ease-out hover:scale-[1.1] hover:-translate-y-1 hover:rotate-0 hover:z-[100] cursor-pointer overflow-hidden ${
+      className={`group relative bg-dark-900/40 backdrop-blur-3xl border rounded-3xl p-6 transition-all duration-500 ease-out hover:scale-[1.05] hover:-translate-y-1 hover:rotate-0 hover:z-[100] cursor-pointer overflow-hidden ${
         revision.overdueDays > 0 
           ? 'border-red-500/30 hover:border-red-500 hover:shadow-[0_0_30px_rgba(239,68,68,0.5)]' 
           : 'border-dark-800 hover:border-brand-orange hover:shadow-[0_0_30px_rgba(249,115,22,0.5)]'
@@ -79,7 +79,7 @@ function RevisionProblemCard({ revision }) {
                 </span>
               )}
             </div>
-            <h4 className="text-xl font-black text-white group-hover:text-brand-orange transition-colors truncate">
+            <h4 className="text-lg font-black text-white group-hover:text-brand-orange transition-colors truncate">
               {revision.problemTitle || 'Untitled Problem'}
             </h4>
           </div>

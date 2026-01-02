@@ -4,18 +4,18 @@ function DashboardHeader({ user, counts }) {
   const totalDue = counts.dueToday + counts.overdue;
 
   return (
-    <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-10">
+    <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-6">
       <div className="space-y-2">
         <div className="flex items-center gap-3">
            <div className="p-2.5 bg-brand-orange/10 rounded-2xl border border-brand-orange/20 shadow-[0_0_20px_rgba(249,115,22,0.1)]">
              <Hand className="w-7 h-7 text-brand-orange animate-wave" />
            </div>
-           <h1 className="text-4xl font-black text-white tracking-tight">
+           <h1 className="text-3xl font-black text-white tracking-tight">
              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-dark-400">{user?.displayName?.split(' ')[0] || 'Candidate'}</span>
            </h1>
         </div>
         
-        <p className="text-dark-400 text-lg flex items-center gap-2 pl-1">
+        <p className="text-dark-400 text-base flex items-center gap-2 pl-1">
           {totalDue > 0 ? (
             <>
               <Sparkles className="w-4 h-4 text-brand-yellow/60" />
