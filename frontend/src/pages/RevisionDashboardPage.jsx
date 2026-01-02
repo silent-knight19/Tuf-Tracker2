@@ -113,16 +113,16 @@ function RevisionDashboardPage() {
                   </div>
                   <div>
                     <h3 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
-                       Active Revisions ({dueToday.length})
+                       Active Revisions ({counts.dueToday})
                     </h3>
                     <p className="text-dark-500 text-sm font-bold uppercase tracking-widest mt-1">Mastery Maintenance protocol</p>
                   </div>
                 </div>
             </div>
 
-            {dueToday.length > 0 ? (
+            {Object.values(dueToday).flat().length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {dueToday.map(revision => (
+                {Object.values(dueToday).flat().map(revision => (
                   <RevisionProblemCard key={revision.id} revision={revision} />
                 ))}
               </div>

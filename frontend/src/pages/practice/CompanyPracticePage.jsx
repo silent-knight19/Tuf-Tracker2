@@ -296,7 +296,7 @@ function CompanyPracticePage() {
         </div>
       </div>
 
-      <div className="max-w-[1440px] mx-auto px-8">\n
+      <div className="max-w-[1440px] mx-auto px-8">
         {/* Popular Companies Grid (Stay below) */}
         <div className="lg:col-span-12 order-3">
           <h3 className="text-xs font-bold text-dark-500 uppercase tracking-widest mb-6">Popular Targets</h3>
