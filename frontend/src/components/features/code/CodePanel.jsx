@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { Play, RotateCcw, GripHorizontal, Clock, Sparkles, Brain, CheckCircle, AlertTriangle, Lightbulb, TrendingUp, X, Star } from 'lucide-react';
+import { Play, RotateCcw, GripHorizontal, Clock, Cpu, Brain, CheckCircle, AlertTriangle, Lightbulb, TrendingUp, X, Star } from 'lucide-react';
 import CodeEditor from './CodeEditor';
 import ConsolePanel from './ConsolePanel';
 import InputPanel from './InputPanel';
@@ -200,7 +200,7 @@ function CodePanel({
     { id: 'console', label: 'Output' },
     { id: 'input', label: 'Input' },
     { id: 'edgecases', label: 'Edge Cases', badge: edgeCases?.length || 0 },
-    { id: 'analysis', label: 'Analysis', badge: analysisResult ? '✓' : null }
+    { id: 'analysis', label: 'Analysis', badge: analysisResult ? 'done' : null }
   ];
 
   return (
@@ -385,8 +385,8 @@ function AnalysisPanel({ result, isLoading, onClear }) {
     return (
       <div className="h-full flex flex-col items-center justify-center text-dark-400 p-8">
         <div className="relative">
-          <Brain className="w-12 h-12 text-purple-500 animate-pulse" />
-          <Sparkles className="w-4 h-4 text-purple-400 absolute -top-1 -right-1 animate-bounce" />
+          <Cpu className="w-12 h-12 text-purple-500 animate-pulse" />
+          <Zap className="w-4 h-4 text-purple-400 absolute -top-1 -right-1 animate-bounce" />
         </div>
         <p className="mt-4 font-bold">Analyzing your code...</p>
         <p className="text-xs text-dark-500 mt-1">Evaluating complexity, quality, and patterns</p>

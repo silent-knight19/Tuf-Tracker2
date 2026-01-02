@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Zap, ExternalLink, Bot, ChevronRight, Eye, EyeOff, Lightbulb, Sparkles, GripVertical } from 'lucide-react';
+import { ArrowLeft, Zap, ExternalLink, Cpu, ChevronRight, Eye, EyeOff, Lightbulb, Terminal, GripVertical } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -419,7 +419,7 @@ function SolveUserProblemPage() {
                 {loadingHelp ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
-                  <Bot className="w-4 h-4" />
+                  <Cpu className="w-4 h-4" />
                 )}
                 AI Assist
               </button>
@@ -432,7 +432,7 @@ function SolveUserProblemPage() {
                 {loadingHelp ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
-                  <Bot className="w-4 h-4" />
+                  <Cpu className="w-4 h-4" />
                 )}
                 Regenerate
               </button>
@@ -504,7 +504,7 @@ function SolveUserProblemPage() {
                       {loadingEdgeCases ? (
                         <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       ) : (
-                        <Sparkles className="w-3 h-3" />
+                        <Terminal className="w-3 h-3" />
                       )}
                       {edgeCases ? 'Regenerate' : 'Generate'} Edge Cases
                     </button>
@@ -569,7 +569,7 @@ function SolveUserProblemPage() {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                          <Bot className="w-5 h-5 text-green-400" /> Solution
+                          <Cpu className="w-5 h-5 text-green-400" /> Solution
                         </h2>
                         <button
                           type="button"

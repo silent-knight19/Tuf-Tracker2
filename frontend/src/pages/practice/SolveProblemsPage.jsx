@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { Code, Activity, Sparkles } from 'lucide-react';
+import { Code, Activity, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SolveProblemsSection from '../../components/features/revision/SolveProblemsSection';
 import { useRevisionStore } from '../../stores/revisionStore';
@@ -63,7 +63,7 @@ function SolveProblemsPage() {
         <header className="flex flex-col lg:flex-row items-end justify-between mb-8 gap-8 shrink-0">
           <motion.div variants={itemVariants} className="space-y-3 max-w-2xl">
             <div className="flex items-center gap-2 px-2.5 py-0.5 bg-brand-orange/10 border border-brand-orange/20 rounded-full w-fit">
-              <Sparkles className="w-3 h-3 text-brand-orange" />
+              <Zap className="w-3 h-3 text-brand-orange" />
               <span className="text-[9px] font-black text-brand-orange uppercase tracking-[0.2em]">Personal Vault</span>
             </div>
             

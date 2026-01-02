@@ -6,7 +6,8 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { 
   ArrowLeft, 
   ExternalLink, 
-  Sparkles, 
+  Cpu, 
+  Terminal, 
   RotateCw, 
   Lightbulb, 
   Edit2, 
@@ -597,7 +598,7 @@ function ProblemViewPage() {
                       disabled={isGenerating}
                       className="btn btn-primary flex items-center gap-2 mx-auto"
                     >
-                      <Sparkles className="w-4 h-4" />
+                      <Cpu className="w-4 h-4" />
                       Generate Description
                     </button>
                   </div>
@@ -641,7 +642,7 @@ function ProblemViewPage() {
                     : 'text-dark-400 hover:text-dark-200'
                 }`}
               >
-                <Sparkles className="w-3 h-3" />
+                <Cpu className="w-3 h-3" />
                 AI Study Guide
               </button>
             </div>
@@ -681,7 +682,7 @@ function ProblemViewPage() {
                   </>
                 ) : (
                   <>
-                    {aiSections ? <RotateCw className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                    {aiSections ? <RotateCw className="w-4 h-4" /> : <Cpu className="w-4 h-4" />}
                     {aiSections ? 'Regenerate' : 'Generate'}
                   </>
                 )}
@@ -928,7 +929,7 @@ function ProblemViewPage() {
                 <div>
                   {isViewOnly ? (
                     <>
-                      <Sparkles className="w-12 h-12 text-dark-600 mx-auto mb-3" />
+                      <Cpu className="w-12 h-12 text-dark-600 mx-auto mb-3" />
                       <p className="text-dark-400 mb-2">AI Study Guide unavailable in preview</p>
                       <p className="text-sm">Add this problem to generate AI-powered notes</p>
                     </>

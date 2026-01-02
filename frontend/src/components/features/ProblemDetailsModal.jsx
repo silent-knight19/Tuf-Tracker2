@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useProblemStore } from '../../stores/problemStore';
-import { Sparkles, RotateCw, Lightbulb, X, ExternalLink } from 'lucide-react';
+import { Cpu, RotateCw, Lightbulb, X, ExternalLink } from 'lucide-react';
 
 function ProblemDetailsModal({ problem, isOpen, onClose }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -285,7 +285,7 @@ function ProblemDetailsModal({ problem, isOpen, onClose }) {
               <div className="card">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-dark-100 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-brand-orange" />
+                    <Cpu className="w-5 h-5 text-brand-orange" />
                     AI Study Guide
                   </h3>
                   <button
@@ -300,7 +300,7 @@ function ProblemDetailsModal({ problem, isOpen, onClose }) {
                       </>
                     ) : (
                       <>
-                        {aiSections ? <RotateCw className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                        {aiSections ? <RotateCw className="w-4 h-4" /> : <Cpu className="w-4 h-4" />}
                         {aiSections ? 'Regenerate' : 'Generate'}
                       </>
                     )}

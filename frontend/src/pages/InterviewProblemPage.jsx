@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Bot, ChevronRight, Eye, EyeOff, Lightbulb, ExternalLink, Sparkles, GripVertical } from 'lucide-react';
+import { ArrowLeft, Cpu, ChevronRight, Eye, EyeOff, Lightbulb, ExternalLink, Terminal, GripVertical } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import api from '../utils/api';
 import { auth } from '../config/firebase';
@@ -310,7 +310,7 @@ function InterviewProblemPage() {
               {loadingSolution ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <Bot className="w-4 h-4" />
+                <Cpu className="w-4 h-4" />
               )}
               Get Solution
             </button>
@@ -368,7 +368,7 @@ function InterviewProblemPage() {
                       {loadingTestCases ? (
                         <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       ) : (
-                        <Sparkles className="w-3 h-3" />
+                        <Terminal className="w-3 h-3" />
                       )}
                       {testCases ? 'Regenerate' : 'Generate'} Test Cases
                     </button>
@@ -434,7 +434,7 @@ function InterviewProblemPage() {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                          <Bot className="w-5 h-5 text-green-400" /> Solution
+                          <Cpu className="w-5 h-5 text-green-400" /> Solution
                         </h2>
                         <button
                           type="button"
