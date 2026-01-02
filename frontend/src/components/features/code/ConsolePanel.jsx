@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Clock } from 'lucide-react';
 
 function ConsolePanel({ output, error, timedOut, isLoading, testCases }) {
   const hasOutput = output || error || timedOut;
@@ -116,7 +116,7 @@ function ConsolePanel({ output, error, timedOut, isLoading, testCases }) {
 
         {timedOut && (
           <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded text-red-400">
-            <strong>⏱ Execution Timeout</strong>
+            <strong className="flex items-center gap-2"><Clock className="w-4 h-4" /> Execution Timeout</strong>
             <p className="text-xs mt-1">Code execution exceeded the time limit (2-3 seconds)</p>
           </div>
         )}

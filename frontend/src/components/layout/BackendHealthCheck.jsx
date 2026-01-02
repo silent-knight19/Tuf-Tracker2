@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { AlertCircle } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const BACKEND_BASE_URL = API_URL.replace('/api', '');
@@ -84,7 +85,7 @@ function BackendHealthCheck({ children }) {
     return (
       <>
         <div className="bg-red-500/10 border-b border-red-500/20 text-red-400 px-4 py-2 flex items-center justify-center gap-2 text-sm">
-          <span>⚠️ Connection to server failed. Some features may not work.</span>
+          <span className="flex items-center gap-2"><AlertCircle className="w-4 h-4" /> Connection to server failed. Some features may not work.</span>
           <button 
             onClick={() => window.location.reload()}
             className="underline hover:text-red-300"

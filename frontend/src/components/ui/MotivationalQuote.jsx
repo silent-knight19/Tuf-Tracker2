@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQuoteStore } from '../../stores/quoteStore';
-import { Quote, Sparkles } from 'lucide-react';
+import { Quote, Zap } from 'lucide-react';
 
 const MotivationalQuote = ({ category = null, className = "", variant = "card", animate = true, size = "md", hideAuthor = false }) => {
   const { quotes, fetchQuotes, getRandomQuote } = useQuoteStore();
@@ -50,7 +50,7 @@ const MotivationalQuote = ({ category = null, className = "", variant = "card", 
   if (variant === "subtle") {
     return (
       <div className={`flex items-center gap-1.5 transition-all duration-700 ease-out ${transitionClass} ${className}`}>
-        <Sparkles className="w-3.5 h-3.5 text-brand-orange/60" />
+        <Zap className="w-3.5 h-3.5 text-brand-orange/60" />
         <span className="text-[10px] font-black tracking-tight uppercase text-brand-orange">"{activeQuote.text}"</span>
       </div>
     );

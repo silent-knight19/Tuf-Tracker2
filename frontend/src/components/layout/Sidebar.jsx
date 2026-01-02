@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
-import { LayoutDashboard, BarChart2, RotateCw, LogOut, BookOpen, Target, Briefcase, Code, Building2 } from 'lucide-react';
+import { LayoutDashboard, BarChart2, RotateCw, LogOut, BookOpen, Target, Code, Building2, Cpu } from 'lucide-react';
 import MotivationalQuote from '../ui/MotivationalQuote';
 
 function Sidebar({ open }) {
@@ -17,7 +17,7 @@ function Sidebar({ open }) {
   const practiceNavigation = [
     { name: 'Pattern Focus', path: '/practice/patterns', icon: Target, color: 'text-purple-400', desc: 'Master algorithms' },
     { name: 'Company Prep', path: '/practice/companies', icon: Building2, color: 'text-green-400', desc: 'FAANG practice' },
-    { name: 'Mock Interview', path: '/practice/interview', icon: Briefcase, color: 'text-blue-400', desc: 'AI-powered' },
+    { name: 'Mock Interview', path: '/practice/interview', icon: Cpu, color: 'text-blue-400', desc: 'AI-powered' },
     { name: 'Problem Bank', path: '/practice/solve', icon: Code, color: 'text-brand-orange', desc: 'Your collection' },
   ];
 

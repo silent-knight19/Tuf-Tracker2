@@ -1,4 +1,4 @@
-import { Zap, Trophy, Hand, Sparkles } from 'lucide-react';
+import { Zap, Trophy, UserCircle, Target } from 'lucide-react';
 
 function DashboardHeader({ user, counts }) {
   const totalDue = counts.dueToday + counts.overdue;
@@ -8,7 +8,7 @@ function DashboardHeader({ user, counts }) {
       <div className="space-y-2">
         <div className="flex items-center gap-3">
            <div className="p-2.5 bg-brand-orange/10 rounded-2xl border border-brand-orange/20 shadow-[0_0_20px_rgba(249,115,22,0.1)]">
-             <Hand className="w-7 h-7 text-brand-orange animate-wave" />
+             <UserCircle className="w-7 h-7 text-brand-orange" />
            </div>
            <h1 className="text-3xl font-black text-white tracking-tight">
              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-dark-400">{user?.displayName?.split(' ')[0] || 'Candidate'}</span>
@@ -18,7 +18,7 @@ function DashboardHeader({ user, counts }) {
         <p className="text-dark-400 text-base flex items-center gap-2 pl-1">
           {totalDue > 0 ? (
             <>
-              <Sparkles className="w-4 h-4 text-brand-yellow/60" />
+              <Target className="w-4 h-4 text-brand-yellow/60" />
               <span>You have <span className="text-white font-bold">{totalDue} missions</span> to debrief today.</span>
             </>
           ) : (

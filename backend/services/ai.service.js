@@ -1028,118 +1028,389 @@ Return JSON:
   // Generate Learning Notes (Comprehensive Study Material)
   // ═══════════════════════════════════════════════════════════════
   async generateLearningNotes(pattern, topic) {
+    // Determine if this is a pattern or a topic (Data Structure/Algorithm)
+    const isPattern = !!pattern;
     const subject = pattern || topic;
-    const prompt = `You are a world-class DSA instructor and competitive programming expert. Create EXTREMELY COMPREHENSIVE and DETAILED learning notes for mastering "${subject}" in coding interviews.
 
-This is meant to be a COMPLETE TUTORIAL that someone can use to fully understand and master this concept. Be THOROUGH and EDUCATIONAL - write as if you're creating a premium course module.
+    // ═══════════════════════════════════════════════════════════════
+    // PROMPT FOR PATTERNS (Algorithmic techniques like Two Pointers, Sliding Window)
+    // ═══════════════════════════════════════════════════════════════
+    const patternPrompt = `You are an EXCEPTIONAL computer science educator with 20+ years of experience teaching at top universities (MIT, Stanford, CMU) and training engineers at FAANG companies. Your students consistently praise you for making complex concepts crystal clear.
 
-Return a JSON object with this EXACT structure. EVERY field must be detailed and comprehensive:
+YOUR MISSION: Create the ULTIMATE learning resource for "${subject}" that will take a complete beginner with ZERO prior knowledge and transform them into someone who can confidently solve any ${subject} problem in a coding interview.
+
+TEACHING PHILOSOPHY:
+- Explain like you're talking to a smart friend who has never seen this before
+- Use analogies and real-world examples to make abstract concepts concrete  
+- Build understanding step-by-step, never assuming prior knowledge
+- After reading this, even a first-year CS student should fully understand ${subject}
+- Be GENEROUS with explanations - clarity trumps brevity
+
+Return a JSON object with this structure. EVERY field must be EXCEPTIONALLY detailed:
 
 {
-  "title": "Learning: ${subject}",
+  "title": "Mastering ${subject}",
   
-  "overview": "Write a DETAILED 5-6 sentence overview that covers: (1) What ${subject} is and its formal definition, (2) The core principle or invariant that makes it work, (3) Why it's crucial for coding interviews and which companies love it, (4) How it compares to brute force approaches, (5) The key insight that distinguishes experts from beginners. This should read like an engaging introduction that hooks the reader and establishes foundational understanding.",
+  "overview": "Write a COMPREHENSIVE 8-10 sentence overview that a complete beginner can understand. Structure it as: (1) Start with a simple real-world analogy that captures the essence of ${subject} - something anyone can relate to. (2) Define what ${subject} actually is in plain English. (3) Explain the CORE INSIGHT - the 'aha!' moment that makes this technique click. (4) Describe WHAT PROBLEM this solves and WHY we need it. (5) Explain how it improves upon the naive/brute-force approach - with specific complexity improvements. (6) Mention which types of coding problems use this and how often it appears in interviews. (7) End with what mastery looks like - what will someone be able to do after learning this? Make this overview engaging, encouraging, and accessible. A complete beginner should finish reading this and think 'I understand why this matters and I'm excited to learn it!'",
   
   "whenToUse": [
-    "Signal 1: A specific scenario where this pattern is the primary candidate. Describe the signal and the underlying transformation it allows. Provide 2-3 lines of depth.",
-    "Signal 2: Another common interview scenario with 2-3 lines of detailed explanation.",
-    "Signal 3: A scenario involving specific data structure interactions (e.g., strings or linked lists). Provide 2-3 lines of depth.",
-    "Signal 4: A scenario focusing on space optimization (e.g., reducing O(n) space to O(1)). Provide 2-3 lines of depth.",
-    "Signal 5: An advanced scenario involving multi-pass or nested applications of the pattern. Provide 2-3 lines of depth.",
-    "Signal 6: A niche or 'hidden' application of the pattern in less obvious problems. Provide 2-3 lines of depth.",
-    "Signal 7: A scenario where this pattern is combined with another technique (e.g., sorting, hashing). Provide 2-3 lines of depth.",
-    "Signal 8: Another scenario focusing on the time complexity advantage. Provide 2-3 lines of depth."
-  ],
-  
-  "goldenRules": {
-    "dataStructures": ["List 3-5 data structure scenarios (e.g., 'Sorted Array -> Binary Search/Two Pointers', 'String -> Sliding Window/Hashing'). Explain the connection."],
-    "keywords": ["List 5-7 keyword-to-action mappings (e.g., 'Find a pair -> Two Pointers', 'Contiguous subarray -> Sliding Window'). Explain WHY the keyword triggers the pattern."],
-    "operations": ["List 3-4 operational cues (e.g., 'O(1) space required -> In-place modification', 'Minimize O(n^2) -> Optimization pattern'). Explain the constraint implication."],
-    "constraints": ["List 2-3 constraint patterns (e.g., 'n <= 10^5 -> O(n) or O(n log n) required'). Explain how constraints dictate the approach."]
-  },
-  
-  "unconventionalUse": [
-    "Unconventional Scenario 1: 2-3 lines explaining a case where ${subject} is applied WITHOUT the typical prerequisite (e.g., Two Pointers without sorting). Explain WHEN, WHY, and HOW this works.",
-    "Unconventional Scenario 2: 2-3 lines on another advanced/edge case where the pattern is used non-traditionally.",
-    "Unconventional Scenario 3: 2-3 lines on combining ${subject} with an unexpected technique or applying it to an unusual data structure."
+    "🎯 GOLDEN RULE 1 (90% CONFIDENCE - If you see this, USE ${subject}): Describe the MOST RELIABLE signal that tells you to use ${subject}. Be extremely specific. Example format: 'When you see [EXACT PROBLEM PATTERN] combined with [SPECIFIC CONSTRAINT], you should immediately think ${subject}. This works because [DETAILED EXPLANATION]. Real example: [CITE A REAL LEETCODE PROBLEM]. The reason this is 90% reliable is [EXPLAIN THE MATHEMATICAL/LOGICAL GUARANTEE].' Write 4-5 lines minimum.",
+    
+    "🎯 GOLDEN RULE 2 (90% CONFIDENCE): Second most reliable signal. Same detailed format as above. Focus on a DIFFERENT trigger pattern. Include a different real problem example.",
+    
+    "🎯 GOLDEN RULE 3 (90% CONFIDENCE): Third golden rule focusing on CONSTRAINT-BASED recognition. When the problem CONSTRAINTS (time/space requirements) force you toward ${subject}. Explain how to read constraints and know ${subject} is required.",
+    
+    "Signal 4 (HIGH CONFIDENCE): A common interview scenario where ${subject} shines. Explain the problem type, why ${subject} is optimal, and name 2-3 real LeetCode problems that fit this pattern.",
+    
+    "Signal 5 (HIGH CONFIDENCE): Another strong signal focusing on the TIME COMPLEXITY benefit. Explain exactly how ${subject} reduces complexity from brute force. Include the before/after complexity analysis.",
+    
+    "Signal 6 (MEDIUM CONFIDENCE): A scenario involving specific data structures (arrays, strings, linked lists, trees). Explain which data structure properties make ${subject} applicable.",
+    
+    "Signal 7 (MEDIUM CONFIDENCE): A SPACE OPTIMIZATION scenario. When you need O(1) space or the problem has strict memory constraints.",
+    
+    "Signal 8 (MEDIUM CONFIDENCE): When ${subject} combines with another technique (like binary search, hashing, sorting). Explain the hybrid approach.",
+    
+    "Signal 9 (PATTERN RECOGNITION): Common KEYWORDS in problem statements that hint at ${subject}. List 5-7 keyword phrases and explain why each triggers this pattern.",
+    
+    "Signal 10 (ANTI-PATTERNS): When NOT to use ${subject}. Describe scenarios that LOOK like they need ${subject} but actually don't. This prevents common mistakes."
   ],
   
   "complexity": {
-    "time": "O(n) - Provide the typical time complexity with a brief explanation of why (e.g., 'O(n) because each element is visited at most once by each pointer, giving us 2n operations')",
-    "space": "O(1) - Provide the typical space complexity with explanation (e.g., 'O(1) auxiliary space since we only use pointer variables regardless of input size')",
-    "bestCase": "Describe the best-case scenario in detail: what input conditions lead to fastest execution, what the complexity becomes, and why. Example: 'Best case O(1) when the target pair is at the array edges - first comparison succeeds immediately'",
-    "worstCase": "Describe the worst-case scenario in detail: what input conditions cause maximum work, and strategies to handle or mitigate this. Example: 'Worst case O(n) when target doesn't exist - both pointers traverse to meet at the middle, checking all possible pairs'"
+    "time": "Write the time complexity with a COMPLETE BEGINNER-FRIENDLY explanation. Format: 'O(?) - [Plain English explanation]. Here's why: [Step-by-step reasoning showing exactly why we get this complexity. Count the operations. Explain what 'visiting each element once' means. Use concrete examples with actual numbers to illustrate.]'",
+    
+    "space": "Write the space complexity with the same detailed explanation format. Explain what 'auxiliary space' means. Clarify what counts toward space complexity and what doesn't.",
+    
+    "bestCase": "Describe when ${subject} performs BEST. What input makes it fastest? What's the complexity? Give a concrete example with actual numbers showing why it's fast.",
+    
+    "worstCase": "Describe when ${subject} performs WORST. What causes maximum work? How to recognize problematic inputs? Any strategies to mitigate?"
   },
   
   "coreApproach": {
-    "intuition": "Write a DETAILED 4-5 sentence explanation of the CORE INSIGHT that makes this technique work. Explain the 'aha!' moment that unlocks mastery. Why does this approach work? What mathematical or logical principle underlies it? How should someone THINK about problems to recognize when this applies? This should be the key conceptual breakthrough that transforms a confused beginner into someone who 'gets it'.",
+    "intuition": "Write a DETAILED 6-8 sentence explanation that gives the complete beginner an 'AHA!' moment. Start with: 'The key insight that makes ${subject} work is...' Then explain: (1) The fundamental principle/invariant. (2) Why this principle guarantees correctness. (3) How to THINK about problems to recognize when this applies. (4) A simple analogy that makes the concept click. (5) What distinguishes an expert's thinking from a beginner's. This should be the paragraph that transforms confusion into clarity.",
     
     "steps": [
-      "STEP 1 - Initialization: Provide a detailed explanation of how to set up the algorithm. What variables do you need? Where do pointers start and why? What invariants must be maintained? Example: 'Initialize two pointers: left at index 0 (smallest element) and right at index n-1 (largest element). The invariant is that our answer, if it exists, must lie within the range [left, right]. This works because...'",
-      "STEP 2 - Loop Condition: Explain the main loop condition in detail. When do we continue? When do we stop? What does the condition represent conceptually? Include common variations.",
-      "STEP 3 - Core Logic: Describe the main decision-making process inside the loop. How do we decide which pointer to move and why? What comparison do we make? Explain the reasoning behind each branch.",
-      "STEP 4 - Pointer Movement: Explain how and why we move pointers. What does moving left pointer right achieve? What about moving right pointer left? Why does this converge to a solution?",
-      "STEP 5 - Solution Detection: How do we know when we've found the answer? What condition signals success? How do we extract and return the result?",
-      "STEP 6 - Termination Handling: What happens if no solution exists? How do we handle the case when pointers meet or cross? What should we return and why?"
+      "STEP 1 - UNDERSTAND THE PROBLEM: Before coding, what should you identify? What information do you need? How do you reformulate the problem to fit ${subject}? What questions should you ask yourself? Provide a mental checklist.",
+      
+      "STEP 2 - INITIALIZATION: Explain EXACTLY how to set up your solution. What variables/pointers/data structures do you need? Where do they start and WHY? What INVARIANT will you maintain throughout? Write this so a beginner knows precisely what code to write first.",
+      
+      "STEP 3 - THE MAIN LOOP: What's the loop condition? When do we continue vs stop? Explain the MEANING of the loop condition - what does it represent conceptually? Include common variations.",
+      
+      "STEP 4 - CORE DECISION LOGIC: Inside the loop, what decisions do we make? How do we know which action to take? Explain the branching logic step-by-step. Why does each decision lead us closer to the answer?",
+      
+      "STEP 5 - STATE UPDATES: How do we move forward? What changes with each iteration? How does the solution space shrink? Explain why we're guaranteed to make progress and eventually terminate.",
+      
+      "STEP 6 - SOLUTION DETECTION: How do we know we found the answer? What condition signals success? How do we extract and return the result correctly?",
+      
+      "STEP 7 - HANDLE NO SOLUTION: What if there's no valid answer? How do we detect this? What should we return? Explain edge case handling."
     ],
     
     "edgeCases": [
-      "Edge Case 1: 2-3 lines of deep technical explanation on how to handle specific boundary conditions (e.g., empty/single element) for ${subject}. Must be exactly 2-3 lines.",
-      "Edge Case 2: 2-3 lines explaining another critical edge case and the logic to solve it. Must be exactly 2-3 lines.",
-      "Edge Case 3: 2-3 lines on handling null or unexpected input types. Must be exactly 2-3 lines.",
-      "Edge Case 4: 2-3 lines on duplicate handling or collision logic. Must be exactly 2-3 lines.",
-      "Edge Case 5: 2-3 lines on negative values or underflow/overflow. Must be exactly 2-3 lines.",
-      "Edge Case 6: 2-3 lines on large-scale performance or memory limits. Must be exactly 2-3 lines."
+      "EDGE CASE: Empty/Null Input - What happens with empty arrays, null values, or zero-length strings? How should your code handle this? ALWAYS check for this FIRST. Show the exact code check and explain why it prevents crashes.",
+      
+      "EDGE CASE: Single Element - How does ${subject} behave with just one element? Does your loop even execute? Make sure your code doesn't break on size=1 inputs.",
+      
+      "EDGE CASE: All Same Elements - When every element is identical. Does ${subject} handle duplicates correctly? This often reveals bugs in pointer movement logic.",
+      
+      "EDGE CASE: Already Solved - When the input is already the answer (sorted, at target, etc.). Make sure you don't do unnecessary work or miss the immediate solution.",
+      
+      "EDGE CASE: No Solution Exists - When it's impossible to find an answer. How do you detect and report this gracefully without infinite loops?",
+      
+      "EDGE CASE: Extreme Values - Negative numbers, zeros, very large numbers, integer overflow. How do these affect ${subject}? What precautions needed?"
     ],
     
-    "pseudocode": "// COMPREHENSIVE PSEUDOCODE TEMPLATE FOR ${subject}\\n// This template can be adapted for most ${subject} problems\\n\\nfunction solveTwoPointers(array, target):\\n    // STEP 1: Handle edge cases first\\n    if array is null or array.length < 2:\\n        return NO_SOLUTION\\n    \\n    // STEP 2: Initialize pointers\\n    // left starts at beginning, right at end\\n    left = 0\\n    right = array.length - 1\\n    \\n    // STEP 3: Main loop - continue while pointers haven't crossed\\n    while left < right:\\n        \\n        // STEP 4: Calculate current state\\n        currentValue = compute(array[left], array[right])\\n        \\n        // STEP 5: Check if solution found\\n        if currentValue == target:\\n            return [left, right]  // Found answer!\\n        \\n        // STEP 6: Decide which pointer to move\\n        else if currentValue < target:\\n            // Need larger value, move left pointer right\\n            left = left + 1\\n            // Optional: skip duplicates\\n            // while left < right and array[left] == array[left-1]:\\n            //     left = left + 1\\n        \\n        else:  // currentValue > target\\n            // Need smaller value, move right pointer left\\n            right = right - 1\\n            // Optional: skip duplicates\\n            // while left < right and array[right] == array[right+1]:\\n            //     right = right - 1\\n    \\n    // STEP 7: No solution found\\n    return NO_SOLUTION\\n\\n// TIME: O(n) - each element visited at most once\\n// SPACE: O(1) - only using pointer variables"
+    "pseudocode": "function solve${subject.replace(/[^a-zA-Z]/g, '')}(input):\\n    // ═══════════════════════════════════════════════════════════════\\n    // STEP 1: HANDLE EDGE CASES FIRST (Always do this!)\\n    // ═══════════════════════════════════════════════════════════════\\n    if input is null OR input is empty:\\n        return default_value  // Handle gracefully\\n    \\n    if input.length == 1:\\n        return handle_single_element()  // Special case\\n    \\n    // ═══════════════════════════════════════════════════════════════\\n    // STEP 2: INITIALIZE YOUR STATE\\n    // Explain what each variable represents and why it starts there\\n    // ═══════════════════════════════════════════════════════════════\\n    [Initialize pointers/variables with clear comments explaining WHY]\\n    \\n    // INVARIANT: [State what property must ALWAYS be true]\\n    \\n    // ═══════════════════════════════════════════════════════════════\\n    // STEP 3: MAIN LOOP\\n    // [Explain what this loop is searching for]\\n    // ═══════════════════════════════════════════════════════════════\\n    while [loop condition - explain what it means]:\\n        \\n        // Calculate current state\\n        current = [computation]\\n        \\n        // DECISION POINT: [Explain the branching logic]\\n        if current == target:\\n            // SUCCESS! We found the answer\\n            return [result]\\n        \\n        else if [condition for one direction]:\\n            // [Explain WHY we move this way]\\n            [move pointer/update state]\\n        \\n        else:\\n            // [Explain WHY we move the other way]\\n            [move pointer/update state]\\n    \\n    // ═══════════════════════════════════════════════════════════════\\n    // STEP 4: NO SOLUTION FOUND\\n    // ═══════════════════════════════════════════════════════════════\\n    return NO_SOLUTION\\n\\n// COMPLEXITY ANALYSIS:\\n// TIME: O(?) because [detailed explanation]\\n// SPACE: O(?) because [detailed explanation]"
   },
   
   "exampleProblems": [
     {
-      "name": "EASY: Real LeetCode-style Problem Title",
+      "name": "[REAL FAMOUS LEETCODE PROBLEM - EASY LEVEL]",
       "difficulty": "Easy",
-      "companies": ["Google", "Amazon"],
-      "description": "Standard easy-level problem description.",
-      "intuition": "DETAILED EXPLANATION (3-4 sentences): Specifically explain HOW the ${subject} pattern is applied step-by-step to solve this specific problem. Why is it the optimal choice here?",
-      "code": "// DIFFICULTY: EASY - PARAGRAPH-STYLE COMMENTS REQUIRED\\n// You MUST use block comments (/* ... */) to explain the logic before each major section.\\n// Inside the code, use line comments (//) to explain the 'WHY' and 'HOW'.\\n// Example:\\n// /*\\n//  * INITIALIZATION STRATEGY:\\n//  * We use two pointers starting at opposite ends because the array is sorted.\\n//  * This allows us to eliminate one element at every step based on the sum.\\n//  */\\n// int left = 0; // Start at the smallest element\\n// int right = n - 1; // Start at the largest element\\n// Complete compilable Java solution with DEEP explanatory comments."
+      "companies": ["Google", "Amazon", "Microsoft"],
+      "description": "Write the FULL problem description as it would appear on LeetCode. Include: what the function should do, input format, output format, and examples. A reader should be able to solve this problem just from your description.",
+      "intuition": "Write a DETAILED 5-6 sentence explanation of HOW to solve this specific problem using ${subject}. Walk through the thought process: (1) How do we recognize ${subject} applies here? (2) What's our strategy? (3) Walk through a small example step-by-step. (4) Why is this optimal? This should be detailed enough that a beginner could implement the solution after reading this.",
+      "code": "// ═══════════════════════════════════════════════════════════════\\n// PROBLEM: [Problem Name]\\n// APPROACH: ${subject}\\n// TIME: O(?)  |  SPACE: O(?)\\n// ═══════════════════════════════════════════════════════════════\\n\\n/*\\n * STRATEGY EXPLANATION:\\n * [Write 3-4 sentences explaining the high-level approach]\\n * [Explain WHY we're using ${subject}]\\n * [Describe the invariant we maintain]\\n */\\n\\npublic ReturnType methodName(params) {\\n    // Step 1: Handle edge cases\\n    // [Comment explaining this check]\\n    if (edgeCase) {\\n        return defaultValue;\\n    }\\n    \\n    // Step 2: Initialize\\n    // [Comment explaining each variable's purpose]\\n    int pointer1 = 0;  // [Why start here?]\\n    int pointer2 = n-1; // [Why start here?]\\n    \\n    // Step 3: Main loop\\n    // [Comment explaining when/why we stop]\\n    while (condition) {\\n        \\n        // [Comment: What are we computing?]\\n        int current = compute();\\n        \\n        // [Comment: Explain the decision branching]\\n        if (foundAnswer) {\\n            // [Comment: Why is this our answer?]\\n            return answer;\\n        } else if (needToMoveLeft) {\\n            // [Comment: Why move this direction?]\\n            pointer1++;\\n        } else {\\n            // [Comment: Why move this direction?]\\n            pointer2--;\\n        }\\n    }\\n    \\n    // Step 4: No solution\\n    return noSolution;\\n}"
     },
     {
-      "name": "MEDIUM: Real LeetCode-style Problem Title",
+      "name": "[REAL FAMOUS LEETCODE PROBLEM - MEDIUM LEVEL]",
       "difficulty": "Medium",
-      "companies": ["Meta", "Microsoft"],
-      "description": "Standard medium-level problem description.",
-      "intuition": "DETAILED EXPLANATION (3-4 sentences): Deep dive into HOW the ${subject} pattern handles the increased complexity of this medium problem. Explain the specific transformation or logic move.",
-      "code": "// DIFFICULTY: MEDIUM - PARAGRAPH-STYLE COMMENTS REQUIRED\\n// You MUST use block comments (/* ... */) to explain the logic before each major section.\\n// Inside the code, use line comments (//) to explain the 'WHY' and 'HOW'.\\n// Example:\\n// /*\\n//  * SLIDING WINDOW STRATEGY:\\n//  * We expand the right pointer to include elements until the constraint is violated.\\n//  * Then we shrink from the left to restore validity, updating the max/min length.\\n//  */\\n// while (validityCondition == false) {\\n//     left++; // Shrink window from the left\\n// }\\n// Complete compilable Java solution with DEEP explanatory comments."
+      "companies": ["Meta", "Apple", "Bloomberg"],
+      "description": "Full problem description for a MEDIUM difficulty problem that uses ${subject}.",
+      "intuition": "Detailed 5-6 sentence explanation for this medium-level problem. Explain what makes it harder than the easy problem and how ${subject} handles the additional complexity.",
+      "code": "// Same detailed commenting style as Easy, but showing MEDIUM-level techniques\\n// Show how ${subject} scales to harder problems\\n// Include any optimizations or tricks needed for MEDIUM difficulty"
     },
     {
-      "name": "HARD: Real LeetCode-style Problem Title",
+      "name": "[REAL FAMOUS LEETCODE PROBLEM - HARD LEVEL]",
       "difficulty": "Hard",
-      "companies": ["Apple", "Netflix"],
-      "description": "Advanced hard-level problem description.",
-      "intuition": "DETAILED EXPLANATION (4-5 sentences): Complex breakdown of HOW the ${subject} pattern is mastered here, perhaps in combination with other techniques or to handle extreme constraints.",
-      "code": "// DIFFICULTY: HARD - PARAGRAPH-STYLE COMMENTS REQUIRED\\n// You MUST use block comments (/* ... */) to explain the logic before each major section.\\n// Inside the code, use line comments (//) to explain the 'WHY' and 'HOW'.\\n// Focus on explaining the OPTIMIZATION or TRICK used here.\\n// Example:\\n// /*\\n//  * OPTIMIZATION:\\n//  * Instead of re-calculating sum O(K), we use a running sum in O(1).\\n//  * We also use a Deque to maintain monotonicity for O(1) retrieval.\\n//  */\\n// Complete compilable Java solution with DEEP explanatory comments."
+      "companies": ["Apple", "Uber", "Airbnb"],
+      "description": "Full problem description for a HARD difficulty problem that uses ${subject}.",
+      "intuition": "Detailed 6-7 sentence explanation. Explain the TRICK or INSIGHT that makes this hard problem solvable. What's the 'aha!' moment? How does ${subject} combine with other techniques here?",
+      "code": "// Same detailed commenting style\\n// Focus on the ADVANCED techniques: optimizations, combining patterns, handling corner cases\\n// Explain any non-obvious tricks"
     }
   ],
   
   "commonMistakes": [
-    "Mistake 1: 2-3 lines of detailed technical reasoning about a common error and its fix. Exactly 2-3 lines.",
-    "Mistake 2: 2-3 lines regarding a frequent logical slip. Exactly 2-3 lines.",
-    "Mistake 3: 2-3 lines on performance pitfalls. Exactly 2-3 lines.",
-    "Mistake 4: 2-3 lines on implementation bugs. Exactly 2-3 lines.",
-    "Mistake 5: 2-3 lines on communication or conceptual errors. Exactly 2-3 lines."
+    "❌ MISTAKE 1 - [Specific Error]: Describe a common bug that beginners make when implementing ${subject}. EXPLAIN: (1) What the bug looks like in code, (2) Why beginners make this mistake, (3) What happens when this bug runs, (4) How to FIX it. This should be detailed enough that someone can check their own code for this mistake.",
+    
+    "❌ MISTAKE 2 - [Another Common Error]: Same detailed format - focus on a different type of mistake (logical error, off-by-one, wrong initialization, etc.)",
+    
+    "❌ MISTAKE 3 - [Performance Mistake]: A mistake that causes TLE (Time Limit Exceeded) or MLE (Memory Limit Exceeded). Explain the inefficient pattern and the efficient alternative.",
+    
+    "❌ MISTAKE 4 - [Edge Case Miss]: A mistake related to not handling edge cases. Which edge case is commonly forgotten? What's the symptom?",
+    
+    "❌ MISTAKE 5 - [Conceptual Misunderstanding]: A mistake that shows someone doesn't truly understand ${subject}. They're applying it wrong or in wrong situations. Clarify the correct understanding."
   ],
   
   "proTips": [
-    "Pro Tip 1: 2-3 lines of elite-level advice for pattern recognition or speed. Exactly 2-3 lines.",
-    "Pro Tip 2: 2-3 lines on advanced variant handling. Exactly 2-3 lines.",
-    "Pro Tip 3: 2-3 lines on interview communication tactics. Exactly 2-3 lines.",
-    "Pro Tip 4: 2-3 lines on space-time trade-off mastery. Exactly 2-3 lines.",
-    "Pro Tip 5: 2-3 lines on combining this pattern with others. Exactly 2-3 lines."
+    "💡 PRO TIP 1 - Pattern Recognition Speed: Share an expert tip for INSTANTLY recognizing when ${subject} applies. What do you look for in the first 10 seconds of reading a problem? This should feel like insider knowledge.",
+    
+    "💡 PRO TIP 2 - Interview Communication: How should you EXPLAIN your ${subject} approach to an interviewer? What vocabulary impresses them? What should you mention to show mastery?",
+    
+    "💡 PRO TIP 3 - Debugging Strategy: When your ${subject} solution isn't working, what's the fastest way to debug? What are the first things to check? Share a systematic debugging approach.",
+    
+    "💡 PRO TIP 4 - Optimization Tricks: Advanced optimizations for ${subject} that separate good solutions from great ones. Space-time trade-offs, early termination, etc.",
+    
+    "💡 PRO TIP 5 - Practice Roadmap: What problems should someone solve IN ORDER to master ${subject}? Give a specific progression from easy to hard with 5-7 problem recommendations."
   ]
 }
 
-CRITICAL: Generate REAL, DETAILED content for "${subject}". Every field must be COMPREHENSIVE and EDUCATIONAL. Do NOT use placeholder text or generic examples. The code must be COMPLETE and COMPILABLE Java. This should be thorough enough to serve as a complete self-study resource.`;
+CRITICAL REQUIREMENTS:
+1. Write for a COMPLETE BEGINNER - assume they've never seen ${subject} before
+2. Use REAL LeetCode problem names in examples (Two Sum, 3Sum, Container With Most Water, etc.)
+3. Code must be COMPLETE, COMPILABLE Java that actually works
+4. Every explanation should answer "WHY?" not just "WHAT"
+5. Include concrete examples with actual numbers whenever possible
+6. Be EXTREMELY DETAILED - length is not a concern, quality is
+7. After reading this, someone should be able to solve ${subject} problems in interviews
+8. **CRITICAL - NO MARKDOWN**: Do NOT use any markdown formatting like **bold**, *italics*, \`code\`, or ### headers in the text. Write in PLAIN TEXT only. The text will be displayed as-is without any markdown rendering.`;
+
+    // ═══════════════════════════════════════════════════════════════
+    // PROMPT FOR TOPICS (Data Structures/Algorithms like LinkedList, Trees, Heaps)
+    // This returns a COMPLETELY DIFFERENT JSON structure than patterns
+    // ═══════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════
+    // PROMPT FOR TOPICS (Data Structures/Algorithms like LinkedList, Trees, Heaps)
+    // This returns a COMPLETELY DIFFERENT JSON structure than patterns
+    // ═══════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════
+    // PROMPT FOR TOPICS (Data Structures/Algorithms like LinkedList, Trees, Heaps)
+    // This returns a COMPLETELY DIFFERENT JSON structure than patterns
+    // ═══════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════
+    // PROMPT FOR TOPICS (Data Structures/Algorithms like LinkedList, Trees, Heaps)
+    // This returns a COMPLETELY DIFFERENT JSON structure than patterns
+    // ═══════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════
+    // PROMPT FOR TOPICS (Data Structures/Algorithms like LinkedList, Trees, Heaps)
+    // This returns a COMPLETELY DIFFERENT JSON structure than patterns
+    // ═══════════════════════════════════════════════════════════════
+    const topicPrompt = `You are a Friendly Computer Science Tutor explaining concepts to a student who has JUST started coding. Your goal is to make "${subject}" easy to understand with THE SIMPLEST POSSIBLE Java code.
+
+PEDAGOGICAL STRATEGY (Beginner -> Expert Curve):
+1. START SIMPLE (Beginner): Use "ELI5" (Explain Like I'm 5) analogies.
+2. BUILD FOUNDATION (Intermediate): Explain "How" and "Why".
+3. DEEP DIVE (Advanced): Logic walkthroughs.
+4. MASTER (Expert): Complexity & Industry.
+
+Return a JSON object with this EXACT structure. Content must be ELABORATE but the CODE MUST BE DEAD SIMPLE:
+
+{
+  "type": "topic",
+  "title": "Mastering ${subject} in Java",
+  
+  "conceptFoundation": {
+    "definition": "BEGINNER LEVEL: Write a clear, friendly 3-4 sentence definition. Avoid jargon initially.",
+    
+    "realWorldAnalogy": "BEGINNER LEVEL: Provide a vivid, elaborate real-world analogy. Don't just say 'Stack = Plates'. Explain the analogy details.",
+    
+    "whyItExists": "INTERMEDIATE LEVEL: Explain the 'Why'. What problem does this solve that an Array couldn't?",
+    
+    "visualDescription": "INTERMEDIATE LEVEL: Describe how it looks in memory. Paint a mental picture. ASCII art recommended."
+  },
+  
+  "technicalAnatomy": {
+    "components": [
+      "NODE CLASS: Describe the Node structure simply.",
+      "HEAD/ROOT: The entry point.",
+      "SIZE/CAPACITY: Tracking data."
+    ],
+    
+    "properties": [
+      "Property 1",
+      "Property 2",
+      "Property 3"
+    ],
+    
+    "javaClassBlueprint": "Write a VERY BASIC Java class for ${subject}. \nCRITICAL CODING RULES:\n1. Use 'int' for data if possible (easiest to understand).\n2. NO 'this.' keyword: Use distinct parameter names (e.g. 'val' instead of 'data') to avoid 'this.data = data'.\n3. NO 'throw new Exception': Use System.out.println('Error') and return -1 or null.\n4. NO complex Generics unless absolutely necessary.\n5. Write like a beginner: straightforward, line-by-line code."
+  },
+  
+  "operations": [
+    {
+      "name": "Insertion",
+      "explanation": "STEP-BY-STEP WALKTHROUGH: Walk through the logic like a story. 'First we make a box...'",
+      "edgeCases": [
+        "Empty structure",
+        "Boundaries",
+        "Duplicates"
+      ],
+      "code": "// ═══════════════════════════════════════════════════════════════\\n// BASIC INSERTION\\n// ═══════════════════════════════════════════════════════════════\\n\\n// ABSOLUTE BEGINNER CODE\\n// NO 'this.' -> use different names\\n// NO 'throw' -> use System.out.println\\n// Use simple if/else",
+      "timeComplexity": { "best": "O(?)", "average": "O(?)", "worst": "O(?)" },
+      "spaceComplexity": "O(?)"
+    },
+    {
+      "name": "Deletion",
+      "explanation": "STEP-BY-STEP WALKTHROUGH: Explain deletion logic carefully.",
+      "edgeCases": [
+        "Empty structure",
+        "Deleting only item",
+        "Deleting from middle"
+      ],
+      "code": "// ═══════════════════════════════════════════════════════════════\\n// BASIC DELETION\\n// ═══════════════════════════════════════════════════════════════\\n\\n// ABSOLUTE BEGINNER CODE\\n// NO 'this.' keyword\\n// NO Exceptions\\n// Print errors explicitly",
+      "timeComplexity": { "best": "O(?)", "average": "O(?)", "worst": "O(?)" },
+      "spaceComplexity": "O(?)"
+    },
+    {
+      "name": "Search",
+      "explanation": "How do we find things? Walk through the process.",
+      "edgeCases": [
+        "Not found",
+        "Empty structure"
+      ],
+      "code": "// ═══════════════════════════════════════════════════════════════\\n// BASIC SEARCH\\n// ═══════════════════════════════════════════════════════════════\\n\\n// Simple traversal loop",
+      "timeComplexity": { "best": "O(?)", "average": "O(?)", "worst": "O(?)" },
+      "spaceComplexity": "O(?)"
+    },
+    {
+      "name": "Traversal",
+      "explanation": "How do we visit every item?",
+      "edgeCases": [],
+      "code": "// ═══════════════════════════════════════════════════════════════\\n// TRAVERSAL\\n// ═══════════════════════════════════════════════════════════════\\n\\n// Simple printing loop",
+      "timeComplexity": { "best": "O(n)", "average": "O(n)", "worst": "O(n)" },
+      "spaceComplexity": "O(?)"
+    }
+  ],
+  
+  "complexityTable": {
+    "headers": ["Operation", "Best Case", "Average Case", "Worst Case", "Space"],
+    "rows": [
+      ["Access", "O(?)", "O(?)", "O(?)", "O(1)"],
+      ["Search", "O(?)", "O(?)", "O(?)", "O(1)"],
+      ["Insert", "O(?)", "O(?)", "O(?)", "O(1)"],
+      ["Delete", "O(?)", "O(?)", "O(?)", "O(1)"]
+    ],
+    "explanation": "EXPERT LEVEL: Analyze the trade-offs."
+  },
+  
+  "comparisonWithAlternatives": [
+    {
+      "structure": "Array",
+      "comparison": "Compare ${subject} vs Array.",
+      "useArrayWhen": "Scenario for Array",
+      "use${subject.replace(/[^a-zA-Z]/g, '')}When": "Scenario for ${subject}"
+    },
+    {
+      "structure": "Alternative DS",
+      "comparison": "Compare vs another similar DS.",
+      "useAlternativeWhen": "Scenario for alternative",
+      "use${subject.replace(/[^a-zA-Z]/g, '')}When": "Scenario for ${subject}"
+    }
+  ],
+  
+  "industryApplications": [
+    {
+      "application": "Real World Use Case 1",
+      "explanation": "EXPERT LEVEL: Explain exactly how ${subject} is used.",
+      "companies": ["Company A", "Company B"]
+    },
+    {
+      "application": "Real World Use Case 2",
+      "explanation": "Explanation",
+      "companies": ["Company C"]
+    },
+    {
+      "application": "Real World Use Case 3",
+      "explanation": "Explanation",
+      "companies": ["Company D"]
+    }
+  ],
+  
+  "interviewProblems": [
+    {
+      "name": "Basic Problem (Easy)",
+      "difficulty": "Easy",
+      "leetcodeNumber": 1,
+      "whyThisProblem": "Tests basic understanding"
+    },
+    {
+      "name": "Logic Problem (Medium)",
+      "difficulty": "Medium",
+      "leetcodeNumber": 2,
+      "whyThisProblem": "Tests core logic/edge cases"
+    },
+    {
+      "name": "Complex Problem (Hard)",
+      "difficulty": "Hard",
+      "leetcodeNumber": 3,
+      "whyThisProblem": "Tests mastery and optimization"
+    }
+  ],
+  
+  "commonMistakes": [
+    {
+      "mistake": "Mistake 1",
+      "why": "Reason",
+      "consequence": "Result",
+      "fix": "Solution"
+    },
+    {
+      "mistake": "Mistake 2",
+      "why": "Reason",
+      "consequence": "Result",
+      "fix": "Solution"
+    },
+    {
+      "mistake": "Mistake 3",
+      "why": "Reason",
+      "consequence": "Result",
+      "fix": "Solution"
+    }
+  ],
+  
+  "proTips": [
+    {
+      "tip": "Tip 1",
+      "content": "Advice"
+    },
+    {
+      "tip": "Tip 2",
+      "content": "Advice"
+    },
+    {
+      "tip": "Tip 3",
+      "content": "Advice"
+    }
+  ],
+  
+  "masteryChecklist": [
+    "Can you implement from scratch?",
+    "Can you explain complexity?",
+    "Can you compare with alternatives?",
+    "Can you solve 3 problems?",
+    "Can you explain real-world usage?"
+  ]
+}
+
+CRITICAL RULES:
+1. "type" MUST be "topic".
+2. CODE MUST BE "ABSOLUTE BEGINNER" STYLE.
+   - NO 'this.variable' (Use distinct parameter names)
+   - NO 'throw new Exception' (Use System.out.println)
+   - Use 'int' where possible.
+3. Content must range from BEGINNER to EXPERT.
+4. Be ELABORATE and STORY-LIKE in explanations.
+5. NO MARKDOWN formatting in text fields.`;
+
+    // Choose the appropriate prompt
+    const prompt = isPattern ? patternPrompt : topicPrompt;
 
     try {
       const text = await this.callCerebras(prompt, true);
@@ -1149,18 +1420,173 @@ CRITICAL: Generate REAL, DETAILED content for "${subject}". Every field must be 
         throw new Error('Failed to parse learning notes');
       }
       
-      // Ensure all required fields exist with fallbacks
+      // Helper function to strip markdown formatting from text
+      const stripMarkdown = (text) => {
+        if (typeof text !== 'string') return text;
+        return text
+          .replace(/\*\*([^*]+)\*\*/g, '$1')  // Remove **bold**
+          .replace(/\*([^*]+)\*/g, '$1')       // Remove *italic*
+          .replace(/__([^_]+)__/g, '$1')       // Remove __bold__
+          .replace(/_([^_]+)_/g, '$1')         // Remove _italic_
+          .replace(/`([^`]+)`/g, '$1')         // Remove `code`
+          .replace(/#{1,6}\s+/g, '')           // Remove ### headers
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'); // Remove [links](url)
+      };
+      
+      // Apply to string arrays
+      const stripArray = (arr) => Array.isArray(arr) ? arr.map(item => {
+        if (typeof item === 'string') return stripMarkdown(item);
+        if (typeof item === 'object' && item !== null) {
+          // Recursively strip markdown from object values
+          const cleaned = {};
+          for (const key in item) {
+            cleaned[key] = typeof item[key] === 'string' ? stripMarkdown(item[key]) : item[key];
+          }
+          return cleaned;
+        }
+        return item;
+      }) : [];
+      
+      // ═══════════════════════════════════════════════════════════════
+      // RETURN STRUCTURE FOR TOPICS (Data Structures/Algorithms)
+      // ═══════════════════════════════════════════════════════════════
+      if (!isPattern) {
+        // Clean conceptFoundation
+        const cleanConceptFoundation = notes.conceptFoundation ? {
+          definition: stripMarkdown(notes.conceptFoundation.definition),
+          realWorldAnalogy: stripMarkdown(notes.conceptFoundation.realWorldAnalogy),
+          whyItExists: stripMarkdown(notes.conceptFoundation.whyItExists),
+          visualDescription: stripMarkdown(notes.conceptFoundation.visualDescription)
+        } : null;
+        
+        // Clean technicalAnatomy
+        const cleanTechnicalAnatomy = notes.technicalAnatomy ? {
+          components: stripArray(notes.technicalAnatomy.components),
+          properties: stripArray(notes.technicalAnatomy.properties),
+          javaClassBlueprint: notes.technicalAnatomy.javaClassBlueprint // Keep code as-is
+        } : null;
+        
+        // Clean operations array
+        const cleanOperations = Array.isArray(notes.operations) 
+          ? notes.operations.map(op => ({
+              name: stripMarkdown(op.name),
+              explanation: stripMarkdown(op.explanation),
+              edgeCases: stripArray(op.edgeCases),
+              code: op.code, // Keep code as-is
+              timeComplexity: op.timeComplexity,
+              spaceComplexity: op.spaceComplexity
+            }))
+          : [];
+        
+        // Clean comparison array
+        const cleanComparisons = Array.isArray(notes.comparisonWithAlternatives)
+          ? notes.comparisonWithAlternatives.map(c => ({
+              ...c,
+              structure: stripMarkdown(c.structure),
+              comparison: stripMarkdown(c.comparison)
+            }))
+          : [];
+        
+        // Clean industry applications
+        const cleanIndustryApps = Array.isArray(notes.industryApplications)
+          ? notes.industryApplications.map(app => ({
+              application: stripMarkdown(app.application),
+              explanation: stripMarkdown(app.explanation),
+              companies: app.companies || []
+            }))
+          : [];
+        
+        // Clean interview problems
+        const cleanInterviewProblems = Array.isArray(notes.interviewProblems)
+          ? notes.interviewProblems.map(p => ({
+              name: stripMarkdown(p.name),
+              difficulty: p.difficulty,
+              leetcodeNumber: p.leetcodeNumber,
+              whyThisProblem: stripMarkdown(p.whyThisProblem)
+            }))
+          : [];
+        
+        // Clean common mistakes (now objects, not strings)
+        const cleanMistakes = Array.isArray(notes.commonMistakes)
+          ? notes.commonMistakes.map(m => {
+              if (typeof m === 'string') return { mistake: stripMarkdown(m) };
+              return {
+                mistake: stripMarkdown(m.mistake),
+                why: stripMarkdown(m.why),
+                consequence: stripMarkdown(m.consequence),
+                fix: stripMarkdown(m.fix)
+              };
+            })
+          : [];
+        
+        // Clean pro tips (now objects, not strings)
+        const cleanProTips = Array.isArray(notes.proTips)
+          ? notes.proTips.map(t => {
+              if (typeof t === 'string') return { tip: '', content: stripMarkdown(t) };
+              return {
+                tip: stripMarkdown(t.tip),
+                content: stripMarkdown(t.content)
+              };
+            })
+          : [];
+        
+        return {
+          type: 'topic',
+          title: stripMarkdown(notes.title) || `Mastering ${subject}`,
+          conceptFoundation: cleanConceptFoundation,
+          technicalAnatomy: cleanTechnicalAnatomy,
+          operations: cleanOperations,
+          complexityTable: notes.complexityTable || null,
+          comparisonWithAlternatives: cleanComparisons,
+          industryApplications: cleanIndustryApps,
+          interviewProblems: cleanInterviewProblems,
+          commonMistakes: cleanMistakes,
+          proTips: cleanProTips,
+          masteryChecklist: stripArray(notes.masteryChecklist)
+        };
+      }
+      
+      // ═══════════════════════════════════════════════════════════════
+      // RETURN STRUCTURE FOR PATTERNS (Algorithmic techniques)
+      // ═══════════════════════════════════════════════════════════════
+      // Apply to complexity object
+      const cleanComplexity = notes.complexity ? {
+        time: stripMarkdown(notes.complexity.time),
+        space: stripMarkdown(notes.complexity.space),
+        bestCase: stripMarkdown(notes.complexity.bestCase),
+        worstCase: stripMarkdown(notes.complexity.worstCase)
+      } : { time: 'O(n)', space: 'O(1)' };
+      
+      // Apply to coreApproach object
+      const cleanCoreApproach = notes.coreApproach ? {
+        intuition: stripMarkdown(notes.coreApproach.intuition),
+        steps: stripArray(notes.coreApproach.steps),
+        edgeCases: stripArray(notes.coreApproach.edgeCases),
+        pseudocode: notes.coreApproach.pseudocode // Keep pseudocode as-is (it's code)
+      } : { intuition: '', steps: [], edgeCases: [], pseudocode: '' };
+      
+      // Apply to exampleProblems array
+      const cleanExampleProblems = Array.isArray(notes.exampleProblems) 
+        ? notes.exampleProblems.map(p => ({
+            ...p,
+            name: stripMarkdown(p.name),
+            description: stripMarkdown(p.description),
+            intuition: stripMarkdown(p.intuition),
+            code: p.code // Keep code as-is
+          }))
+        : [];
+      
+      // Ensure all required fields exist with fallbacks and cleaned content
       return {
-        title: notes.title || `Learning: ${subject}`,
-        overview: notes.overview || `Overview of ${subject} pattern/topic.`,
-        whenToUse: notes.whenToUse || [],
-        complexity: notes.complexity || { time: 'O(n)', space: 'O(1)' },
-        coreApproach: notes.coreApproach || { intuition: '', steps: [], edgeCases: [], pseudocode: '' },
-        exampleProblems: notes.exampleProblems || [],
-        commonMistakes: notes.commonMistakes || [],
-        proTips: notes.proTips || [],
-        goldenRules: notes.goldenRules || null,
-        unconventionalUse: notes.unconventionalUse || []
+        type: 'pattern',
+        title: stripMarkdown(notes.title) || `Mastering ${subject}`,
+        overview: stripMarkdown(notes.overview) || `Overview of ${subject} pattern/topic.`,
+        whenToUse: stripArray(notes.whenToUse),
+        complexity: cleanComplexity,
+        coreApproach: cleanCoreApproach,
+        exampleProblems: cleanExampleProblems,
+        commonMistakes: stripArray(notes.commonMistakes),
+        proTips: stripArray(notes.proTips)
       };
     } catch (e) {
       console.error('Learning notes generation failed:', e.message);

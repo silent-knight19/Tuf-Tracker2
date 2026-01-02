@@ -42,11 +42,11 @@ function GuidedReviewModal({ revision, onClose, onComplete }) {
   };
 
   const confidenceLabels = {
-    1: '❌ Forgot completely',
-    2: '🤔 Struggled but got it',
-    3: '✅ Comfortable',
-    4: '🎯 Mastered',
-    5: '🎯 Perfected'
+    1: 'Forgot completely',
+    2: 'Struggled but got it',
+    3: 'Comfortable',
+    4: 'Mastered',
+    5: 'Perfected'
   };
 
   return (

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { X } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 
 function QuickReviewModal({ revision, onClose, onComplete }) {
   const [checklist, setChecklist] = useState({
@@ -34,11 +34,11 @@ function QuickReviewModal({ revision, onClose, onComplete }) {
 
   const allChecked = Object.values(checklist).every(v => v);
   const confidenceLabels = {
-    1: '❌ Forgot completely',
-    2: '🤔 Struggled but got it',
-    3: '✅ Comfortable',
-    4: '🎯 Mastered',
-    5: '🎯 Perfected'
+    1: 'Forgot completely',
+    2: 'Struggled but got it',
+    3: 'Comfortable',
+    4: 'Mastered',
+    5: 'Perfected'
   };
 
   return (
@@ -74,7 +74,7 @@ function QuickReviewModal({ revision, onClose, onComplete }) {
             <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
               checklist.pattern ? 'bg-green-500 border-green-500' : 'border-dark-600'
             }`}>
-              {checklist.pattern && <span className="text-white text-sm">✓</span>}
+              {checklist.pattern && <Check className="w-3 h-3 text-white" />}
             </div>
             <span className="text-sm text-white">I remember the pattern</span>
           </div>
@@ -88,7 +88,7 @@ function QuickReviewModal({ revision, onClose, onComplete }) {
             <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
               checklist.algorithm ? 'bg-green-500 border-green-500' : 'border-dark-600'
             }`}>
-              {checklist.algorithm && <span className="text-white text-sm">✓</span>}
+              {checklist.algorithm && <Check className="w-3 h-3 text-white" />}
             </div>
             <span className="text-sm text-white">I can explain the algorithm</span>
           </div>
@@ -102,7 +102,7 @@ function QuickReviewModal({ revision, onClose, onComplete }) {
             <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
               checklist.edgeCases ? 'bg-green-500 border-green-500' : 'border-dark-600'
             }`}>
-              {checklist.edgeCases && <span className="text-white text-sm">✓</span>}
+              {checklist.edgeCases && <Check className="w-3 h-3 text-white" />}
             </div>
             <span className="text-sm text-white">I know the edge cases</span>
           </div>
@@ -116,7 +116,7 @@ function QuickReviewModal({ revision, onClose, onComplete }) {
             <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
               checklist.code ? 'bg-green-500 border-green-500' : 'border-dark-600'
             }`}>
-              {checklist.code && <span className="text-white text-sm">✓</span>}
+              {checklist.code && <Check className="w-3 h-3 text-white" />}
             </div>
             <span className="text-sm text-white">I could code it correctly</span>
           </div>

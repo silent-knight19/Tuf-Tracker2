@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Bot, ChevronRight, Eye, EyeOff, Lightbulb, ExternalLink, Sparkles, GripVertical, Code2, ListChecks, Terminal, PlayCircle } from 'lucide-react';
+import { ArrowLeft, Cpu, ChevronRight, Eye, EyeOff, Lightbulb, ExternalLink, Terminal, GripVertical, Code2, ListChecks, PlayCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import api from '../utils/api';
 import { auth } from '../config/firebase';
@@ -381,7 +381,7 @@ function SolveProblemPage() {
       <div className="min-h-screen bg-dark-950 flex items-center justify-center">
         <div className="text-center p-8 bg-dark-900 rounded-2xl border border-dark-800 shadow-xl max-w-md">
            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
-             <Bot className="w-8 h-8 text-red-500" />
+             <Cpu className="w-8 h-8 text-red-500" />
            </div>
            <h2 className="text-xl font-bold text-dark-100 mb-2">{error || 'Problem not found'}</h2>
            <button 
@@ -441,9 +441,9 @@ function SolveProblemPage() {
                 className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-dark-100 rounded-xl text-sm font-semibold shadow-lg shadow-blue-500/20 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2 border border-blue-400/20"
               >
                 {loadingHelp ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <Cpu className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Sparkles className="w-4 h-4" />
+                  <Terminal className="w-4 h-4" />
                 )}
                 <span className="hidden sm:inline">AI Assist</span>
               </button>
@@ -459,7 +459,7 @@ function SolveProblemPage() {
               <p className="animate-pulse font-medium">Analyzing problem...</p>
             </div>
           ) : description ? (
-            <div className="space-y-8 animate-in fade-in duration-500 slide-in-from-bottom-4">
+            <div className="space-y-4 animate-in fade-in duration-500 slide-in-from-bottom-4">
               {/* Description Text */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-brand-orange/80 mb-2">
@@ -555,7 +555,7 @@ function SolveProblemPage() {
                       {loadingEdgeCases ? (
                         <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <Sparkles className="w-3 h-3 group-hover:text-purple-300" />
+                        <Terminal className="w-3 h-3 group-hover:text-purple-300" />
                       )}
                       Generate Edge Cases
                     </button>
@@ -634,7 +634,7 @@ function SolveProblemPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                    <h2 className="text-sm font-bold text-dark-100 flex items-center gap-2">
-                    <Bot className="w-4 h-4 text-green-400" /> 
+                    <Cpu className="w-4 h-4 text-green-400" /> 
                     <span className="bg-gradient-to-r from-green-300 to-green-500 bg-clip-text text-transparent">AI Solution</span>
                   </h2>
                   <button

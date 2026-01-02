@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRevisionStore } from '../stores/revisionStore';
 import { useAuthStore } from '../stores/authStore';
-import { PartyPopper, X, Calendar, AlertCircle, Zap } from 'lucide-react';
+import { CheckCircle, X, Calendar, AlertCircle, RefreshCw } from 'lucide-react';
 import RevisionProblemCard from '../components/features/RevisionProblemCard';
 import DashboardHeader from '../components/features/revision/DashboardHeader';
 import MotivationalQuote from '../components/ui/MotivationalQuote';
@@ -108,8 +108,8 @@ function RevisionDashboardPage() {
           <div className="space-y-6">
             <div className="flex items-center justify-between px-2">
                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-brand-orange/10 rounded-xl border border-brand-orange/20">
-                    <PartyPopper className="w-6 h-6 text-brand-orange" />
+                  <div className="p-2.5 bg-brand-orange/10 rounded-xl border border-brand-orange/20">
+                    <RefreshCw className="w-6 h-6 text-brand-orange" />
                   </div>
                   <div>
                     <h3 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
@@ -130,8 +130,8 @@ function RevisionDashboardPage() {
               <div className="group bg-dark-900/40 backdrop-blur-xl border border-dark-800/60 rounded-[2rem] py-16 text-center relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-b from-brand-orange/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                 <div className="relative z-10 space-y-4">
-                  <div className="w-20 h-20 bg-dark-950 border border-dark-800 rounded-3xl flex items-center justify-center mx-auto shadow-2xl group-hover:rotate-12 transition-transform duration-500">
-                    <PartyPopper className="w-10 h-10 text-green-400" />
+                  <div className="w-20 h-20 bg-dark-950 border border-dark-800 rounded-3xl flex items-center justify-center mx-auto shadow-2xl group-hover:scale-105 transition-transform duration-500">
+                    <CheckCircle className="w-10 h-10 text-green-400" />
                   </div>
                   <div>
                     <h4 className="text-2xl font-black text-white tracking-tight">System Status: Clear</h4>
@@ -187,7 +187,7 @@ function RevisionDashboardPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-dark-900 border border-dark-800 rounded-xl p-6 w-full max-w-2xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col">
             <div className="flex justify-between items-center mb-4 shrink-0">
-              <h3 className="text-xl font-bold text-white">📅 All Upcoming Reviews ({upcoming.length})</h3>
+              <h3 className="text-xl font-bold text-white flex items-center gap-2"><Calendar className="w-5 h-5" /> All Upcoming Reviews ({upcoming.length})</h3>
               <button onClick={() => setShowUpcoming(false)} className="text-dark-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
@@ -207,7 +207,7 @@ function RevisionDashboardPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-dark-900 border border-red-500/30 rounded-xl p-6 w-full max-w-2xl shadow-2xl max-h-[80vh] overflow-hidden flex flex-col">
             <div className="flex justify-between items-center mb-4 shrink-0">
-              <h3 className="text-xl font-bold text-red-400">⚠️ All Overdue Problems ({overdue.length})</h3>
+              <h3 className="text-xl font-bold text-red-400 flex items-center gap-2"><AlertCircle className="w-5 h-5" /> All Overdue Problems ({overdue.length})</h3>
               <div className="flex items-center gap-4">
                 <button 
                   onClick={handleClearAllOverdue}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useProblemStore } from '../../stores/problemStore';
-import { Sparkles, X } from 'lucide-react';
+import { Cpu, X } from 'lucide-react';
 
 function AddProblemModal({ isOpen, onClose }) {
   const [title, setTitle] = useState('');
@@ -116,7 +116,7 @@ function AddProblemModal({ isOpen, onClose }) {
           {/* AI Notice */}
           <div className="bg-brand-orange/10 border border-brand-orange/20 rounded-lg p-3">
             <p className="text-sm text-brand-orange flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
+              <Cpu className="w-4 h-4" />
               AI will search LeetCode, GfG, and trusted platforms to ensure accurate description, constraints, and company tags.
             </p>
           </div>

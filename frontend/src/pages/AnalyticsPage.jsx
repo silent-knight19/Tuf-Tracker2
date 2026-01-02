@@ -72,39 +72,7 @@ function AnalyticsPage() {
 
       <div className="max-w-[1600px] mx-auto px-8 py-10 space-y-12">
         
-        {/* Intelligence Briefing Header */}
-        <div className="relative group">
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-12 border-b border-white/[0.03]">
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-orange/10 border border-brand-orange/20 rounded-full">
-                <div className="w-1.5 h-1.5 rounded-full bg-brand-orange animate-pulse" />
-                <span className="text-[10px] font-black text-brand-orange uppercase tracking-[0.2em]">Neural Network Active</span>
-              </div>
-              <h1 className="text-6xl font-black text-white tracking-tighter uppercase leading-none">
-                Skill <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange to-orange-300">Architecture</span>
-              </h1>
-              <div className="flex items-center gap-4 text-dark-500">
-                <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-widest">
-                  <Calendar className="w-4 h-4" />
-                  Cohort 2024.1
-                </div>
-                <div className="w-1 h-1 rounded-full bg-dark-800" />
-                <p className="text-sm font-medium italic">Operational deep-dive into algorithmic performance metrics.</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="flex flex-col items-end">
-                 <div className="text-[10px] font-black text-dark-500 uppercase tracking-widest mb-1">Status Report</div>
-                 <div className="px-4 py-2 bg-dark-900 border border-dark-800 rounded-xl flex items-center gap-2">
-                   <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
-                   <span className="text-xs font-black text-white uppercase tracking-tighter">Consistency: Peak</span>
-                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      
+
         {/* Synthetic Metric Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
