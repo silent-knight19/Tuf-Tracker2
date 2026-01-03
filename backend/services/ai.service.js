@@ -609,13 +609,8 @@ REQUIREMENTS:
     console.log('[generateEdgeCasesFromSolution] Computing expected outputs for', testInputs.length, 'test cases...');
     try {
       let edgeCases;
-      if (allCandidates.length > 1) {
-        console.log('[generateEdgeCasesFromSolution] Using majority voting with', allCandidates.length, 'candidates');
-        edgeCases = await this.computeEdgeCaseOutputsWithVoting(allCandidates, testInputs, functionSignature);
-      } else {
-        console.log('[generateEdgeCasesFromSolution] Using single execution');
-        edgeCases = await this.computeEdgeCaseOutputs(solutionCode, testInputs, functionSignature);
-      }
+      console.log('[generateEdgeCasesFromSolution] Using single execution');
+      edgeCases = await this.computeEdgeCaseOutputs(solutionCode, testInputs, functionSignature);
       
       // Filter: ONLY include test cases with valid expected values
       const validEdgeCases = edgeCases
@@ -654,112 +649,7 @@ REQUIREMENTS:
   // ═══════════════════════════════════════════════════════════════
   // Compute Edge Case Outputs with MAJORITY VOTING
   // ═══════════════════════════════════════════════════════════════
-  async computeEdgeCaseOutputsWithVoting(candidates, edgeCaseInputs, functionSignature) {
-    if (!candidates || candidates.length === 0) return edgeCaseInputs;
-    
-    // Extract code from candidates
-    const codes = candidates.map(c => c.solution.code);
-    const codeRunner = require('./codeRunner.service');
-    
-    // Extract method name
-    let methodName = 'solve';
-    if (functionSignature) {
-      const match = functionSignature.match(/\s+(\w+)\s*\(/);
-      if (match) methodName = match[1];
-    }
-    
-    console.log(`🗳️  Computing outputs using Majority Voting (N=${candidates.length}) for method: ${methodName}`);
-    
-    try {
-      // 1. Prepare batch inputs ONCE
-      const tests = edgeCaseInputs.map((tc) => ({
-        args: tc.args || Object.values(tc.input || {}),
-        expected: null
-      }));
-      const argsJson = JSON.stringify({ method: methodName, tests });
-      
-      // 2. Run ALL candidates in PARALLEL against the batch
-      const runPromises = codes.map(async (code, idx) => {
-        try {
-          const result = await codeRunner.runJava(code, argsJson);
-          return {
-            id: idx + 1,
-            stdout: result.stdout?.trim() || '',
-            stderr: result.stderr?.trim() || ''
-          };
-        } catch (e) {
-          console.warn(`Voting execution failed for Candidate ${idx + 1}:`, e.message);
-          return null;
-        }
-      });
-      
-      const results = await Promise.all(runPromises);
-      const validResults = results.filter(r => r !== null && !r.stderr);
-      
-      console.log(`   ${validResults.length}/${candidates.length} candidates executed successfully.`);
 
-      if (validResults.length === 0) {
-        console.warn('❌ All candidates failed execution. Using fallback values.');
-        return edgeCaseInputs.map(tc => ({
-          ...tc,
-          expected: tc.expected || 'ERROR'
-        }));
-      }
-
-      // 3. For each test case, collect votes
-      // We parse the output of each candidate: "Test 1: Result", "Test 2: Result"
-      
-      return edgeCaseInputs.map((tc, testIdx) => {
-        const testLabel = `Test ${testIdx + 1}:`;
-        const votes = {}; // "OutputValue" -> count
-        
-        validResults.forEach(res => {
-          const matchLine = res.stdout.split('\n').find(l => l.includes(testLabel));
-          if (matchLine) {
-            const parts = matchLine.split(testLabel);
-            if (parts.length > 1) {
-              const val = parts[1].trim();
-              
-              // Validate output (ignore Errors for voting unless everyone errors)
-              const isValid = (val !== '' && !val.includes('ERROR') && !val.includes('Exception'));
-              
-              const key = isValid ? val : 'ERROR';
-              votes[key] = (votes[key] || 0) + 1;
-            }
-          }
-        });
-        
-        // 4. Find Winner
-        let winner = null;
-        let maxVotes = -1;
-        
-        Object.entries(votes).forEach(([val, count]) => {
-          if (count > maxVotes) {
-            maxVotes = count;
-            winner = val;
-          }
-        });
-        
-        // LOGGING for debug
-        // console.log(`   Test ${testIdx + 1} Votes:`, votes, '-> Winner:', winner);
-
-        // Fallback if winner is ERROR or null
-        const rawExpected = (winner && winner !== 'ERROR') ? winner : (tc.expected || 'N/A');
-        const finalExpected = rawExpected !== undefined && rawExpected !== null ? String(rawExpected) : 'N/A';
-
-        return {
-          ...tc,
-          expected: finalExpected,
-          expectedOutput: finalExpected,
-          consensus: maxVotes > 0 ? (maxVotes / validResults.length) : 0 // Confidence score
-        };
-      });
-
-    } catch (e) {
-      console.error('Majority voting failed:', e.message);
-      return edgeCaseInputs;
-    }
-  }
 
   // ═══════════════════════════════════════════════════════════════
   // Compute Edge Case Outputs (Run Java code)
@@ -897,15 +787,10 @@ REQUIREMENTS:
     let edgeCases = testInputs;
     
     if (testInputs.length > 0) {
-      console.log('Step 3: Computing expected values with Majority Voting...');
+      console.log('Step 3: Computing expected values with Single Execution...');
       try {
-        // Use Voting if we have multiple candidates, otherwise falls back to single
-        if (allCandidates.length > 1) {
-           edgeCases = await this.computeEdgeCaseOutputsWithVoting(allCandidates, testInputs, functionSignature);
-        } else {
-           // Fallback to legacy single-execution if only 1 candidate available (e.g. providedSolution)
-           edgeCases = await this.computeEdgeCaseOutputs(solution.code, testInputs, functionSignature);
-        }
+        // Always use single execution (best candidate)
+        edgeCases = await this.computeEdgeCaseOutputs(solution.code, testInputs, functionSignature);
         
         console.log(`✅ Computed expected values for ${edgeCases.filter(e => e.expected && e.expected !== 'ERROR').length}/${edgeCases.length} test cases`);
       } catch (e) {

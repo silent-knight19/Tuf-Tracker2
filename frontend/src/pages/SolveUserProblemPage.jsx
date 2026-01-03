@@ -153,7 +153,7 @@ function SolveUserProblemPage() {
           behavior: 'smooth'
         });
       }
-    }, 3000);
+    }, 1000);
   };
 
   const handleGenerateEdgeCases = async () => {
