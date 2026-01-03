@@ -274,8 +274,29 @@ public class Main {
             
             String argsStr = json.substring(start, end);
             Object[] params = parseArgs(argsStr, method.getParameterTypes());
+            
+            // Check if method returns void (for in-place modification problems like Sort Colors)
+            boolean isVoid = method.getReturnType() == void.class;
+            
+            // Store reference to first array param before invocation (for void methods)
+            Object firstArrayArg = null;
+            if (isVoid && params.length > 0) {
+                for (Object p : params) {
+                    if (p != null && p.getClass().isArray()) {
+                        firstArrayArg = p;
+                        break;
+                    }
+                }
+            }
+            
             Object result = method.invoke(instance, params);
-            System.out.println("Test " + id + ": " + format(result));
+            
+            // For void methods, output the modified first array argument
+            if (isVoid && firstArrayArg != null) {
+                System.out.println("Test " + id + ": " + format(firstArrayArg));
+            } else {
+                System.out.println("Test " + id + ": " + format(result));
+            }
             
         } catch (InvocationTargetException e) {
             Throwable t = e.getCause();

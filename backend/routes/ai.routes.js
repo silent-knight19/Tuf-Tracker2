@@ -90,18 +90,40 @@ router.post('/company-problem', verifyToken, async (req, res) => {
 // POST /api/ai/problem-help
 router.post('/problem-help', verifyToken, async (req, res) => {
   try {
-    const { title, description, difficulty, forceRefresh, pattern, examples, constraints, functionSignature } = req.body;
+    const { title, description, difficulty, forceRefresh, pattern, examples, constraints, functionSignature, mode, providedSolution, existingEdgeCases } = req.body;
 
     if (!title || !description) {
       return res.status(400).json({ error: 'Title and description are required' });
     }
 
-    // Include pattern in cache key if specified
+    // ═══════════════════════════════════════════════════════════════
+    // FAST PATH: edge_cases_only mode - bypass cache entirely
+    // ═══════════════════════════════════════════════════════════════
+    if (mode === 'edge_cases_only') {
+      console.log('[problem-help] edge_cases_only mode - bypassing cache, using majority voting');
+      const edgeCases = await aiService.generateEdgeCasesFromSolution(
+        title,
+        functionSignature || null,
+        constraints || [],
+        providedSolution || null,
+        description || '', // For majority voting if no solution provided
+        difficulty || 'Medium'
+      );
+      
+      // Return only edge cases for this mode
+      return res.json({
+        hints: [],
+        solutions: {},
+        edgeCases: edgeCases || []
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // STANDARD PATH: Full problem help with caching
+    // ═══════════════════════════════════════════════════════════════
     const patternKey = pattern ? `_${cacheService.normalizeKey(pattern)}` : '';
-    // Use v2 prefix to invalidate old cache missing edge cases
     const cacheKey = `help_v2_${cacheService.normalizeKey(title)}${patternKey}`;
 
-    // If forceRefresh, delete existing cache first
     if (forceRefresh) {
       try {
         const { db } = require('../config/firebase.config');
@@ -124,9 +146,9 @@ router.post('/problem-help', verifyToken, async (req, res) => {
           examples || [],
           constraints || [],
           functionSignature || null,
-          req.body.mode || 'full', // Pass mode
-          req.body.providedSolution || null, // Pass providedSolution
-          req.body.existingEdgeCases || null // Pass existingEdgeCases
+          'full', // Always use 'full' for the cached path
+          null,
+          existingEdgeCases || null
         );
       }
     );
@@ -289,7 +311,7 @@ router.post('/test-cases', verifyToken, async (req, res) => {
       async () => {
         return await aiService.generateTestCases(
           title, 
-          description, 
+          description,
           constraints || [],
           functionSignature
         );

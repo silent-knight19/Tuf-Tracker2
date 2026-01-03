@@ -61,7 +61,9 @@ function EdgeCasesPanel({ edgeCases, onCopyInput, isLoading }) {
               <div>
                 <span className="text-dark-500 font-medium text-xs uppercase tracking-wider">Expected Output:</span>
                 <pre className="mt-1 p-2 bg-dark-950 rounded text-green-400 font-mono text-xs overflow-x-auto">
-                  {typeof edgeCase.expectedOutput === 'object' ? JSON.stringify(edgeCase.expectedOutput, null, 2) : String(edgeCase.expectedOutput)}
+                  {typeof (edgeCase.expectedOutput || edgeCase.expected) === 'object' 
+                    ? JSON.stringify(edgeCase.expectedOutput || edgeCase.expected, null, 2) 
+                    : String(edgeCase.expectedOutput ?? edgeCase.expected ?? 'N/A')}
                 </pre>
               </div>
 
