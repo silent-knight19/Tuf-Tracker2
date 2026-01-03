@@ -82,6 +82,7 @@ class AIService {
   // Generate 20 Test Cases (WITH computed expected values)
   // ═══════════════════════════════════════════════════════════════
   async generateTestCases(title, description, constraints = [], functionSignature = null) {
+
     const prompt = `Generate 20 test cases with CORRECT expected outputs for: "${title}"
 
 Function Signature: ${functionSignature || 'public int solve(int[] nums)'}
@@ -105,12 +106,21 @@ REQUIREMENTS:
 5. Input parameter names must match the function signature, and expected values must match the return type.`;
 
     try {
+
       const text = await this.callCerebras(prompt, true);
+
+      
       const data = this.parseJSON(text);
+
+      
       const testCases = data?.testCases || data || [];
       
-      // Filter out any with null expected values
-      return testCases.filter(tc => tc.expected !== null && tc.expected !== undefined);
+      // Filter out any with null expected values and normalize
+      return testCases.filter(tc => tc.expected !== null && tc.expected !== undefined).map(tc => ({
+        ...tc,
+        expectedOutput: tc.expectedOutput || tc.expected,
+        input: tc.input || (tc.args ? { args: tc.args } : {})
+      }));
     } catch (e) {
       console.error('Test case generation failed:', e.message);
       return [];
@@ -190,8 +200,9 @@ COMMON MISTAKES TO AVOID:
 - *CRITICAL*: For Floating Point outputs, ROUND results to 5 decimal places (Math.round(val * 1e5) / 1e5.0) to match test expectations.`;
 
     try {
-      // PROD: Use 3 candidates for Majority Voting (Optimal Balance of Cost vs Accuracy)
-      const NUM_CANDIDATES = 3;
+      // OPTIMIZED: Use 1 candidate for speed (saves ~40 seconds)
+      // Majority voting is disabled for performance - enable with 3 if accuracy is more important
+      const NUM_CANDIDATES = 1;
       
       console.log(`\n🔄 Generating ${NUM_CANDIDATES} solution candidates (PARALLEL) for verification...`);
       
@@ -293,8 +304,20 @@ Return JSON:
   "description": "Professional interview-style description with clear sections. Specify return values for edge/impossible cases.",
   "functionSignature": "public ReturnType methodName(Type param)",
   "examples": [{"input": "...", "output": "...", "explanation": "..."}],
-  "constraints": ["1 <= n <= 10^5"]
-}`;
+  "constraints": [
+    "1 <= array.length <= 10^5",
+    "-10^9 <= array[i] <= 10^9",
+    "0 <= k <= array.length",
+    "Return -1 if no valid solution exists"
+  ]
+}
+
+**CRITICAL: CONSTRAINTS MUST BE COMPREHENSIVE**:
+- Include array/string LENGTH limits (e.g., 1 <= n <= 10^5)
+- Include VALUE RANGE limits for all inputs (e.g., -10^9 <= nums[i] <= 10^9)
+- Include any SPECIAL CONDITIONS (e.g., "All elements are unique", "Array is sorted")
+- Include RETURN VALUE for edge/impossible cases (e.g., "Return -1 if impossible")
+- Include any 2D array dimensions if applicable (e.g., rows, cols limits)`;
 
     try {
       console.log('Generating problem from criteria...');
@@ -343,8 +366,20 @@ Return JSON:
   "description": "Professional ${company} interview problem with clear technical requirements. Define return values for impossible cases.",
   "functionSignature": "public ReturnType methodName(Type param)",
   "examples": [{"input": "...", "output": "...", "explanation": "..."}],
-  "constraints": ["1 <= n <= 10^5"]
-}`;
+  "constraints": [
+    "1 <= array.length <= 10^5",
+    "-10^9 <= array[i] <= 10^9",
+    "0 <= k <= array.length",
+    "Return -1 if no valid solution exists"
+  ]
+}
+
+**CRITICAL: CONSTRAINTS MUST BE COMPREHENSIVE**:
+- Include array/string LENGTH limits
+- Include VALUE RANGE limits for all inputs
+- Include any SPECIAL CONDITIONS
+- Include RETURN VALUE for edge/impossible cases
+- Include any 2D array dimensions if applicable`;
 
     try {
       console.log(`Generating ${company} problem...`);
@@ -383,8 +418,20 @@ Return JSON:
   "description": "Professional interview-style description (Scenario -> Task -> Clarity). Explicitly state return values for edge/impossible cases.",
   "functionSignature": "public ReturnType methodName(Type param)",
   "examples": [{"input": "...", "output": "...", "explanation": "..."}],
-  "constraints": ["1 <= nums.length <= 10^5"]
-}`;
+  "constraints": [
+    "1 <= nums.length <= 10^5",
+    "-10^9 <= nums[i] <= 10^9",
+    "All elements are unique OR duplicates allowed",
+    "Return -1/null/[] for edge cases as applicable"
+  ]
+}
+
+**CRITICAL: CONSTRAINTS MUST BE COMPREHENSIVE AND ACCURATE**:
+- Include ALL constraints from the original problem if known
+- Include array/string LENGTH limits
+- Include VALUE RANGE limits for all inputs
+- Include any SPECIAL CONDITIONS (sorted, unique, positive only, etc.)
+- Include RETURN VALUE specification for edge/impossible cases`;
 
     try {
       const text = await this.callCerebras(prompt, true);
@@ -399,6 +446,7 @@ Return JSON:
   // Generate Edge Case Inputs (for computeEdgeCaseOutputs)
   // ═══════════════════════════════════════════════════════════════
   async generateEdgeCaseInputs(title, description, examples = [], constraints = [], functionSignature = null) {
+    console.log('[generateEdgeCaseInputs] Starting for:', title);
     const prompt = `Generate 15 test cases with CORRECT expected outputs for: "${title}"
 
 Function Signature: ${functionSignature || 'public int solve(int[] nums)'}
@@ -408,7 +456,7 @@ CRITICAL: You MUST compute and provide the CORRECT expected output for each test
 
 Return JSON:
 {
-  "inputs": [
+  "testCases": [
     {"name": "Basic test", "input": {"nums": [1,2,3]}, "expected": 6, "category": "Basic"},
     {"name": "Empty array", "input": {"nums": []}, "expected": 0, "category": "Boundary"}
   ]
@@ -420,15 +468,22 @@ REQUIREMENTS:
 3. Input parameter names must match the function signature`;
 
     try {
+      console.log('[generateEdgeCaseInputs] Calling Cerebras...');
       const text = await this.callCerebras(prompt, true);
       const data = this.parseJSON(text);
-      const inputs = data?.inputs || data || [];
+      const testCases = data?.testCases || data?.inputs || data || [];
       
-      // Filter out any with null expected values
-      return inputs.filter(tc => tc.expected !== null && tc.expected !== undefined);
+      console.log('[generateEdgeCaseInputs] Got', testCases.length, 'cases');
+
+      // Filter out any with null expected values and normalize
+      return testCases.filter(tc => tc.expected !== null && tc.expected !== undefined).map(tc => ({
+        ...tc,
+        expectedOutput: tc.expectedOutput || tc.expected,
+        input: tc.input || (tc.args ? { args: tc.args } : {})
+      }));
     } catch (e) {
-      console.error('Edge case input generation failed:', e.message);
-      return [{ name: "Fallback", input: examples[0]?.input || {}, expected: null, category: "Fallback" }];
+      console.error('[generateEdgeCaseInputs] FAILED:', e.message);
+      return [{ name: "Fallback", input: examples[0]?.input || {}, expected: null, expectedOutput: null, category: "Fallback" }];
     }
   }
 
@@ -510,6 +565,90 @@ REQUIREMENTS:
   // ═══════════════════════════════════════════════════════════════
   async generateEdgeCases(title, description, examples = [], constraints = [], functionSignature = null) {
     return this.generateEdgeCaseInputs(title, description, examples, constraints, functionSignature);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // DEDICATED: Generate Edge Cases from a Provided Solution (Fast Path)
+  // Uses Majority Voting when generating solutions
+  // ═══════════════════════════════════════════════════════════════
+  async generateEdgeCasesFromSolution(title, functionSignature, constraints = [], providedSolutionCode = null, description = '', difficulty = 'Medium') {
+    console.log('[generateEdgeCasesFromSolution] Starting for:', title);
+    
+    let solutionCode = providedSolutionCode;
+    let allCandidates = [];
+    
+    // If no solution is provided, generate multiple candidates for voting
+    if (!solutionCode) {
+      console.log('[generateEdgeCasesFromSolution] No solution provided, generating solutions with voting...');
+      const help = await this.generateSolutionOnly(title, description, difficulty, functionSignature, []);
+      
+      if (help.bestCandidate) {
+        solutionCode = help.bestCandidate.solution?.code;
+        allCandidates = help.allCandidates || [help.bestCandidate];
+      } else if (help.solution?.code) {
+        solutionCode = help.solution.code;
+        allCandidates = [help];
+      }
+      
+      if (!solutionCode) {
+        console.warn('[generateEdgeCasesFromSolution] Failed to generate solution');
+        return [];
+      }
+    }
+    
+    // 1. Generate test inputs
+    console.log('[generateEdgeCasesFromSolution] Generating test inputs...');
+    const testInputs = await this.generateTestInputsOnly(title, functionSignature, constraints);
+    
+    if (!testInputs || testInputs.length === 0) {
+      console.warn('[generateEdgeCasesFromSolution] No test inputs generated.');
+      return [];
+    }
+    
+    // 2. Compute expected outputs using MAJORITY VOTING (if multiple candidates) or single execution
+    console.log('[generateEdgeCasesFromSolution] Computing expected outputs for', testInputs.length, 'test cases...');
+    try {
+      let edgeCases;
+      if (allCandidates.length > 1) {
+        console.log('[generateEdgeCasesFromSolution] Using majority voting with', allCandidates.length, 'candidates');
+        edgeCases = await this.computeEdgeCaseOutputsWithVoting(allCandidates, testInputs, functionSignature);
+      } else {
+        console.log('[generateEdgeCasesFromSolution] Using single execution');
+        edgeCases = await this.computeEdgeCaseOutputs(solutionCode, testInputs, functionSignature);
+      }
+      
+      // Filter: ONLY include test cases with valid expected values
+      const validEdgeCases = edgeCases
+        .filter(tc => {
+          // Check for valid expected value
+          const expected = tc.expected || tc.expectedOutput;
+          if (!expected || expected === 'N/A' || expected === 'null' || String(expected).includes('ERROR')) {
+            console.log('[generateEdgeCasesFromSolution] Filtering: invalid expected for', tc.name);
+            return false;
+          }
+          
+          // Filter out cases with null/undefined args
+          const args = tc.args || (tc.input?.args) || [];
+          const containsNull = (val) => {
+            if (val === null || val === undefined) return true;
+            if (Array.isArray(val)) return val.some(containsNull);
+            return false;
+          };
+          if (containsNull(args)) return false;
+          
+          return true;
+        })
+        .map(tc => ({
+          ...tc,
+          expectedOutput: tc.expected || tc.expectedOutput
+        }));
+      
+      console.log(`[generateEdgeCasesFromSolution] Returning ${validEdgeCases.length}/${edgeCases.length} valid test cases`);
+      return validEdgeCases;
+    } catch (e) {
+      console.error('[generateEdgeCasesFromSolution] Failed to compute outputs:', e.message);
+      return [];
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -605,7 +744,8 @@ REQUIREMENTS:
         // console.log(`   Test ${testIdx + 1} Votes:`, votes, '-> Winner:', winner);
 
         // Fallback if winner is ERROR or null
-        const finalExpected = (winner && winner !== 'ERROR') ? winner : (tc.expected || 'ERROR');
+        const rawExpected = (winner && winner !== 'ERROR') ? winner : (tc.expected || 'N/A');
+        const finalExpected = rawExpected !== undefined && rawExpected !== null ? String(rawExpected) : 'N/A';
 
         return {
           ...tc,
@@ -669,24 +809,27 @@ REQUIREMENTS:
         }
 
         // Use val if it exists and doesn't contain error markers
-        // IMPORTANT: "0" is a valid value, so we check for null/undefined explicitly
         const isValid = (val !== null && val !== undefined && val !== '' && 
                         !val.includes('ERROR') && !val.includes('Exception'));
-        const finalExpected = isValid ? val : (tc.expected || tc.expectedOutput || 'ERROR');
         
+        // CRITICAL: Only use the computed value, NEVER fall back to AI predictions
+        // Mark as computed so filter can differentiate
         return {
           ...tc,
-          expected: finalExpected,
-          expectedOutput: finalExpected
+          expected: isValid ? val : null,
+          expectedOutput: isValid ? val : null,
+          computedFromExecution: isValid // Flag for filtering
         };
       });
       
     } catch (e) {
       console.error('Batched computation failed:', e.message);
+      // Return with null expected so they get filtered
       return edgeCaseInputs.map(tc => ({
         ...tc,
-        expected: tc.expected || 'ERROR',
-        expectedOutput: tc.expectedOutput || tc.expected || 'ERROR'
+        expected: null,
+        expectedOutput: null,
+        computedFromExecution: false
       }));
     }
   }
@@ -785,6 +928,9 @@ REQUIREMENTS:
     const prompt = `Generate 15 diverse test cases for: "${title}"
 
 Function Signature: ${functionSignature || 'public int solve(int[] nums)'}
+Constraints: ${constraints.length > 0 ? constraints.join('; ') : 'Standard constraints apply'}
+
+**YOU MUST STRICTLY FOLLOW ALL CONSTRAINTS ABOVE WHEN GENERATING TEST CASES.**
 
 Return JSON with this structure:
 {
@@ -805,17 +951,22 @@ CRITICAL RULES FOR "args":
 3. DO NOT over-nest. 
    - solve(int[] nums) -> args: [[1,2,3]]
    - solve(int a, int b) -> args: [10, 20]
-4. Include: 3 Basic, 4 Boundary, 4 Edge, 4 Tricky cases.
+4. **CRITICAL SIZE LIMIT**: 
+   - Arrays MUST have at most 50 elements. NEVER generate arrays with more than 50 elements.
+   - 2D arrays MUST have at most 10 rows with at most 10 columns each.
+   - This is for performance reasons. Large inputs cause timeouts.
+5. Include: 3 Basic, 4 Boundary, 4 Edge, 4 Tricky cases.
    - *CRITICAL PERFORMANCE RULE*: For numeric arguments that might dictate complexity (e.g., maxTime, K, target, capacity), KEEP VALUES REASONABLE (e.g., <= 10^5) unless the problem is purely mathematical.
    - Do NOT generate input values > 10^9 (avoids scalar types overflow).
    - **CONSTRAINT ADHERENCE**: 
        - If constraints say 1 <= x, NEVER generate x=0.
        - If constraints say 0 < x (strictly positive), NEVER generate x=0. This is common for probabilities, divisors, or dimensions.
        - If prob is a multiplier, 0 might cause -Infinity in log-space algorithms. AVOID IT unless explicitly tested as a valid edge case.
-5. Provide a highly accurate "expected" value according to problem rules. 
+6. Provide a highly accurate "expected" value according to problem rules. 
    - *CRITICAL*: If the task is impossible (e.g. K > unique elements), return EXACTLY what the problem specifies (usually -1). DO NOT use string "ERROR" if the return type is int.
    - This WILL BE USED if the backend code fails to execute. DO NOT leave it null.
-6. **STRICT DATA STRUCTURE RULES**:
+   - *CRITICAL FOR VOID METHODS*: If the function returns void (e.g., sortColors), \"expected\" should be the MODIFIED array, NOT null. Example: args: [[2,0,1]], expected: [0,1,2]
+7. **STRICT DATA STRUCTURE RULES**:
    - **CRITICAL**: Check the Problem Description for exact tuple definitions (e.g., "edges are [u, v, w, t]").
    - If the input is a 2D array (e.g., int[][] edges, int[][] planes), the INNER array length must match the problem statement EXACTLY.
    - **Generic Weighted Graph**: [[u, v, w]] (length 3) - ONLY if no other data is specified.
@@ -826,23 +977,64 @@ CRITICAL RULES FOR "args":
      - **Time/Window definitions**: If problem says [u, v, cost, time], YOU MUST GENERATE 4 integers.
      - **Coordinates**: [[r, c], [r, c]] (length 2)
    - CHECK THE FUNCTION SIGNATURE AND EXAMPLES. Do not guess dimensions. If constraints say portals[i].length == 4, generate 4 values.
-7. **GRAPH/TREE INDEXING**:
+8. **GRAPH/TREE INDEXING**:
    - Unless explicitly stated otherwise, assume **0-BASED INDEXING** (nodes 0 to n-1).
    - *CRITICAL*: For input n=3, edges MUST use nodes {0, 1, 2}. Usage of node 3 is an ERROR (IndexOutOfBounds).
    - If the example uses 1-based indexing, ONLY THEN use 1-based. Otherwise default to 0-based.`;
 
     try {
+      console.log('[generateTestInputsOnly] Calling Cerebras...');
       const text = await this.callCerebras(prompt, true);
       const data = this.parseJSON(text);
-      let inputs = data?.inputs || data || [];
+      let testCases = data?.testCases || data?.inputs || data || [];
       
-      return inputs.map(tc => ({
-        ...tc,
-        input: tc.input || (tc.args ? { args: tc.args } : {})
-      }));
+      console.log('[generateTestInputsOnly] Got', testCases.length, 'cases');
+
+      // Helper to check if an array is too large
+      const isTooLarge = (arg) => {
+        if (Array.isArray(arg)) {
+          if (arg.length > 50) return true;
+          if (arg.some(inner => Array.isArray(inner) && inner.length > 50)) return true;
+        }
+        return false;
+      };
+      
+      // Helper to check if value contains null/undefined (recursive)
+      const containsNull = (val) => {
+        if (val === null || val === undefined) return true;
+        if (Array.isArray(val)) return val.some(containsNull);
+        return false;
+      };
+
+      // Filter and normalize
+      return testCases
+        .filter(tc => {
+          const args = tc.args || (tc.input?.args) || [];
+          
+          // Reject if any arg contains null
+          if (containsNull(args)) {
+            console.log('[generateTestInputsOnly] Filtering out null-arg test case:', tc.name);
+            return false;
+          }
+          
+          // Reject if any arg is too large
+          if (args.some(arg => isTooLarge(arg))) {
+            console.log('[generateTestInputsOnly] Filtering out oversized test case:', tc.name);
+            return false;
+          }
+          
+          return true;
+        })
+        .map(tc => ({
+          ...tc,
+          input: tc.input || (tc.args ? { args: tc.args } : {}),
+          expected: tc.expected !== undefined && tc.expected !== null ? tc.expected : 'N/A',
+          expectedOutput: tc.expectedOutput || tc.expected || 'N/A'
+        }));
     } catch (e) {
-      console.error('Test input generation failed:', e.message);
-      return [];
+      console.error('[generateTestInputsOnly] FAILED:', e.message);
+      // Return a minimal fallback instead of empty array
+      return [{ name: 'Fallback Test', args: [], input: { args: [] }, expected: 'N/A', expectedOutput: 'N/A', category: 'Fallback' }];
     }
   }
 

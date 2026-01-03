@@ -252,10 +252,18 @@ function AIInterviewPage() {
         });
       }
 
-      // 2. Set Edge Cases
-      if (data.edgeCases) {
-        console.log('[EdgeCases] Received Edge Cases from API:', data.edgeCases);
-        setEdgeCases(data.edgeCases);
+      let generatedEdgeCases = data.edgeCases || [];
+      
+      // Normalize: ensure expectedOutput is set (backend might return 'expected')
+      if (Array.isArray(generatedEdgeCases)) {
+        generatedEdgeCases = generatedEdgeCases.map(tc => ({
+          ...tc,
+          expectedOutput: tc.expectedOutput ?? tc.expected ?? 'N/A'
+        }));
+      }
+
+      if (generatedEdgeCases.length > 0) {
+        setEdgeCases(generatedEdgeCases);
         
         // Auto-convert edge cases to JSON test format
         if (data.edgeCases.length > 0) {
@@ -549,19 +557,6 @@ function AIInterviewPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-[1.3rem] font-[800] text-white">Constraints</h2>
-                <button
-                  onClick={() => handleFetchAIContent(true)}
-                  disabled={loadingEdgeCases}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:bg-dark-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 disabled:cursor-not-allowed"
-                  title="Generate additional edge cases using AI (optional)"
-                >
-                  {loadingEdgeCases ? (
-                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <Terminal className="w-3 h-3" />
-                  )}
-                  AI Edge Cases
-                </button>
               </div>
               <ul className="list-disc list-inside space-y-2 text-dark-200 bg-dark-900 p-5 rounded-lg border border-dark-800 text-[1.1rem] font-[450]">
                 {problem.constraints.map((constraint, index) => (

@@ -133,7 +133,16 @@ function InterviewProblemPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      const generatedTestCases = response.data;
+      let generatedTestCases = response.data;
+      
+      // Normalize: ensure expectedOutput is set (backend returns 'expected')
+      if (Array.isArray(generatedTestCases)) {
+        generatedTestCases = generatedTestCases.map(tc => ({
+          ...tc,
+          expectedOutput: tc.expectedOutput ?? tc.expected ?? 'N/A'
+        }));
+      }
+      
       setTestCases(generatedTestCases);
       
       if (generatedTestCases && generatedTestCases.length > 0) {
@@ -299,22 +308,34 @@ function InterviewProblemPage() {
             </div>
           </div>
           
-          {/* Solution Button - Independent */}
-          {!solutionData && (
-            <button 
-              type="button"
-              onClick={handleGetSolution}
-              disabled={loadingSolution || loadingDescription}
-              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-            >
-              {loadingSolution ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <Cpu className="w-4 h-4" />
-              )}
-              Get Solution
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {problem.problemLink && (
+              <a 
+                href={problem.problemLink} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 hover:text-amber-400 rounded-lg text-sm font-bold transition-all border border-amber-500/20 hover:border-amber-500/50 flex items-center gap-2 shadow-lg shadow-amber-500/5"
+              >
+                <ExternalLink className="w-4 h-4" />
+                <span className="hidden sm:inline">LeetCode</span>
+              </a>
+            )}
+            {!solutionData && (
+              <button 
+                type="button"
+                onClick={handleGetSolution}
+                disabled={loadingSolution || loadingDescription}
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 shadow-lg shadow-blue-500/20"
+              >
+                {loadingSolution ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Cpu className="w-4 h-4" />
+                )}
+                Get Solution
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Content */}
@@ -327,10 +348,35 @@ function InterviewProblemPage() {
           ) : description ? (
             <>
               {/* Description */}
-              <div className="bg-dark-900 p-4 rounded-xl border border-dark-800">
-                <h2 className="text-lg font-bold text-white mb-3">Description</h2>
-                <div className="prose prose-invert max-w-none text-dark-300">
-                  <ReactMarkdown>{typeof description === 'string' ? description : description.description}</ReactMarkdown>
+              <div className="bg-dark-900 p-5 rounded-xl border border-dark-800">
+                <h2 className="text-lg font-bold text-white mb-4">Description</h2>
+                <div className="prose prose-invert max-w-none text-dark-300 leading-loose">
+                  <ReactMarkdown
+                    components={{
+                      p: ({node, children}) => <p className="mb-4 last:mb-0 leading-7 text-[15px] tracking-wide text-dark-300">{children}</p>,
+                      strong: ({node, children}) => <strong className="text-brand-orange font-bold">{children}</strong>,
+                      code: ({node, inline, className, children, ...props}) => {
+                        // Check if this is inline code (no className means no language specified = inline)
+                        const isInline = !className && (inline !== false);
+                        return isInline ? (
+                          <code className="bg-dark-800/80 text-brand-orange px-1.5 py-0.5 rounded text-sm font-mono border border-dark-700" {...props}>{children}</code>
+                        ) : (
+                          <pre className="bg-dark-950 rounded-lg p-3 my-4 border border-dark-800 overflow-x-auto">
+                            <code className="text-sm text-dark-200 font-mono" {...props}>{children}</code>
+                          </pre>
+                        );
+                      },
+                      ul: ({node, children}) => <ul className="list-disc list-inside space-y-2 my-4 ml-2 text-dark-300">{children}</ul>,
+                      ol: ({node, children}) => <ol className="list-decimal list-inside space-y-2 my-4 ml-2 text-dark-300">{children}</ol>,
+                      li: ({node, children}) => <li className="text-dark-300 leading-relaxed">{children}</li>,
+                      h1: ({node, children}) => <h1 className="text-xl font-bold text-white mt-6 mb-3">{children}</h1>,
+                      h2: ({node, children}) => <h2 className="text-lg font-bold text-white mt-5 mb-2">{children}</h2>,
+                      h3: ({node, children}) => <h3 className="text-base font-bold text-white mt-4 mb-2">{children}</h3>,
+                      blockquote: ({node, children}) => <blockquote className="border-l-4 border-brand-orange/50 pl-4 my-4 text-dark-300 italic">{children}</blockquote>
+                    }}
+                  >
+                    {typeof description === 'string' ? description : description.description}
+                  </ReactMarkdown>
                 </div>
                 {description.functionSignature && (
                   <div className="mt-4 p-3 bg-dark-950 rounded-lg border border-dark-800">
@@ -359,19 +405,6 @@ function InterviewProblemPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-bold text-white">Constraints</h2>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); handleGenerateTestCases(); }}
-                      disabled={loadingTestCases}
-                      className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 disabled:bg-dark-700 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 disabled:cursor-not-allowed"
-                    >
-                      {loadingTestCases ? (
-                        <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <Terminal className="w-3 h-3" />
-                      )}
-                      {testCases ? 'Regenerate' : 'Generate'} Test Cases
-                    </button>
                   </div>
                   <ul className="list-disc list-inside space-y-1.5 text-dark-300 bg-dark-900 p-4 rounded-lg border border-dark-800 text-sm">
                     {description.constraints.map((constraint, index) => (
@@ -381,17 +414,7 @@ function InterviewProblemPage() {
                 </div>
               )}
 
-              {/* External Link */}
-              {problem.problemLink && (
-                <a 
-                  href={problem.problemLink} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="px-3 py-2 bg-dark-800 hover:bg-dark-700 rounded-lg text-sm text-white transition-colors flex items-center gap-2 inline-flex"
-                >
-                  <ExternalLink className="w-4 h-4" /> Open Original Source
-                </a>
-              )}
+
 
               {/* Solution Section - Only shown after clicking Get Solution */}
               {solutionData && (

@@ -329,7 +329,6 @@ function ProblemViewPage() {
 
   return (
     <div className="h-screen flex flex-col bg-dark-950">
-      {/* Top Bar */}
       <div className="h-12 bg-dark-900 border-b border-dark-800 flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-4">
           <button 
@@ -343,6 +342,27 @@ function ProblemViewPage() {
           </span>
         </div>
         <div className="flex items-center gap-3">
+          {problem.platformUrl && (
+            <a 
+              href={problem.platformUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 hover:text-amber-400 rounded-lg text-sm font-bold transition-all border border-amber-500/20 hover:border-amber-500/50 flex items-center gap-2 shadow-lg shadow-amber-500/5"
+              title={`Open on ${problem.platform}`}
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span className="hidden sm:inline">LeetCode</span>
+            </a>
+          )}
+          {!isViewOnly && (
+            <button
+              onClick={() => window.open(`/solve/${problem.id}`, '_blank')}
+              className="text-white hover:text-white text-sm flex items-center gap-1.5 font-bold bg-brand-orange hover:bg-orange-600 px-3 py-1.5 rounded-lg border border-brand-orange/20 transition-all shadow-lg shadow-brand-orange/20"
+            >
+              <Zap className="w-4 h-4 fill-current" />
+              <span className="hidden sm:inline">Solve with AI</span>
+            </button>
+          )}
           {isViewOnly && (
             <button 
               onClick={async () => {
@@ -417,39 +437,6 @@ function ProblemViewPage() {
                 ))}
               </div>
             )}
-
-            {(() => {
-              const platformUrl = problem.platformUrl || (
-                problem.platform === 'LeetCode' 
-                  ? `https://leetcode.com/problems/${problem.title.toLowerCase().replace(/\s+/g, '-')}/`
-                  : null
-              );
-
-              if (!platformUrl) return null;
-
-              return (
-                <div className="flex items-center gap-4">
-                  <a 
-                    href={platformUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-brand-orange hover:underline text-sm flex items-center gap-1 font-medium"
-                  >
-                    View on {problem.platform}
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                  
-                  {/* Solve with AI Button */}
-                  <button
-                    onClick={() => window.open(`/solve/${problem.id}`, '_blank')}
-                    className="text-brand-orange hover:text-brand-yellow text-sm flex items-center gap-1.5 font-bold bg-brand-orange/10 hover:bg-brand-orange/20 px-3 py-1.5 rounded-lg border border-brand-orange/20 transition-all shadow-[0_0_15px_rgba(249,115,22,0.1)]"
-                  >
-                    <Zap className="w-4 h-4 fill-current" />
-                    Solve with AI
-                  </button>
-                </div>
-              );
-            })()}
           </div>
 
           {/* Description Content */}
@@ -463,8 +450,32 @@ function ProblemViewPage() {
                 ) : problem.description ? (
                   <>
                     {/* Problem Statement */}
-                    <div className="text-dark-200 font-medium leading-relaxed mb-6">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    <div className="text-dark-200 font-medium leading-loose mb-8">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          p: ({node, children}) => <p className="mb-4 last:mb-0 leading-7 text-[15px] tracking-wide">{children}</p>,
+                          strong: ({node, children}) => <strong className="text-brand-orange font-bold">{children}</strong>,
+                          code: ({node, inline, className, children, ...props}) => {
+                            // Check if this is inline code (not wrapped in pre)
+                            const isInline = !className && (inline !== false);
+                            return isInline ? (
+                              <code className="bg-dark-800/80 text-brand-orange px-1.5 py-0.5 rounded text-sm font-mono border border-dark-700" {...props}>{children}</code>
+                            ) : (
+                              <pre className="bg-dark-900 rounded-lg p-3 my-4 border border-dark-800 overflow-x-auto">
+                                <code className="text-sm text-dark-200 font-mono" {...props}>{children}</code>
+                              </pre>
+                            );
+                          },
+                          ul: ({node, children}) => <ul className="list-disc list-inside space-y-2 my-4 ml-2">{children}</ul>,
+                          ol: ({node, children}) => <ol className="list-decimal list-inside space-y-2 my-4 ml-2">{children}</ol>,
+                          li: ({node, children}) => <li className="text-dark-300 leading-relaxed">{children}</li>,
+                          h1: ({node, children}) => <h1 className="text-xl font-bold text-white mt-6 mb-3">{children}</h1>,
+                          h2: ({node, children}) => <h2 className="text-lg font-bold text-white mt-5 mb-2">{children}</h2>,
+                          h3: ({node, children}) => <h3 className="text-base font-bold text-white mt-4 mb-2">{children}</h3>,
+                          blockquote: ({node, children}) => <blockquote className="border-l-4 border-brand-orange/50 pl-4 my-4 text-dark-300 italic">{children}</blockquote>
+                        }}
+                      >
                         {typeof problem.description === 'string' 
                           ? problem.description 
                           : problem.description?.statement || problem.description?.description || ''}
