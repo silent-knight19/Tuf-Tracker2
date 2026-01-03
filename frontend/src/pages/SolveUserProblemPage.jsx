@@ -75,10 +75,10 @@ function SolveUserProblemPage() {
     if (id) fetchProblem();
   }, [id]);
 
-  // Auto-generate edge cases when description loads
+  // Auto-generate solution and content when description loads
   useEffect(() => {
-    if (description && problem && !edgeCases && !loadingEdgeCases) {
-      handleFetchAIContent({ mode: 'edge_cases_only' });
+    if (description && problem && !helpData && !loadingHelp) {
+      handleFetchAIContent({ mode: 'full' });
     }
   }, [description, problem]);
 
@@ -431,18 +431,13 @@ function SolveUserProblemPage() {
               </a>
             )}
             {(!helpData || !helpData.solutions) ? (
-              <button 
-                onClick={() => handleAIAssist(false)}
-                disabled={loadingHelp}
-                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 shadow-lg shadow-blue-500/20"
-              >
-                {loadingHelp ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <Cpu className="w-4 h-4" />
-                )}
-                AI Assist
-              </button>
+              // Show loading state if we are fetching, otherwise nothing (implicit auto-load)
+              loadingHelp ? (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-dark-800/30 border border-dark-700/50 rounded-lg text-sm text-dark-400 animate-pulse">
+                  <div className="w-3.5 h-3.5 border-2 border-brand-orange/30 border-t-brand-orange rounded-full animate-spin" />
+                  Generating Solution...
+                </div>
+              ) : null
             ) : (
               <button 
                 onClick={() => handleAIAssist(true)}

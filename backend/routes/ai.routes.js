@@ -390,5 +390,41 @@ router.post('/analyze-code', verifyToken, async (req, res) => {
   }
 });
 
+// ============================================================
+// POST /api/ai/debrief/questions
+// Get probing questions for debrief
+// ============================================================
+router.post('/debrief/questions', verifyToken, async (req, res) => {
+  try {
+    const { title, difficulty } = req.body;
+    if (!title) return res.status(400).json({ error: 'Title is required' });
+
+    const result = await aiService.generateDebriefQuestions(title, difficulty || 'Medium');
+    res.json(result);
+  } catch (error) {
+    console.error('Error getting debrief questions:', error);
+    res.status(500).json({ error: 'Failed to generate questions' });
+  }
+});
+
+// ============================================================
+// POST /api/ai/debrief/analyze
+// Analyze answers and return confidence score + advice
+// ============================================================
+router.post('/debrief/analyze', verifyToken, async (req, res) => {
+  try {
+    const { title, questions, answers } = req.body;
+    if (!title || !questions || !answers) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const result = await aiService.analyzeDebriefResponse(title, questions, answers);
+    res.json(result);
+  } catch (error) {
+    console.error('Error analyzing debrief:', error);
+    res.status(500).json({ error: 'Failed to analyze debrief' });
+  }
+});
+
 module.exports = router;
 

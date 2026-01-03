@@ -173,6 +173,31 @@ export const useRevisionStore = create((set, get) => ({
     }
   },
 
+  updateRevisionDebrief: async (revisionId, debriefData) => {
+    set({ loading: true, error: null });
+    try {
+      // Assuming generic patch endpoint handles arbitrary fields, or creating a specific one.
+      // Since revision routes usually allow partial updates via PATCH /revisions/:id
+      const response = await api.patch(`/revisions/${revisionId}`, {
+        confidenceScore: debriefData.confidenceScore,
+        aiAdvice: debriefData.advice
+      });
+
+      // Update revision in state
+      set(state => ({
+        revisions: state.revisions.map(r => 
+          r.id === revisionId ? response.data : r
+        ),
+        loading: false
+      }));
+
+      return response.data;
+    } catch (error) {
+      set({ error: error.message, loading: false });
+      throw error;
+    }
+  },
+
   removeFromQueue: async (revisionId) => {
     set({ loading: true, error: null });
     try {

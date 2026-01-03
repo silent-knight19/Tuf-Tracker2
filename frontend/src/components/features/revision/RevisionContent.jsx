@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { CheckCircle, Circle, Clock, Activity, Target } from 'lucide-react';
+
+import { CheckCircle, Circle, Clock, Activity, Target, BrainCircuit } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 function RevisionContent({ revision, onLogTime }) {
   // Timeline Logic
@@ -129,6 +131,26 @@ function RevisionContent({ revision, onLogTime }) {
              </div>
            ))}
         </div>
+
+        {/* AI Strategic Advice Section */}
+        {revision.aiAdvice && (
+          <div className="mt-8 bg-purple-500/5 border border-purple-500/20 rounded-3xl p-8 relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-8 opacity-10">
+               <BrainCircuit className="w-32 h-32 text-purple-500" />
+             </div>
+             
+             <div className="relative z-10">
+               <h3 className="text-lg font-black text-white uppercase tracking-tight mb-4 flex items-center gap-3">
+                 <BrainCircuit className="w-6 h-6 text-purple-400" />
+                 AI Strategic Advice
+               </h3>
+               
+               <div className="prose prose-invert max-w-none text-dark-200">
+                 <ReactMarkdown>{revision.aiAdvice}</ReactMarkdown>
+               </div>
+             </div>
+          </div>
+        )}
       </div>
     </div>
   );

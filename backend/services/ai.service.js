@@ -1774,6 +1774,77 @@ CRITICAL RULES:
       throw e;
     }
   }
+  // ═══════════════════════════════════════════════════════════════
+  // Guided Debrief: Generate Questions
+  // ═══════════════════════════════════════════════════════════════
+  async generateDebriefQuestions(title, difficulty) {
+    const prompt = `Generate 3 probing, conceptual interview questions for a candidate who just solved "${title}" (${difficulty}).
+    
+    GOAL: Verify deep understanding, not just memorization.
+    
+    RULES:
+    1. Question 1: Focus on Time/Space Complexity trade-offs or decisions.
+    2. Question 2: Focus on Edge Cases or "What if" scenarios (e.g., constraints change).
+    3. Question 3: Focus on Pattern recognition or alternative approaches.
+    
+    Return JSON:
+    {
+      "questions": [
+        "Question 1 text...",
+        "Question 2 text...",
+        "Question 3 text..."
+      ]
+    }`;
+
+    try {
+      const text = await this.callCerebras(prompt, true);
+      return this.parseJSON(text);
+    } catch (e) {
+      console.error('Debrief questions failed:', e.message);
+      return { 
+        questions: [
+          "Explain the time complexity of your solution and why it is optimal.",
+          "What edge cases did you consider, and how does your code handle them?",
+          "Are there any alternative approaches to this problem? Why did you choose this one?"
+        ] 
+      };
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Guided Debrief: Analyze Response
+  // ═══════════════════════════════════════════════════════════════
+  async analyzeDebriefResponse(title, questions, answers) {
+    const prompt = `Analyze the candidate's answers for the problem "${title}".
+    
+    Questions & Answers:
+    ${questions.map((q, i) => `Q: ${q}\nA: ${answers[i] || "No answer"}`).join('\n\n')}
+    
+    TASK:
+    1. Assign a "Confidence Score" (0-5) based on depth, accuracy, and clarity.
+       - 5 = Expert (Deep insight, correct trade-offs)
+       - 3 = Competent (Correct but surface level based)
+       - 0 = Shallow (Incorrect or memorized)
+    2. Provide "Strategic Advice" for the future. What should they focus on? (Markdown format).
+    
+    Return JSON:
+    {
+      "confidenceScore": 4,
+      "advice": "**Strategic Takeaway:** ... (Markdown)"
+    }`;
+
+    try {
+      console.log('Analyzing debrief response...');
+      const text = await this.callCerebras(prompt, true);
+      return this.parseJSON(text);
+    } catch (e) {
+      console.error('Debrief analysis failed:', e.message);
+      return {
+        confidenceScore: 3,
+        advice: "**Review Required:** Analysis failed. Please manually review your solution and ensure you understand the core concepts."
+      };
+    }
+  }
 }
 
 module.exports = new AIService();

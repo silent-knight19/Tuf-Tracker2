@@ -1,4 +1,6 @@
-import { Play, Wand2, Target, Activity, Clock, Terminal } from 'lucide-react';
+import { useState } from 'react';
+import { Play, Wand2, Target, Activity, Clock, Terminal, Award } from 'lucide-react';
+import GuidedDebriefModal from './GuidedDebriefModal';
 
 function RevisionSidebar({ revision, onStartReview, onGuidedReview }) {
   const handleSolveWithAI = () => {
@@ -8,8 +10,22 @@ function RevisionSidebar({ revision, onStartReview, onGuidedReview }) {
     }
   };
 
+  /* State for modal */
+  const [isDebriefOpen, setIsDebriefOpen] = useState(false);
+
   return (
     <div className="space-y-10">
+      {/* Debrief Modal */}
+      <GuidedDebriefModal 
+        isOpen={isDebriefOpen} 
+        onClose={() => setIsDebriefOpen(false)}
+        problemTitle={revision.problemTitle || revision.title}
+        difficulty={revision.difficulty}
+        onComplete={(result) => {
+           if (onGuidedReview) onGuidedReview(result); // Pass result up to parent to save
+        }}
+      />
+
       {/* Action Protocol Container */}
       <div className="relative group">
         <div className="absolute -inset-1 bg-gradient-to-r from-brand-orange/20 to-purple-500/20 rounded-3xl blur opacity-25 group-hover:opacity-100 transition duration-1000" />
@@ -31,10 +47,10 @@ function RevisionSidebar({ revision, onStartReview, onGuidedReview }) {
             </button>
 
             <button 
-              onClick={onGuidedReview}
-              className="w-full py-4 rounded-xl bg-dark-950 border border-dark-800 text-dark-400 hover:text-purple-400 hover:border-purple-500/30 transition-all flex items-center justify-center gap-3 font-black text-[11px] uppercase tracking-widest leading-none"
+              onClick={() => setIsDebriefOpen(true)}
+              className="w-full py-4 rounded-xl bg-dark-950 border border-dark-800 text-dark-400 hover:text-purple-400 hover:border-purple-500/30 transition-all flex items-center justify-center gap-3 font-black text-[11px] uppercase tracking-widest leading-none group/debrief"
             >
-              <Wand2 className="w-5 h-5 text-purple-400 group-hover:animate-pulse" /> 
+              <Wand2 className="w-5 h-5 text-purple-400 group-hover/debrief:animate-pulse" /> 
               Guided Debrief
             </button>
 
@@ -77,7 +93,7 @@ function RevisionSidebar({ revision, onStartReview, onGuidedReview }) {
       {/* Critical Metrics Hub */}
       <div className="grid grid-cols-2 gap-4">
         {[
-          { icon: Activity, value: revision.healthScore || 0, total: '/5', label: 'Health Score', color: 'text-green-400', bg: 'bg-green-400/10' },
+          { icon: Award, value: revision.confidenceScore || 0, total: '/5', label: 'Confidence Level', color: 'text-blue-400', bg: 'bg-blue-400/10' },
           { icon: Clock, value: revision.totalReviews || 0, label: 'Sessions', color: 'text-blue-400', bg: 'bg-blue-400/10' }
         ].map((stat, i) => (
           <div key={i} className="bg-dark-900/40 backdrop-blur-md border border-dark-800 rounded-3xl p-6 flex flex-col items-center justify-center text-center group/stat">
