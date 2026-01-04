@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Zap, ExternalLink, Cpu, ChevronRight, Eye, EyeOff, Lightbulb, Terminal, GripVertical, RotateCw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -16,6 +16,8 @@ import CodePanel from '../components/features/code/CodePanel';
 function SolveUserProblemPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isBlindMode = searchParams.get('blind') === 'true';
   
   // Problem State (fetched from API)
   const [problem, setProblem] = useState(null);
@@ -75,10 +77,10 @@ function SolveUserProblemPage() {
     if (id) fetchProblem();
   }, [id]);
 
-  // Auto-generate edge cases when description loads
+  // Auto-generate solution and content when description loads
   useEffect(() => {
-    if (description && problem && !edgeCases && !loadingEdgeCases) {
-      handleFetchAIContent({ mode: 'edge_cases_only' });
+    if (description && problem && !helpData && !loadingHelp) {
+      handleFetchAIContent({ mode: 'full' });
     }
   }, [description, problem]);
 
@@ -153,7 +155,7 @@ function SolveUserProblemPage() {
           behavior: 'smooth'
         });
       }
-    }, 3000);
+    }, 1000);
   };
 
   const handleGenerateEdgeCases = async () => {
@@ -362,6 +364,24 @@ function SolveUserProblemPage() {
     return [input];
   };
 
+  const obfuscateSignature = (signature) => {
+    if (!signature) return signature;
+    // Replace method name with 'solve'
+    // Regex matches: return type + space + method name + space* + (
+    return signature.replace(/(\s+)([a-zA-Z0-9_]+)(\s*\()/g, '$1solve$3');
+  };
+
+  // Prepare display data based on blind mode
+  const displayProblemTitle = isBlindMode ? 'Mystery Problem' : problem?.title;
+  
+  const displayDescription = description ? {
+    ...description,
+    description: description.description, // Keep original text for now (maybe obscure later?)
+    functionSignature: isBlindMode && description.functionSignature 
+      ? obfuscateSignature(description.functionSignature) 
+      : description.functionSignature
+  } : null;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-dark-950 flex flex-col items-center justify-center">
@@ -401,24 +421,28 @@ function SolveUserProblemPage() {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-base font-bold text-white">{problem.title}</h1>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className={`px-2 py-0.5 rounded text-sm font-bold ${
-                  problem.difficulty === 'Easy' ? 'bg-green-500/10 text-green-400' :
-                  problem.difficulty === 'Medium' ? 'bg-yellow-500/10 text-yellow-400' :
-                  'bg-red-500/10 text-red-400'
-                }`}>
-                  {problem.difficulty || 'Medium'}
-                </span>
-                {problem.platform && (
-                  <span className="text-xs text-dark-500">{problem.platform}</span>
-                )}
-              </div>
+              <h1 className="text-base font-bold text-white">
+                {displayProblemTitle}
+              </h1>
+              {!isBlindMode && (
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className={`px-2 py-0.5 rounded text-sm font-bold ${
+                    problem.difficulty === 'Easy' ? 'bg-green-500/10 text-green-400' :
+                    problem.difficulty === 'Medium' ? 'bg-yellow-500/10 text-yellow-400' :
+                    'bg-red-500/10 text-red-400'
+                  }`}>
+                    {problem.difficulty || 'Medium'}
+                  </span>
+                  {problem.platform && (
+                    <span className="text-xs text-dark-500">{problem.platform}</span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           
           <div className="flex items-center gap-4 relative z-20">
-            {problem.platformUrl && (
+            {!isBlindMode && problem.platformUrl && (
               <a 
                 href={problem.platformUrl} 
                 target="_blank" 
@@ -431,18 +455,13 @@ function SolveUserProblemPage() {
               </a>
             )}
             {(!helpData || !helpData.solutions) ? (
-              <button 
-                onClick={() => handleAIAssist(false)}
-                disabled={loadingHelp}
-                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 shadow-lg shadow-blue-500/20"
-              >
-                {loadingHelp ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <Cpu className="w-4 h-4" />
-                )}
-                AI Assist
-              </button>
+              // Show loading state if we are fetching, otherwise nothing (implicit auto-load)
+              loadingHelp ? (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-dark-800/30 border border-dark-700/50 rounded-lg text-sm text-dark-400 animate-pulse">
+                  <div className="w-3.5 h-3.5 border-2 border-brand-orange/30 border-t-brand-orange rounded-full animate-spin" />
+                  Generating Solution...
+                </div>
+              ) : null
             ) : (
               <button 
                 onClick={() => handleAIAssist(true)}
@@ -497,24 +516,24 @@ function SolveUserProblemPage() {
                       blockquote: ({node, children}) => <blockquote className="border-l-4 border-brand-orange/50 pl-4 my-4 text-dark-300 italic">{children}</blockquote>
                     }}
                   >
-                    {typeof description === 'string' ? description : description.description}
+                    {typeof displayDescription === 'string' ? displayDescription : displayDescription.description}
                   </ReactMarkdown>
                 </div>
                 
-                {description.functionSignature && (
+                {displayDescription.functionSignature && (
                   <div className="mt-6 p-4 bg-dark-950 rounded-lg border border-dark-800">
                     <p className="text-[14px] font-[500] text-dark-400 mb-2">Function Signature:</p>
-                    <code className="text-base text-green-400 font-mono font-[500]">{description.functionSignature}</code>
+                    <code className="text-base text-green-400 font-mono font-[500]">{displayDescription.functionSignature}</code>
                   </div>
                 )}
               </div>
 
               {/* Examples */}
-              {description.examples && description.examples.length > 0 && (
+              {displayDescription.examples && displayDescription.examples.length > 0 && (
                 <div className="space-y-4">
                   <h2 className="text-[1.3rem] font-[800] text-white">Examples</h2>
                   <div className="grid gap-4">
-                    {description.examples.map((example, index) => (
+                    {displayDescription.examples.map((example, index) => (
                       <div key={index} className="bg-dark-900 rounded-lg p-5 border border-dark-800">
                         <div className="space-y-3 font-mono text-base font-[500]">
                           <div>
@@ -537,13 +556,13 @@ function SolveUserProblemPage() {
               )}
 
               {/* Constraints */}
-              {description.constraints && description.constraints.length > 0 && (
+              {displayDescription.constraints && displayDescription.constraints.length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h2 className="text-[1.3rem] font-[800] text-white">Constraints</h2>
                   </div>
                   <ul className="list-disc list-inside space-y-2 text-dark-200 bg-dark-900 p-5 rounded-lg border border-dark-800 text-[1.1rem] font-[450]">
-                    {description.constraints.map((constraint, index) => (
+                    {displayDescription.constraints.map((constraint, index) => (
                       <li key={index}>{constraint}</li>
                     ))}
                   </ul>
@@ -726,11 +745,11 @@ function SolveUserProblemPage() {
           onGenerateEdgeCases={handleGenerateEdgeCases}
           isGeneratingEdgeCases={loadingEdgeCases}
           autoGeneratedInput={autoGeneratedInput}
-          functionSignature={description?.functionSignature}
+          functionSignature={displayDescription?.functionSignature}
           onAnalyzeCode={handleAnalyzeCode}
-          problemDescription={description?.description}
-          examples={description?.examples}
-          constraints={description?.constraints}
+          problemDescription={displayDescription?.description}
+          examples={displayDescription?.examples}
+          constraints={displayDescription?.constraints}
           optimalComplexity={helpData?.solutions?.optimal?.complexity}
         />
       </div>

@@ -12,7 +12,8 @@ function InterviewPracticePage() {
   const [difficulty, setDifficulty] = useState('Medium');
   const [practiceLoading, setPracticeLoading] = useState(false);
 
-  const solvedProblems = problems.filter(p => p.status === 'Solved');
+  // Normalize solved check to match Dashboard logic
+  const solvedProblems = problems.filter(p => p.status === 'Solved' || p.status === 'Completed' || p.solvedAt);
 
   const handleStartPractice = async () => {
     setPracticeLoading(true);
@@ -37,7 +38,8 @@ function InterviewPracticePage() {
       } else if (mode === 'solved-review') {
         if (solvedProblems.length > 0) {
           const randomSolved = solvedProblems[Math.floor(Math.random() * solvedProblems.length)];
-          window.open(`/problem/${randomSolved.id}`, '_blank');
+          // Open in Solve page with blind mode (hides title/difficulty/company)
+          window.open(`/solve/${randomSolved.id}?blind=true`, '_blank');
         } else {
           alert("No solved problems to review!");
         }

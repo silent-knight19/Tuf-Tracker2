@@ -10,7 +10,7 @@ import RevisionContent from '../components/features/revision/RevisionContent';
 function RevisionProblemDetailPage({ autoOpenReview = false }) {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getRevisionById, fetchRevisionById, updateRevisionNotes, completeReview, logRevisionTime } = useRevisionStore();
+  const { getRevisionById, fetchRevisionById, updateRevisionNotes, completeReview, logRevisionTime, updateRevisionDebrief } = useRevisionStore();
   
   const [revision, setRevision] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -68,6 +68,15 @@ function RevisionProblemDetailPage({ autoOpenReview = false }) {
     setRevision(updatedRev);
   };
 
+  const handleDebriefComplete = async (debriefData) => {
+    // debriefData contains { confidenceScore, advice }
+    await updateRevisionDebrief(id, debriefData);
+    
+    // Refresh local state to show new score/advice immediately
+    const updatedRev = getRevisionById(id);
+    setRevision(updatedRev);
+  };
+
   if (!revision) return null;
 
   return (
@@ -81,7 +90,7 @@ function RevisionProblemDetailPage({ autoOpenReview = false }) {
             <RevisionSidebar 
               revision={revision}
               onStartReview={() => setShowQuickReview(true)}
-              onGuidedReview={() => setShowGuidedReview(true)}
+              onGuidedReview={handleDebriefComplete}
             />
           </div>
         </div>

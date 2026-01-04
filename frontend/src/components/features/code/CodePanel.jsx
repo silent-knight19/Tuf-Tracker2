@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { Play, RotateCcw, GripHorizontal, Clock, Cpu, Brain, CheckCircle, AlertTriangle, Lightbulb, TrendingUp, X, Star, Zap } from 'lucide-react';
+import { Play, RotateCcw, GripHorizontal, Clock, Cpu, Brain, CheckCircle, AlertTriangle, Lightbulb, TrendingUp, X, Star, Zap, AlignLeft } from 'lucide-react';
 import CodeEditor from './CodeEditor';
 import ConsolePanel from './ConsolePanel';
 import InputPanel from './InputPanel';
@@ -203,6 +203,34 @@ function CodePanel({
     }
   };
 
+  const [isFormatting, setIsFormatting] = useState(false);
+
+  const handleFormat = async () => {
+    setIsFormatting(true);
+    try {
+      // Dynamic import to avoid loading heavy formatter until needed
+      const prettier = await import('prettier/standalone');
+      const javaPlugin = await import('prettier-plugin-java');
+      
+      const formatted = await prettier.format(code, {
+        parser: 'java',
+        plugins: [javaPlugin.default || javaPlugin],
+        tabWidth: 4,
+        useTabs: false,
+        printWidth: 100,
+        trailingComma: 'none',
+      });
+      
+      setCode(formatted);
+    } catch (err) {
+      console.error('Formatting failed:', err);
+      // Fallback or alert? mostly fallback to doing nothing but logging
+      // Maybe show a quick toast if possible, or just error in console
+    } finally {
+      setIsFormatting(false);
+    }
+  };
+
   const tabs = [
     { id: 'console', label: 'Output' },
     { id: 'input', label: 'Input' },
@@ -237,6 +265,20 @@ function CodePanel({
           >
             <RotateCcw className="w-4 h-4 group-hover:-rotate-90 transition-transform duration-500" />
           </button>
+          
+          <button
+            onClick={handleFormat}
+            disabled={isFormatting}
+            className="p-2 text-dark-400 hover:text-white hover:bg-dark-800 rounded-lg transition-colors group disabled:opacity-50 disabled:cursor-wait"
+            title="Format Code"
+          >
+            {isFormatting ? (
+              <div className="w-4 h-4 border-2 border-dark-400 border-t-white rounded-full animate-spin" />
+            ) : (
+              <AlignLeft className="w-4 h-4" />
+            )}
+          </button>
+
           <button
             onClick={handleRunCode}
             disabled={isRunning || cooldown > 0}
