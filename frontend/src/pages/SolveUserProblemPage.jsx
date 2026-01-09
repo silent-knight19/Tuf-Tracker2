@@ -451,7 +451,7 @@ function SolveUserProblemPage() {
                 title={`Open on ${problem.platform || 'Platform'}`}
               >
                 <ExternalLink className="w-4 h-4" />
-                <span className="hidden sm:inline">LeetCode</span>
+                <span className="hidden sm:inline">{problem.platform || 'LeetCode'}</span>
               </a>
             )}
             {(!helpData || !helpData.solutions) ? (

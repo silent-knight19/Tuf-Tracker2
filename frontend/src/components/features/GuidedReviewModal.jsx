@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { X, ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 function GuidedReviewModal({ revision, onClose, onComplete }) {
   const [step, setStep] = useState(1);
@@ -12,6 +13,8 @@ function GuidedReviewModal({ revision, onClose, onComplete }) {
   });
   const [showPatternAnswer, setShowPatternAnswer] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useScrollLock(true);
 
   const totalSteps = 4;
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRevisionStore } from '../stores/revisionStore';
 import { useAuthStore } from '../stores/authStore';
 import { CheckCircle, X, Calendar, AlertCircle, RefreshCw } from 'lucide-react';
+import { useScrollLock } from '../hooks/useScrollLock';
 import RevisionProblemCard from '../components/features/RevisionProblemCard';
 import DashboardHeader from '../components/features/revision/DashboardHeader';
 import MotivationalQuote from '../components/ui/MotivationalQuote';
@@ -16,6 +17,9 @@ function RevisionDashboardPage() {
   // Overdue Modal State
   const [showOverdue, setShowOverdue] = useState(false);
   const [clearingOverdue, setClearingOverdue] = useState(false);
+
+  // Lock scroll when modals are open
+  useScrollLock(showUpcoming || showOverdue);
 
   useEffect(() => {
     fetchDueToday();

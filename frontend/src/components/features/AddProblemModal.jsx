@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useProblemStore } from '../../stores/problemStore';
+import { useScrollLock } from '../../hooks/useScrollLock';
 import { Cpu, X } from 'lucide-react';
 
 function AddProblemModal({ isOpen, onClose }) {
@@ -9,6 +10,8 @@ function AddProblemModal({ isOpen, onClose }) {
   const [notes, setNotes] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const { addProblem } = useProblemStore();
+
+  useScrollLock(isOpen);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

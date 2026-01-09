@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { X, Check } from 'lucide-react';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 function QuickReviewModal({ revision, onClose, onComplete }) {
   const [checklist, setChecklist] = useState({
@@ -12,6 +13,8 @@ function QuickReviewModal({ revision, onClose, onComplete }) {
   const [confidence, setConfidence] = useState(3);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useScrollLock(true);
 
   const toggleCheck = (key) => {
     setChecklist(prev => ({ ...prev, [key]: !prev[key] }));

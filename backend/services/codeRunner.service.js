@@ -117,7 +117,7 @@ class CodeRunnerService {
       // On macOS (development): Just run javac with Node.js timeout
       const javaCmd = 'javac -J-Xmx128m -J-Xms16m -encoding UTF-8 *.java';
       const cmd = this.isLinux 
-        ? `sh -c "ulimit -f ${this.limits.maxFileSizeKB} && timeout 25s ${javaCmd}"`
+        ? `bash -c "ulimit -f ${this.limits.maxFileSizeKB} && timeout 25s ${javaCmd}"`
         : javaCmd;
       
       await execPromise(cmd, {
@@ -146,7 +146,7 @@ class CodeRunnerService {
       // - timeout: Kernel-level timeout (more reliable than Node.js)
       // On macOS (development): Just run java with Node.js timeout
       const cmd = this.isLinux
-        ? `sh -c "ulimit -u ${this.limits.maxProcesses} -f ${this.limits.maxFileSizeKB} && timeout ${this.limits.timeoutSeconds}s ${javaCmd}"`
+        ? `bash -c "ulimit -u ${this.limits.maxProcesses} -f ${this.limits.maxFileSizeKB} && timeout ${this.limits.timeoutSeconds}s ${javaCmd}"`
         : javaCmd;
       
       const result = await execPromise(cmd, {

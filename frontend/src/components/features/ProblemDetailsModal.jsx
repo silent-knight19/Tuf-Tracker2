@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useProblemStore } from '../../stores/problemStore';
+import { useScrollLock } from '../../hooks/useScrollLock';
 import { Cpu, RotateCw, Lightbulb, X, ExternalLink } from 'lucide-react';
 
 function ProblemDetailsModal({ problem, isOpen, onClose }) {
@@ -8,6 +9,8 @@ function ProblemDetailsModal({ problem, isOpen, onClose }) {
   const [approach, setApproach] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const { updateProblem, generateNotes } = useProblemStore();
+
+  useScrollLock(isOpen);
 
   useEffect(() => {
     if (problem) {

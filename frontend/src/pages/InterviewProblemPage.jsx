@@ -317,7 +317,7 @@ function InterviewProblemPage() {
                 className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 hover:text-amber-400 rounded-lg text-sm font-bold transition-all border border-amber-500/20 hover:border-amber-500/50 flex items-center gap-2 shadow-lg shadow-amber-500/5"
               >
                 <ExternalLink className="w-4 h-4" />
-                <span className="hidden sm:inline">LeetCode</span>
+                <span className="hidden sm:inline">{problem.platform || 'LeetCode'}</span>
               </a>
             )}
             {!solutionData && (

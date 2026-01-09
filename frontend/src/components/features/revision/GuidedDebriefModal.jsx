@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../../utils/api';
 import ReactMarkdown from 'react-markdown';
 import { auth } from '../../../config/firebase';
+import { useScrollLock } from '../../../hooks/useScrollLock';
 
 import { createPortal } from 'react-dom';
 
@@ -14,6 +15,8 @@ function GuidedDebriefModal({ isOpen, onClose, problemTitle, difficulty, onCompl
   const [answers, setAnswers] = useState({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [analysis, setAnalysis] = useState(null);
+
+  useScrollLock(isOpen);
 
   // Reset state when modal opens
   useEffect(() => {
