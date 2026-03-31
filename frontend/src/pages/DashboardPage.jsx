@@ -12,7 +12,6 @@ import LearnPage from './LearnPage';
 import { useProblemStore } from '../stores/problemStore';
 import { Flame, PanelLeft, Search } from 'lucide-react';
 import { useAutoHideHeader } from '../hooks/useAutoHideHeader';
-import CountdownTimer from '../components/ui/CountdownTimer';
 
 // Update function signature to accept children
 function DashboardPage({ children }) {
@@ -135,7 +134,6 @@ function DashboardPage({ children }) {
                  left: sidebarOpen ? 'calc(50% - 8rem)' : '50%',
                  transform: 'translate(-50%, -50%)' 
                }}>
-            <CountdownTimer targetDate="2026-04-01T00:00:00" />
           </div>
  
           <div className="flex items-center gap-6">

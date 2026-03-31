@@ -282,7 +282,7 @@ router.post('/learning-notes', verifyToken, async (req, res) => {
 
 // ============================================================
 // POST /api/ai/test-cases
-// Generate 20 high-quality test cases (Cerebras only)
+// Generate 20 high-quality test cases (OpenRouter)
 // ============================================================
 router.post('/test-cases', verifyToken, async (req, res) => {
   try {
@@ -327,7 +327,7 @@ router.post('/test-cases', verifyToken, async (req, res) => {
 
 // ============================================================
 // POST /api/ai/solution
-// Generate hints + solution (Cerebras only) - INDEPENDENT endpoint
+// Generate hints + solution (OpenRouter) - INDEPENDENT endpoint
 // ============================================================
 router.post('/solution', verifyToken, async (req, res) => {
   try {

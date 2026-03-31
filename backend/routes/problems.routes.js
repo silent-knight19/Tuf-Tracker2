@@ -12,6 +12,8 @@ const companyReadiness = require('../services/company-readiness.service');
 // GET /api/problems - Get all problems for a user
 router.get('/', verifyToken, async (req, res) => {
   try {
+    console.log('--- FETCHING PROBLEMS ---');
+    console.log('Current user UID:', req.user.uid);
     const { topic, pattern, difficulty, company, topics, patterns } = req.query;
     
     // Create query

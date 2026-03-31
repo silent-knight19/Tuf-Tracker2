@@ -3,6 +3,13 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 
+// Request logger middleware
+const requestLogger = (req, res, next) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${req.method} ${req.url} - Origin: ${req.headers.origin || 'No Origin'}`);
+  next();
+};
+
 // Routes
 const authRoutes = require('./routes/auth.routes');
 const { verifyToken } = require('./routes/auth.routes');
@@ -18,14 +25,31 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
+app.use(requestLogger);
 app.use(helmet());
 
 // Enhanced CORS configuration to handle preflight requests
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      process.env.FRONTEND_URL,
+      'http://localhost:5173',
+      'http://127.0.0.1:5173'
+    ].filter(Boolean);
+    
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.startsWith('http://localhost:')) {
+      callback(null, true);
+    } else {
+      console.warn(`⚠️ CORS blocked for origin: ${origin}`);
+      callback(null, true); // Allow in development but log the warning
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   exposedHeaders: ['Content-Type', 'Authorization', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset', 'RateLimit-Limit', 'RateLimit-Remaining', 'RateLimit-Reset']
 }));
 

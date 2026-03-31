@@ -1,23 +1,33 @@
 /**
- * AI Service - Optimized for Cerebras / Qwen 3 235B
+ * AI Service - Uses OpenRouter API for AI model access
  * 
- * All methods use Cerebras API exclusively.
- * No Gemini, no unsupported parameters.
+ * This file contains all the AI-powered features of our app.
+ * Every method that needs AI (generating problems, hints, solutions, etc.)
+ * goes through the callAI() method which talks to OpenRouter.
+ * 
+ * OpenRouter gives us access to many AI models (GPT-4, Claude, Gemini, etc.)
+ * through a single API that works just like OpenAI's API.
  */
 
-const { cerebrasClient, MODEL, generationConfig, rateLimiter } = require('../config/ai.config');
+// Import the OpenRouter client and config from our ai.config.js file
+const { openRouterClient, MODEL, generationConfig, rateLimiter } = require('../config/ai.config');
 
 class AIService {
 
   // ═══════════════════════════════════════════════════════════════
-  // CORE: Cerebras API Call
+  // CORE: OpenRouter API Call
+  // This is the main method that sends prompts to the AI model.
+  // Every other method in this file uses callAI() under the hood.
   // ═══════════════════════════════════════════════════════════════
-  async callCerebras(prompt, jsonMode = true, retries = 2) {
+  async callAI(prompt, jsonMode = true, retries = 2) {
     try {
+      // Wait if we've hit rate limits (prevents too many requests)
       await rateLimiter.wait();
       
-      console.log(`🤖 Cerebras: ${prompt.slice(0, 60)}...`);
+      // Log the first 60 characters of the prompt so we know what's happening
+      console.log(`🤖 OpenRouter: ${prompt.slice(0, 60)}...`);
       
+      // Build the request options for the OpenAI-compatible API
       const options = {
         model: MODEL,
         messages: [{ role: 'user', content: prompt }],
@@ -26,33 +36,36 @@ class AIService {
         max_tokens: generationConfig.max_tokens,
       };
       
-      // Add JSON mode if requested
+      // If we want JSON output, tell the model to respond in JSON format
       if (jsonMode) {
         options.response_format = { type: 'json_object' };
       }
       
-      // Timeout wrapper (30s)
+      // Create a timeout so we don't wait forever (60s for OpenRouter)
       const timeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout after 30s')), 30000)
+        setTimeout(() => reject(new Error('Timeout after 60s')), 60000)
       );
       
+      // Race the actual API call against the timeout
+      // Whichever finishes first wins
       const response = await Promise.race([
-        cerebrasClient.chat.completions.create(options),
+        openRouterClient.chat.completions.create(options),
         timeout
       ]);
       
       console.log('✅ Response received');
+      // Return just the text content from the AI's response
       return response.choices[0].message.content;
       
     } catch (error) {
-      // Retry on rate limit or timeout
+      // If we hit a rate limit (429) or timeout, retry automatically
       if (retries > 0 && (error.status === 429 || error.message?.includes('Timeout'))) {
         console.warn(`⚠️ ${error.message}. Retrying...`);
-        await new Promise(r => setTimeout(r, 2000));
-        return this.callCerebras(prompt, jsonMode, retries - 1);
+        await new Promise(r => setTimeout(r, 2000)); // Wait 2 seconds before retrying
+        return this.callAI(prompt, jsonMode, retries - 1);
       }
       
-      console.error('❌ Cerebras Error:', error.message);
+      console.error('❌ OpenRouter Error:', error.message);
       throw error;
     }
   }
@@ -107,7 +120,7 @@ REQUIREMENTS:
 
     try {
 
-      const text = await this.callCerebras(prompt, true);
+      const text = await this.callAI(prompt, true);
 
       
       const data = this.parseJSON(text);
@@ -209,7 +222,7 @@ COMMON MISTAKES TO AVOID:
       // 1. Launch all requests in parallel for speed
       const promises = Array(NUM_CANDIDATES).fill(null).map(async (_, idx) => {
         try {
-          const text = await this.callCerebras(prompt, true);
+          const text = await this.callAI(prompt, true);
           const candidate = this.parseJSON(text);
           if (candidate?.solution?.code) {
             return {
@@ -321,7 +334,7 @@ Return JSON:
 
     try {
       console.log('Generating problem from criteria...');
-      const text = await this.callCerebras(prompt, true);
+      const text = await this.callAI(prompt, true);
       const problem = this.parseJSON(text);
       
       if (!problem) throw new Error('Failed to parse problem');
@@ -383,7 +396,7 @@ Return JSON:
 
     try {
       console.log(`Generating ${company} problem...`);
-      const text = await this.callCerebras(prompt, true);
+      const text = await this.callAI(prompt, true);
       const problem = this.parseJSON(text);
       
       if (!problem) throw new Error('Failed to parse problem');
@@ -434,7 +447,7 @@ Return JSON:
 - Include RETURN VALUE specification for edge/impossible cases`;
 
     try {
-      const text = await this.callCerebras(prompt, true);
+      const text = await this.callAI(prompt, true);
       return this.parseJSON(text);
     } catch (e) {
       console.error('Description generation failed:', e.message);
@@ -468,8 +481,8 @@ REQUIREMENTS:
 3. Input parameter names must match the function signature`;
 
     try {
-      console.log('[generateEdgeCaseInputs] Calling Cerebras...');
-      const text = await this.callCerebras(prompt, true);
+      console.log('[generateEdgeCaseInputs] Calling OpenRouter...');
+      const text = await this.callAI(prompt, true);
       const data = this.parseJSON(text);
       const testCases = data?.testCases || data?.inputs || data || [];
       
@@ -868,8 +881,8 @@ CRITICAL RULES FOR "args":
    - If the example uses 1-based indexing, ONLY THEN use 1-based. Otherwise default to 0-based.`;
 
     try {
-      console.log('[generateTestInputsOnly] Calling Cerebras...');
-      const text = await this.callCerebras(prompt, true);
+      console.log('[generateTestInputsOnly] Calling OpenRouter...');
+      const text = await this.callAI(prompt, true);
       const data = this.parseJSON(text);
       let testCases = data?.testCases || data?.inputs || data || [];
       
@@ -945,7 +958,7 @@ Return JSON:
 }`;
 
     try {
-      const text = await this.callCerebras(prompt, true);
+      const text = await this.callAI(prompt, true);
       return this.parseJSON(text);
     } catch (e) {
       console.error('Analysis failed:', e.message);
@@ -964,7 +977,7 @@ ${notes}
 Return JSON: {"summary": "Brief summary", "keyPoints": ["Point 1", "Point 2"]}`;
 
     try {
-      const text = await this.callCerebras(prompt, true);
+      const text = await this.callAI(prompt, true);
       return this.parseJSON(text);
     } catch (e) {
       return { summary: notes.slice(0, 200), keyPoints: [] };
@@ -989,7 +1002,7 @@ Return JSON:
 }`;
 
     try {
-      const text = await this.callCerebras(prompt, true);
+      const text = await this.callAI(prompt, true);
       return this.parseJSON(text) || { weakTopics: [], weakPatterns: [], recommendations: [] };
     } catch (e) {
       return { weakTopics: [], weakPatterns: [], recommendations: [] };
@@ -1007,7 +1020,7 @@ Patterns: ${patterns?.join(', ') || 'General'}
 Return JSON: {"suggestions": [{"title": "Problem Name", "reason": "Why similar"}]}`;
 
     try {
-      const text = await this.callCerebras(prompt, true);
+      const text = await this.callAI(prompt, true);
       const data = this.parseJSON(text);
       return data?.suggestions || [];
     } catch (e) {
@@ -1061,7 +1074,7 @@ Rules:
 5. Do not include markdown code blocks inside the JSON strings.`;
 
     try {
-      const text = await this.callCerebras(prompt, true);
+      const text = await this.callAI(prompt, true);
       return this.parseJSON(text);
     } catch (e) {
       return null;
@@ -1094,7 +1107,7 @@ Return JSON:
 }`;
 
     try {
-      const text = await this.callCerebras(prompt, true);
+      const text = await this.callAI(prompt, true);
       return this.parseJSON(text);
     } catch (e) {
       throw new Error('Failed to generate similar problem');
@@ -1490,7 +1503,7 @@ CRITICAL RULES:
     const prompt = isPattern ? patternPrompt : topicPrompt;
 
     try {
-      const text = await this.callCerebras(prompt, true);
+      const text = await this.callAI(prompt, true);
       const notes = this.parseJSON(text);
       
       if (!notes) {
@@ -1753,7 +1766,7 @@ CRITICAL RULES:
 
     try {
       console.log('🔍 Analyzing user code...');
-      const text = await this.callCerebras(prompt, true);
+      const text = await this.callAI(prompt, true);
       const analysis = this.parseJSON(text);
       
       if (!analysis) {
@@ -1797,7 +1810,7 @@ CRITICAL RULES:
     }`;
 
     try {
-      const text = await this.callCerebras(prompt, true);
+      const text = await this.callAI(prompt, true);
       return this.parseJSON(text);
     } catch (e) {
       console.error('Debrief questions failed:', e.message);
@@ -1835,7 +1848,7 @@ CRITICAL RULES:
 
     try {
       console.log('Analyzing debrief response...');
-      const text = await this.callCerebras(prompt, true);
+      const text = await this.callAI(prompt, true);
       return this.parseJSON(text);
     } catch (e) {
       console.error('Debrief analysis failed:', e.message);
