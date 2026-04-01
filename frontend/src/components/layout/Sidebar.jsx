@@ -1,7 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
-import { LayoutDashboard, BarChart2, RotateCw, LogOut, BookOpen, Target, Code, Building2, Cpu } from 'lucide-react';
-import MotivationalQuote from '../ui/MotivationalQuote';
+import { LayoutDashboard, BarChart2, RotateCw, LogOut, BookOpen, Target, Code, Building2, Cpu, Layers, FileText } from 'lucide-react';
 
 function Sidebar({ open }) {
   const location = useLocation();
@@ -9,6 +8,7 @@ function Sidebar({ open }) {
 
   const mainNavigation = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard, color: 'text-blue-400' },
+    { name: 'Sheets', path: '/sheets', icon: Layers, color: 'text-pink-400' },
     { name: 'Analytics', path: '/analytics', icon: BarChart2, color: 'text-green-400' },
     { name: 'Revision', path: '/revision', icon: RotateCw, color: 'text-brand-orange' },
     { name: 'Learn', path: '/learn', icon: BookOpen, color: 'text-purple-400' },
@@ -107,12 +107,38 @@ function Sidebar({ open }) {
             ))}
           </div>
         </div>
-      </nav>
 
-      {/* Motivational Quote - Daily Insight */}
-      <div className="px-3 -mt-4 mb-2.5">
-        <MotivationalQuote category="Discipline" size="lg" />
-      </div>
+        {/* Quick Links - Strivers Sheet */}
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-3 px-3 mb-2">
+            <span className="text-[10px] font-black text-dark-600 uppercase tracking-[0.2em]">Quick Links</span>
+            <div className="h-px flex-1 bg-dark-800/60" />
+          </div>
+          <Link
+            to="/sheets/strivers"
+            className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 ${
+              isActive('/sheets/strivers') 
+                ? 'bg-[#312922]/10 text-white border border-[#312922]/20 shadow-xl' 
+                : 'text-dark-500 hover:text-[#5a4d44] hover:bg-dark-900/50'
+            }`}
+          >
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-500 ${
+              isActive('/sheets/strivers') 
+                ? 'bg-[#312922]/20 border border-[#312922]/30' 
+                : 'bg-dark-950 border border-dark-800 group-hover:border-[#312922]/30'
+            }`}>
+              <FileText className={`w-5 h-5 ${isActive('/sheets/strivers') ? 'text-[#5a4d44]' : 'text-dark-600 group-hover:text-[#5a4d44]'}`} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="font-bold text-[13px] block tracking-tight">Strivers A2Z</span>
+              <span className="text-[10px] text-dark-600 font-bold uppercase tracking-wider block mt-0.5">454 Problems</span>
+            </div>
+            {isActive('/sheets/strivers') && (
+              <div className="w-1.5 h-6 rounded-full bg-[#5a4d44] animate-in slide-in-from-right duration-500" />
+            )}
+          </Link>
+        </div>
+      </nav>
 
       {/* Compact Profile & Eject Section */}
       <div className="p-3 bg-dark-900/30 border-t border-dark-800/60 backdrop-blur-md">

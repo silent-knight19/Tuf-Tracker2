@@ -9,9 +9,14 @@ import RevisionProblemDetailPage from './RevisionProblemDetailPage';
 import ProblemViewPage from './ProblemViewPage';
 import SolveUserProblemPage from './SolveUserProblemPage';
 import LearnPage from './LearnPage';
+import SheetsPage from './SheetsPage';
+import Neetcode150Page from './Neetcode150Page';
+import StriversA2ZPage from './StriversA2ZPage';
+import DsaPatternsPage from './DsaPatternsPage';
 import { useProblemStore } from '../stores/problemStore';
 import { Flame, PanelLeft, Search } from 'lucide-react';
 import { useAutoHideHeader } from '../hooks/useAutoHideHeader';
+import MotivationalQuote from '../components/ui/MotivationalQuote';
 
 // Update function signature to accept children
 function DashboardPage({ children }) {
@@ -129,20 +134,11 @@ function DashboardPage({ children }) {
             </button>
           </div>
  
-          <div className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center transition-all duration-500 ease-in-out" 
-               style={{ 
-                 left: sidebarOpen ? 'calc(50% - 8rem)' : '50%',
-                 transform: 'translate(-50%, -50%)' 
-               }}>
+          <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 flex items-center justify-center max-w-3xl w-full px-4">
+            <MotivationalQuote category="Focus" variant="ghost" />
           </div>
- 
-          <div className="flex items-center gap-6">
-            {/* Notifications / Actions (Future Proofing) */}
-            <div className="hidden sm:flex items-center gap-2.5 pr-5 border-r border-dark-800/50">
-               <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.4)]" />
-               <span className="text-[11px] font-bold text-dark-500 uppercase tracking-[0.15em]">Live Sync</span>
-            </div>
- 
+
+          <div className="flex items-center gap-6 ml-auto">
             {/* Streak Counter - Premium Pill */}
             <div className={`group flex items-center gap-3.5 px-5 py-2 rounded-full border transition-all duration-500 cursor-default ${
               streak > 0 
@@ -157,7 +153,7 @@ function DashboardPage({ children }) {
               </div>
               <div className="flex flex-col -space-y-1">
                 <span className={`text-[11px] font-black uppercase tracking-tighter ${streak > 0 ? 'text-brand-orange/70' : 'text-dark-500'}`}>Streak</span>
-                <span className={`text-[15px] font-black transition-colors ${streak > 0 ? 'text-white' : 'text-dark-400'}`}>
+                <span className={`text-[17.25px] font-black transition-colors ${streak > 0 ? 'text-white' : 'text-dark-400'}`}>
                   {streak} Days
                 </span>
               </div>
@@ -171,6 +167,10 @@ function DashboardPage({ children }) {
             <Routes>
               <Route path="/" element={<ProblemsPage />} />
               <Route path="/problems" element={<ProblemsPage />} />
+              <Route path="/sheets" element={<SheetsPage />} />
+              <Route path="/sheets/neetcode" element={<Neetcode150Page />} />
+              <Route path="/sheets/strivers" element={<StriversA2ZPage />} />
+              <Route path="/sheets/dsa-patterns" element={<DsaPatternsPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/companies" element={<CompaniesPage />} />
               <Route path="/companies/:companyName" element={<ProblemsPage />} />

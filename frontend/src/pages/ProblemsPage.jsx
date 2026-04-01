@@ -7,7 +7,6 @@ import SolvedProblemsStats from '../components/features/SolvedProblemsStats';
 import ProblemCard from '../components/features/ProblemCard';
 import AddProblemModal from '../components/features/AddProblemModal';
 import { CheckCircle2, Plus, ChevronDown, ChevronRight, Search, X } from 'lucide-react';
-import MotivationalQuote from '../components/ui/MotivationalQuote';
 
 function ProblemsPage() {
   const navigate = useNavigate();
@@ -159,8 +158,6 @@ function ProblemsPage() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-5">
-      <MotivationalQuote category="Focus" />
-
       {/* LeetCode Style Stats */}
       <SolvedProblemsStats 
         customProblems={companyName ? companyProblems : null} 

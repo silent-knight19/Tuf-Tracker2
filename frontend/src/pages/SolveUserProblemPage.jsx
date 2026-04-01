@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, Zap, ExternalLink, Cpu, ChevronRight, Eye, EyeOff, Lightbulb, Terminal, GripVertical, RotateCw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -17,11 +17,15 @@ function SolveUserProblemPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const isBlindMode = searchParams.get('blind') === 'true';
   
-  // Problem State (fetched from API)
-  const [problem, setProblem] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Check if problem was passed via state (e.g., from NeetCode sheet)
+  const problemFromState = location.state?.problem;
+  
+  // Problem State (fetched from API or passed via state)
+  const [problem, setProblem] = useState(problemFromState || null);
+  const [loading, setLoading] = useState(!problemFromState);
   const [error, setError] = useState(null);
 
   // Description State (may need AI generation if missing)
@@ -47,8 +51,17 @@ function SolveUserProblemPage() {
   const leftContentRef = useRef(null); // Ref for scrollable container
   const aiAssistRef = useRef(null); // Ref for auto-scrolling
 
-  // Fetch problem on mount
+  // Fetch problem on mount (only if not passed via state)
   useEffect(() => {
+    // If problem was passed via state, skip API fetch
+    if (problemFromState) {
+      // Generate description for NeetCode problems if needed
+      if (problemFromState.title && !problemFromState.description) {
+        fetchDescription(problemFromState.title, 'LeetCode', problemFromState.difficulty, [problemFromState.category], []);
+      }
+      return;
+    }
+
     const fetchProblem = async () => {
       try {
         setLoading(true);
@@ -75,7 +88,7 @@ function SolveUserProblemPage() {
     };
 
     if (id) fetchProblem();
-  }, [id]);
+  }, [id, problemFromState]);
 
   // Auto-generate solution and content when description loads
   useEffect(() => {

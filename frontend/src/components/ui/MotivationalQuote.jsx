@@ -58,15 +58,15 @@ const MotivationalQuote = ({ category = null, className = "", variant = "card", 
 
   if (variant === "ghost") {
     return (
-      <div className={`flex items-center gap-4 px-5 py-2.5 bg-dark-900/40 backdrop-blur-md border border-dark-800/40 rounded-xl transition-all duration-700 ease-out ${transitionClass} ${className}`}>
-        <Quote className="w-3.5 h-3.5 text-brand-orange/50 shrink-0" />
-        <p className="text-[13px] font-black text-brand-orange tracking-tight leading-relaxed">
+      <div className={`flex items-center gap-4 px-5 py-2.5 bg-dark-900/40 backdrop-blur-md border border-dark-800/40 rounded-xl transition-all duration-700 ease-out w-full justify-center ${transitionClass} ${className}`}>
+        <Quote className="w-4 h-4 text-brand-orange/50 shrink-0" />
+        <p className="text-base font-black text-brand-orange tracking-tight leading-relaxed">
           {activeQuote.text}
         </p>
         {!hideAuthor && (
           <>
-            <div className="h-3.5 w-px bg-dark-800 shrink-0" />
-            <span className="text-[9px] font-black text-dark-500 uppercase tracking-widest shrink-0 whitespace-nowrap">{activeQuote.author}</span>
+            <div className="h-4 w-px bg-dark-800 shrink-0" />
+            <span className="text-xs font-black text-dark-500 uppercase tracking-widest shrink-0 whitespace-nowrap">{activeQuote.author}</span>
           </>
         )}
       </div>
