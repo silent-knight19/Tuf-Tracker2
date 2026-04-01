@@ -68,9 +68,8 @@ function SolvedProblemsStats({ customProblems, onShowAddModal }) {
             <div className="flex flex-col items-center gap-6">
               {/* High Fidelity Ring Chart */}
               <div className="relative w-48 h-48 flex-shrink-0 group/chart transition-transform duration-500 hover:scale-105">
-                <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
-                  <PieChart>
-                    <Pie
+                <PieChart width={192} height={192}>
+                  <Pie
                       data={chartData}
                       cx="50%"
                       cy="50%"
@@ -104,7 +103,6 @@ function SolvedProblemsStats({ customProblems, onShowAddModal }) {
                       itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: '800', textTransform: 'uppercase' }}
                     />
                   </PieChart>
-                </ResponsiveContainer>
                 
                 {/* Center Text with enhanced typography */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">

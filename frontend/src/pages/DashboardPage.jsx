@@ -13,6 +13,7 @@ import SheetsPage from './SheetsPage';
 import Neetcode150Page from './Neetcode150Page';
 import StriversA2ZPage from './StriversA2ZPage';
 import DsaPatternsPage from './DsaPatternsPage';
+import CompanyQuestionsPage from './CompanyQuestionsPage';
 import { useProblemStore } from '../stores/problemStore';
 import { Flame, PanelLeft, Search } from 'lucide-react';
 import { useAutoHideHeader } from '../hooks/useAutoHideHeader';
@@ -172,7 +173,7 @@ function DashboardPage({ children }) {
               <Route path="/sheets/strivers" element={<StriversA2ZPage />} />
               <Route path="/sheets/dsa-patterns" element={<DsaPatternsPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
-              <Route path="/companies" element={<CompaniesPage />} />
+              <Route path="/company-prep/:companyName" element={<CompanyQuestionsPage />} />
               <Route path="/companies/:companyName" element={<ProblemsPage />} />
               <Route path="/revision" element={<RevisionDashboardPage />} />
               <Route path="/revision/:id" element={<RevisionProblemDetailPage />} />

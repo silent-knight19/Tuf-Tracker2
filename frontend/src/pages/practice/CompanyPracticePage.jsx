@@ -5,7 +5,7 @@ import SearchableSelect from '../../components/ui/SearchableSelect';
 import MotivationalQuote from '../../components/ui/MotivationalQuote';
 import api from '../../utils/api';
 import { auth } from '../../config/firebase';
-import { DSA_PATTERNS, DSA_TOPICS } from '../../utils/dsaConstants';
+import { useNavigate } from 'react-router-dom';
 
 const TOP_COMPANIES = [
   { name: 'Google', logo: 'https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg', domain: 'Search & AI', bg: 'bg-white' },
@@ -43,14 +43,14 @@ const COMPANY_LOGOS = {
   'pinterest': 'https://upload.wikimedia.org/wikipedia/commons/0/08/Pinterest-logo.png'
 };
 
-function CompanyPracticePage() {
+const CompanyPracticePage = () => {
   const { problems } = useProblemStore();
   
   const [selectedCompany, setSelectedCompany] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('');
   const [selectedPattern, setSelectedPattern] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('Medium');
-  const [practiceLoading, setPracticeLoading] = useState(false);
+  const navigate = useNavigate();
 
   // Extract all companies user has added/interacted with
   const userCompanies = useMemo(() => {
@@ -62,13 +62,20 @@ function CompanyPracticePage() {
     return [...new Set(companies)].sort();
   }, [problems]);
 
+  // What: Function to handle clicking on a specific company.
+  // How: Uses React Router's `navigate` to switch the URL.
+  // Why: The route in App.jsx and DashboardPage.jsx expects `/company-prep/:companyName` instead of `/practice/company-prep/`, so we navigate directly there to avoid white screen bugs!
+  const handleCompanyClick = (companyName) => {
+    navigate(`/company-prep/${companyName.toLowerCase()}`);
+  };
+
+  const [practiceLoading, setPracticeLoading] = useState(false);
+
   const uniquePatterns = useMemo(() => [...new Set([
-    ...DSA_PATTERNS,
     ...problems.flatMap(p => p.patterns || [])
   ])].sort(), [problems]);
 
   const uniqueTopics = useMemo(() => [...new Set([
-    ...DSA_TOPICS,
     ...problems.flatMap(p => p.topics || [])
   ])].sort(), [problems]);
 
@@ -82,8 +89,8 @@ function CompanyPracticePage() {
     const topMatch = TOP_COMPANIES.find(c => c.name.toLowerCase() === companyName.toLowerCase());
     if (topMatch) return topMatch.logo;
 
-    // 3. Fallback to Clearbit dynamically
-    return `https://logo.clearbit.com/${lowerName}.com`;
+    // 3. Fallback to Google Favicon dynamically
+    return `https://www.google.com/s2/favicons?domain=${lowerName}.com&sz=128`;
   };
 
   const handleCompanyPractice = async (overrideCompany = null) => {
@@ -304,7 +311,7 @@ function CompanyPracticePage() {
             {TOP_COMPANIES.map((company) => (
               <button
                 key={company.name}
-                onClick={() => handleCompanyPractice(company.name)}
+                onClick={() => handleCompanyClick(company.name)}
                 className="group p-6 bg-dark-900 border border-dark-800 rounded-2xl hover:border-green-500/50 hover:bg-green-500/5 transition-all flex flex-col items-center text-center gap-4 relative overflow-hidden active:scale-95"
               >
                 <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -326,34 +333,6 @@ function CompanyPracticePage() {
           </div>
         </div>
 
-        {/* User's Companies Section (Stay below) */}
-        {userCompanies.length > 0 && (
-          <div className="lg:col-span-12 mb-8 order-4">
-            <h3 className="text-xs font-bold text-dark-500 uppercase tracking-widest mb-6">Your Previous Targets</h3>
-            <div className="flex flex-wrap gap-3">
-              {userCompanies.map((company) => (
-                <button
-                  key={company}
-                  onClick={() => handleCompanyPractice(company)}
-                  className="px-6 py-3 bg-dark-900 border border-dark-800 rounded-xl hover:border-green-500/40 hover:bg-green-500/5 text-dark-200 hover:text-white transition-all font-bold flex items-center gap-3 group active:scale-95"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center group-hover:bg-green-500/20 transition-colors overflow-hidden p-1.5 flex-shrink-0">
-                    <img 
-                       src={getCompanyLogo(company)}
-                      alt={company}
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = `https://ui-avatars.com/api/?name=${company}&background=111&color=fff&size=32`;
-                      }}
-                    />
-                  </div>
-                  {company}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
