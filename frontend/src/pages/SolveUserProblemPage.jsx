@@ -31,6 +31,7 @@ function SolveUserProblemPage() {
   // Description State (may need AI generation if missing)
   const [description, setDescription] = useState(null);
   const [loadingDescription, setLoadingDescription] = useState(false);
+  const [descriptionError, setDescriptionError] = useState(null);
 
   // AI Assist State
   const [helpData, setHelpData] = useState(null);
@@ -127,6 +128,7 @@ function SolveUserProblemPage() {
   const fetchDescription = async (title, platform, difficulty, topics, patterns) => {
     try {
       setLoadingDescription(true);
+      setDescriptionError(null);
       const token = await auth.currentUser.getIdToken();
       const response = await api.post('/ai/problem-description', { 
         title, 
@@ -140,6 +142,7 @@ function SolveUserProblemPage() {
       setDescription(response.data);
     } catch (error) {
       console.error('Failed to fetch description:', error);
+      setDescriptionError(error.response?.data?.error || error.message || 'Failed to load problem description');
     } finally {
       setLoadingDescription(false);
     }
@@ -498,6 +501,16 @@ function SolveUserProblemPage() {
             <div className="flex flex-col items-center justify-center py-12 text-dark-400">
               <div className="w-8 h-8 border-2 border-brand-orange/30 border-t-brand-orange rounded-full animate-spin mb-4" />
               <p>Fetching problem description...</p>
+            </div>
+          ) : descriptionError ? (
+            <div className="bg-difficulty-hard/10 border border-difficulty-hard/20 rounded-xl p-6 text-center">
+              <p className="text-difficulty-hard mb-4">{descriptionError}</p>
+              <button
+                onClick={() => fetchDescription(problem?.title, problem?.platform, problem?.difficulty, problem?.topics || [problem?.category], problem?.patterns || [])}
+                className="px-4 py-2 bg-brand-orange/20 hover:bg-brand-orange/30 text-brand-orange rounded-lg font-medium transition-colors"
+              >
+                Retry Loading Description
+              </button>
             </div>
           ) : description ? (
             <>

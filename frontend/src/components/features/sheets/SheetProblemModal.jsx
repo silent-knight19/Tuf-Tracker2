@@ -15,7 +15,9 @@ function SheetProblemModal({ problem, onClose, isSolved, onToggleSolved }) {
           leetCodeUrl: problem.leetCodeUrl,
           gfgUrl: problem.gfgUrl,
           source: problem.source || 'sheet',
-          description: `Solve "${problem.title}" - ${problem.difficulty} level problem (${problem.category}).`,
+          // Note: description is intentionally NOT set here
+          // so that SolveUserProblemPage will call fetchDescription
+          // to generate a full description object with examples, constraints, etc.
         }
       }
     });

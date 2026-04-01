@@ -164,7 +164,7 @@ router.post('/problem-help', verifyToken, async (req, res) => {
 // POST /api/ai/problem-description
 router.post('/problem-description', verifyToken, async (req, res) => {
   try {
-    const { title } = req.body;
+    const { title, platform, difficulty, topics, patterns } = req.body;
 
     if (!title) {
       return res.status(400).json({ error: 'Title is required' });
@@ -176,7 +176,18 @@ router.post('/problem-description', verifyToken, async (req, res) => {
       'ai_cache_descriptions',
       cacheKey,
       async () => {
-        return await aiService.generateProblemDescription(title);
+        const result = await aiService.generateProblemDescription(
+          title,
+          platform || 'LeetCode',
+          difficulty || 'Medium',
+          topics || [],
+          patterns || []
+        );
+        // Don't cache null results - throw error to prevent caching
+        if (!result) {
+          throw new Error('Failed to generate problem description');
+        }
+        return result;
       }
     );
     res.json(problemData); // Return full object with title, description, examples, constraints
