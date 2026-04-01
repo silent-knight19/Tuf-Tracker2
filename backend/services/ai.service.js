@@ -339,6 +339,23 @@ Return JSON:
       
       if (!problem) throw new Error('Failed to parse problem');
       
+      // Validate required fields - fill in defaults if any are missing
+      // Why: The AI model sometimes returns a response without certain fields (especially 'description').
+      // How: Check for each required field and provide a sensible default if missing.
+      // What: This prevents the frontend from getting stuck when it tries to use these fields.
+      const requiredFields = ['title', 'difficulty', 'description', 'functionSignature', 'examples', 'constraints'];
+      const missingFields = requiredFields.filter(field => !problem[field]);
+      
+      if (missingFields.length > 0) {
+        console.warn(`Missing fields in generated problem: ${missingFields.join(', ')}. Filling defaults.`);
+        if (!problem.title) problem.title = `${pattern || topic || 'Custom'} Problem`;
+        if (!problem.difficulty) problem.difficulty = difficulty || 'Medium';
+        if (!problem.description) problem.description = `Solve this ${problem.difficulty} level problem: ${problem.title}`;
+        if (!problem.functionSignature) problem.functionSignature = 'public int solve(int[] nums)';
+        if (!problem.examples) problem.examples = [{ input: 'nums = [1,2,3]', output: '6', explanation: 'Example explanation' }];
+        if (!problem.constraints) problem.constraints = ['1 <= nums.length <= 10^5'];
+      }
+
       problem.pattern = pattern;
       problem.topic = topic;
       problem.hints = [];
@@ -400,6 +417,19 @@ Return JSON:
       const problem = this.parseJSON(text);
       
       if (!problem) throw new Error('Failed to parse problem');
+      
+      // Validate required fields - log warning if any are missing but still return
+      const requiredFields = ['title', 'difficulty', 'description', 'functionSignature', 'examples', 'constraints'];
+      const missingFields = requiredFields.filter(field => !problem[field]);
+      
+      if (missingFields.length > 0) {
+        console.warn(`Missing fields in generated problem: ${missingFields.join(', ')}. Using partial problem.`);
+        // Fill in default values for missing fields to prevent frontend errors
+        if (!problem.description) problem.description = `Solve this ${problem.difficulty || 'Medium'} level problem: ${problem.title || 'Unknown'}`;
+        if (!problem.functionSignature) problem.functionSignature = 'public int solve(int[] nums)';
+        if (!problem.examples) problem.examples = [{ input: 'nums = [1,2,3]', output: '6', explanation: 'Example explanation' }];
+        if (!problem.constraints) problem.constraints = ['1 <= nums.length <= 10^5'];
+      }
       
       problem.company = company;
       problem.pattern = pattern;

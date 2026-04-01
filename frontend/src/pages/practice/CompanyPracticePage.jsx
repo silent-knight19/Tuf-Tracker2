@@ -101,26 +101,31 @@ const CompanyPracticePage = () => {
     }
 
     const localId = Date.now().toString();
-    const newTab = window.open(`/interview/ai?localId=${localId}`, '_blank');
-
+    
     try {
       setPracticeLoading(true);
       const token = await auth.currentUser.getIdToken();
 
+      // Send all selected parameters to AI for custom question generation
       const aiResponse = await api.post('/ai/company-problem', {
-        company: company,
+        company: company.trim(),
         topic: selectedTopic || undefined,
         pattern: selectedPattern || undefined,
-        difficulty: selectedDifficulty
+        difficulty: selectedDifficulty || 'Medium'
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
+      // Store the generated problem data
       localStorage.setItem(`ai_problem_${localId}`, JSON.stringify(aiResponse.data));
+      
+      // Open the interview tab after successful generation
+      window.open(`/interview/ai?localId=${localId}`, '_blank');
+      
     } catch (error) {
       console.error('Failed to generate company problem:', error);
-      if (newTab) newTab.close();
-      alert('Failed to generate problem. Please try again.');
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+      alert(`Failed to generate problem: ${errorMessage}. Please try again.`);
     } finally {
       setPracticeLoading(false);
     }
