@@ -23,20 +23,17 @@ router.get('/', verifyToken, async (req, res) => {
     const selectedTopics = topics ? topics.split(',').filter(t => t && t !== 'null') : (topic ? [topic] : []);
     const selectedPatterns = patterns ? patterns.split(',').filter(p => p && p !== 'null') : (pattern ? [pattern] : []);
 
-    // Firebase only supports array-contains once, so we'll use it for the first topic if present
+    // Firebase only supports array-contains once in a single query.
+    // If topics are specified, use array-contains on Firestore for the first topic.
+    // Otherwise, if company is specified, use array-contains for company.
     if (selectedTopics.length > 0) {
       query = query.where('topics', 'array-contains', selectedTopics[0]);
+    } else if (company) {
+      query = query.where('companies', 'array-contains', company);
     }
     
     if (difficulty) {
       query = query.where('difficulty', '==', difficulty);
-    }
-    
-    // Note: Firebase doesn't support array-contains for multiple arrays simultaneously,
-    // so we'll handle additional filtering in memory after fetching.
-    
-    if (company) {
-      query = query.where('companies', 'array-contains', company);
     }
 
     const snapshot = await query.get();
@@ -65,6 +62,13 @@ router.get('/', verifyToken, async (req, res) => {
     if (selectedPatterns.length > 0) {
       filteredProblems = filteredProblems.filter(p => 
         selectedPatterns.every(pat => p.patterns?.includes(pat))
+      );
+    }
+
+    // Filter by company in memory if topics were already filtered in Firestore
+    if (company && selectedTopics.length > 0) {
+      filteredProblems = filteredProblems.filter(p => 
+        p.companies?.includes(company)
       );
     }
 
@@ -321,6 +325,22 @@ router.delete('/:id', verifyToken, async (req, res) => {
     }
 
     await db.collection('problems').doc(req.params.id).delete();
+
+    // Cascade delete from revisions collection to prevent orphaned ghost problems
+    try {
+      const revSnap = await db.collection('revisions')
+        .where('userId', '==', req.user.uid)
+        .where('problemId', '==', req.params.id)
+        .get();
+      if (!revSnap.empty) {
+        const batch = db.batch();
+        revSnap.forEach(d => batch.delete(d.ref));
+        await batch.commit();
+        console.log(`🗑️ Cascade deleted ${revSnap.size} revision records for problem ${req.params.id}`);
+      }
+    } catch (revErr) {
+      console.warn('Failed to cascade delete revision items:', revErr.message);
+    }
 
     res.json({ message: 'Problem deleted successfully' });
   } catch (error) {

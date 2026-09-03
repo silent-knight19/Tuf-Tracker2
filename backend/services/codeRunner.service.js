@@ -111,6 +111,21 @@ class CodeRunnerService {
     return await fs.mkdtemp(prefix);
   }
 
+  getSafeEnv() {
+    return {
+      PATH: process.env.PATH || '/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin',
+      JAVA_HOME: process.env.JAVA_HOME || '',
+      TMPDIR: os.tmpdir(),
+      LANG: 'en_US.UTF-8',
+      LC_ALL: 'en_US.UTF-8'
+    };
+  }
+
+  wrapSolutionClass(source, testInput = '') {
+    const solutionInfo = this.prepareSolutionFile(source);
+    return `// === Solution.java ===\n${solutionInfo.code}\n\n// === Main.java (Reflection Runner) ===\n${this.getRunnerCode()}\n\n// === input.json ===\n${testInput}`;
+  }
+
   async compile(tempDir, isDirectMain) {
     try {
       // On Linux (production): Use ulimit for file size limit + timeout
@@ -123,7 +138,8 @@ class CodeRunnerService {
       await execPromise(cmd, {
         cwd: tempDir,
         timeout: this.timeout.compile,
-        maxBuffer: this.maxBuffer
+        maxBuffer: this.maxBuffer,
+        env: this.getSafeEnv()
       });
       return { success: true };
     } catch (error) {
@@ -153,7 +169,7 @@ class CodeRunnerService {
         cwd: tempDir,
         timeout: this.timeout.run + 2000, // Node timeout slightly longer for safety
         maxBuffer: this.maxBuffer,
-        env: { ...process.env },
+        env: this.getSafeEnv(),
         input: isDirectMain ? stdin : undefined
       });
 
@@ -163,6 +179,7 @@ class CodeRunnerService {
         exitCode: 0,
         timedOut: false
       };
+
     } catch (error) {
       // Exit code 124 = timeout command killed the process (Linux only)
       const timedOut = error.killed || error.code === 124;

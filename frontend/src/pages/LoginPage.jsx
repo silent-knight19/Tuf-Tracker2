@@ -29,11 +29,6 @@ const AlgorithmNode = ({ className }) => (
 
 function LoginPage() {
   const { signInWithGoogle, loading, error } = useAuthStore();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const handleGoogleLogin = async () => {
     try {
@@ -80,11 +75,7 @@ function LoginPage() {
       </div>
 
       {/* Main Card */}
-      <div 
-        className={`relative z-10 max-w-md w-full transition-all duration-700 ${
-          mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}
-      >
+      <div className="relative z-10 max-w-md w-full animate-in fade-in slide-in-from-bottom-6 duration-700">
         {/* Glassmorphism Card */}
         <div className="relative bg-dark-900/60 backdrop-blur-xl border border-dark-800/60 rounded-2xl p-8 shadow-2xl">
           {/* Top Glow Line */}

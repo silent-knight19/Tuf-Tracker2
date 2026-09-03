@@ -24,14 +24,21 @@ const MotivationalQuote = ({ category = null, className = "", variant = "card", 
 
   useEffect(() => {
     if (quotes.length > 0) {
-      rotateQuote();
+      const timer = setTimeout(() => {
+        rotateQuote();
+      }, 50);
       
+      let interval;
       if (animate) {
-        const interval = setInterval(rotateQuote, 30000); // 30s cycle
-        return () => clearInterval(interval);
+        interval = setInterval(rotateQuote, 30000); // 30s cycle
       }
+      return () => {
+        clearTimeout(timer);
+        if (interval) clearInterval(interval);
+      };
     }
-  }, [quotes, category]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quotes.length, category, animate]);
 
   if (!activeQuote) return null;
 

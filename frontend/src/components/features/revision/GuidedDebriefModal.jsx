@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, MessageSquare, Send, Award, BrainCircuit, Lightbulb, Loader2, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../../utils/api';
@@ -9,7 +9,6 @@ import { useScrollLock } from '../../../hooks/useScrollLock';
 import { createPortal } from 'react-dom';
 
 function GuidedDebriefModal({ isOpen, onClose, problemTitle, difficulty, onComplete }) {
-  // ... existing state ...
   const [step, setStep] = useState('loading'); // loading, questions, analyzing, results
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
@@ -18,19 +17,7 @@ function GuidedDebriefModal({ isOpen, onClose, problemTitle, difficulty, onCompl
 
   useScrollLock(isOpen);
 
-  // Reset state when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setStep('loading');
-      setQuestions([]);
-      setAnswers({});
-      setCurrentQuestionIndex(0);
-      setAnalysis(null);
-      fetchQuestions();
-    }
-  }, [isOpen, problemTitle]);
-
-  const fetchQuestions = async () => {
+  const fetchQuestions = useCallback(async () => {
     try {
       const token = await auth.currentUser.getIdToken();
       const res = await api.post('/ai/debrief/questions', {
@@ -48,7 +35,22 @@ function GuidedDebriefModal({ isOpen, onClose, problemTitle, difficulty, onCompl
       onClose();
       alert("Failed to start debrief. Please try again.");
     }
-  };
+  }, [problemTitle, difficulty, onClose]);
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => {
+        setStep('loading');
+        setQuestions([]);
+        setAnswers({});
+        setCurrentQuestionIndex(0);
+        setAnalysis(null);
+        fetchQuestions();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, fetchQuestions]);
 
   const handleAnswerSubmit = async () => {
     if (currentQuestionIndex < questions.length - 1) {

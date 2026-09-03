@@ -12,6 +12,26 @@ export const useAnalyticsStore = create((set) => ({
   loading: false,
   error: null,
 
+  // Fetch unified dashboard analytics in a single network request
+  fetchDashboard: async (days = 30) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await api.get(`/analytics/dashboard?days=${days}`);
+      set({
+        overview: response.data.overview,
+        topics: response.data.topics || [],
+        patterns: response.data.patterns || [],
+        difficulty: response.data.difficulty,
+        platforms: response.data.platforms || [],
+        heatmap: response.data.heatmap || [],
+        timeline: response.data.timeline || [],
+        loading: false
+      });
+    } catch (error) {
+      set({ error: error.message, loading: false });
+    }
+  },
+
   // Fetch overview stats
   fetchOverview: async () => {
     set({ loading: true, error: null });

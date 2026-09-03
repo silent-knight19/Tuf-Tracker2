@@ -11,18 +11,13 @@ import {
 function AnalyticsPage() {
   const { 
     overview, topics, patterns, difficulty, platforms, timeline,
-    fetchOverview, fetchTopics, fetchPatterns, fetchDifficulty, fetchPlatforms, fetchTimeline,
+    fetchDashboard,
     loading 
   } = useAnalyticsStore();
 
   useEffect(() => {
-    fetchOverview();
-    fetchTopics();
-    fetchPatterns();
-    fetchDifficulty();
-    fetchPlatforms();
-    fetchTimeline(30);
-  }, []);
+    fetchDashboard(30);
+  }, [fetchDashboard]);
 
   if (loading && !overview) {
     return (

@@ -11,6 +11,7 @@ function CompaniesPage() {
   const { companies, fetchCompanies, getCompanyReadiness, readinessData, loading } = useCompanyStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [_selectedCompany, setSelectedCompany] = useState(null);
   
   // Ref for click timer
   const clickTimer = useRef(null);

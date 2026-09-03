@@ -4,6 +4,42 @@ const { db } = require('../config/firebase.config');
 const { verifyToken } = require('./auth.routes');
 const analyticsService = require('../services/analytics.service');
 
+// GET /api/analytics/dashboard - Single query endpoint that computes all metrics (saves 83% Firestore reads)
+router.get('/dashboard', verifyToken, async (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 30;
+    const snapshot = await db.collection('problems')
+      .where('userId', '==', req.user.uid)
+      .get();
+
+    const problems = [];
+    snapshot.forEach(doc => {
+      problems.push(doc.data());
+    });
+
+    const overview = analyticsService.calculateOverallStats(problems);
+    const topics = analyticsService.calculateTopicDistribution(problems);
+    const patterns = analyticsService.calculatePatternCoverage(problems);
+    const platforms = analyticsService.calculatePlatformDistribution(problems);
+    const difficulty = analyticsService.calculateDifficultyDistribution(problems);
+    const heatmap = analyticsService.generateHeatmapData(problems);
+    const timeline = analyticsService.calculateProgressTimeline(problems, days);
+
+    res.json({
+      overview,
+      topics,
+      patterns,
+      platforms,
+      difficulty,
+      heatmap,
+      timeline
+    });
+  } catch (error) {
+    console.error('Error generating dashboard analytics:', error);
+    res.status(500).json({ error: 'Failed to generate dashboard analytics' });
+  }
+});
+
 // GET /api/analytics/overview - Get overall statistics
 router.get('/overview', verifyToken, async (req, res) => {
   try {

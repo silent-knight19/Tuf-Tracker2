@@ -25,13 +25,6 @@ function Timer({ autoStart = true, onTimeUpdate }) {
     return () => clearInterval(intervalRef.current);
   }, [isRunning, onTimeUpdate]);
 
-  // Auto-start when component mounts
-  useEffect(() => {
-    if (autoStart) {
-      setIsRunning(true);
-    }
-  }, [autoStart]);
-
   const toggleTimer = () => {
     setIsRunning(prev => !prev);
   };

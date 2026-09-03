@@ -100,15 +100,18 @@ function SolveProblemsSection() {
   // Handle initialization of expanded state
   useEffect(() => {
     if (Object.keys(expandedGroups).length === 0 && groupedRevisions.length > 0) {
-      if (searchQuery) {
-        // Expand all when searching
-        const allExpanded = {};
-        groupedRevisions.forEach(g => allExpanded[g.name] = true);
-        setExpandedGroups(allExpanded);
-      } else {
-        // Expand first by default
-        setExpandedGroups({ [groupedRevisions[0].name]: true });
-      }
+      const timer = setTimeout(() => {
+        if (searchQuery) {
+          // Expand all when searching
+          const allExpanded = {};
+          groupedRevisions.forEach(g => allExpanded[g.name] = true);
+          setExpandedGroups(allExpanded);
+        } else {
+          // Expand first by default
+          setExpandedGroups({ [groupedRevisions[0].name]: true });
+        }
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [groupedRevisions, searchQuery, expandedGroups]);
 

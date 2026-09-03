@@ -167,14 +167,29 @@ class SpacedRepetitionService {
   }
 
   /**
-   * Calculate overdue days
+   * Helper: Parse any date format safely (Date, Timestamp, ISO string, seconds)
+   */
+  parseDate(d) {
+    if (!d) return null;
+    if (d instanceof Date) return d;
+    if (typeof d.toDate === 'function') return d.toDate();
+    if (d._seconds !== undefined) return new Date(d._seconds * 1000);
+    if (d.seconds !== undefined) return new Date(d.seconds * 1000);
+    const parsed = new Date(d);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  /**
+   * Calculate overdue days safely
    */
   calculateOverdueDays(nextDueDate) {
     if (!nextDueDate) return 0;
     
+    const due = this.parseDate(nextDueDate);
+    if (!due) return 0;
+
     const now = new Date();
-    const due = nextDueDate instanceof Date ? nextDueDate : nextDueDate.toDate();
-    const diffTime = now - due;
+    const diffTime = now.getTime() - due.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
     return Math.max(0, diffDays);
@@ -184,7 +199,7 @@ class SpacedRepetitionService {
    * Check if problem should be archived
    */
   shouldArchive(revision) {
-    const { phase, totalReviews, scheduledReviews = [] } = revision;
+    const { phase, scheduledReviews = [] } = revision;
     
     // Archive if completed all scheduled reviews with high confidence
     if (phase === 'month_6_monthly') {
@@ -200,7 +215,8 @@ class SpacedRepetitionService {
    * Get bucket status (Fresh, Needs Revision, Mastered)
    */
   getBucketStatus(revision) {
-    const { totalReviews, phase, archived } = revision;
+    const { phase, archived } = revision;
+    const totalReviews = Number(revision.totalReviews) || 0;
     
     if (archived) return 'mastered';
     if (totalReviews === 0) return 'fresh';
@@ -213,28 +229,29 @@ class SpacedRepetitionService {
    * Calculate problem health score (1-5 stars)
    */
   calculateHealthScore(revision) {
-    const { scheduledReviews = [], totalReviews } = revision;
+    const { scheduledReviews = [] } = revision;
+    const totalReviews = Number(revision.totalReviews) || 0;
     
-    if (totalReviews === 0) return 3; // Default for fresh
+    if (totalReviews <= 0) return 3; // Default for fresh
     
-    // Calculate metrics
-    const completedOnTime = scheduledReviews.filter(r => {
-      return r.completed && !r.overdue;
-    }).length;
+    const completedReviews = scheduledReviews.filter(r => r && r.completed);
+    if (completedReviews.length === 0) return 3;
+
+    const completedOnTime = completedReviews.filter(r => !r.overdue).length;
     
-    const avgConfidence = scheduledReviews
-      .filter(r => r.confidence)
-      .reduce((sum, r) => sum + r.confidence, 0) / totalReviews;
+    const ratedReviews = completedReviews.filter(r => typeof r.confidence === 'number' && !isNaN(r.confidence));
+    const avgConfidence = ratedReviews.length > 0 
+      ? ratedReviews.reduce((sum, r) => sum + r.confidence, 0) / ratedReviews.length 
+      : 3;
     
-    const onTimeRate = completedOnTime / totalReviews;
+    const onTimeRate = completedOnTime / Math.max(1, completedReviews.length);
     
-    // Score calculation
-    let score = 0;
-    score += avgConfidence; // 0-5 from confidence
-    score += onTimeRate * 5; // 0-5 from on-time rate
-    
-    return Math.min(5, Math.max(1, Math.round(score / 2)));
+    let score = (avgConfidence + onTimeRate * 5) / 2;
+    if (isNaN(score)) return 3;
+
+    return Math.min(5, Math.max(1, Math.round(score)));
   }
+
 
   /**
    * Helper: Add days to a date

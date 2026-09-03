@@ -11,7 +11,7 @@ const initCronJobs = () => {
     
     // Cron expression: minute hour day-of-month month day-of-week
     cron.schedule('*/10 * * * *', () => {
-        const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+        const backendUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5001}`;
         console.log(`⏰ Triggering keep-alive ping to: ${backendUrl}`);
 
         if (process.env.NODE_ENV === 'production' && backendUrl.includes('localhost')) {

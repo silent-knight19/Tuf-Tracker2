@@ -76,6 +76,7 @@ function SolveProblemPage() {
       edgeCasesGeneratedRef.current = true;
       handleGenerateEdgeCases();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [description, problem, loadingEdgeCases]);
 
   // Handle mouse move for panel resizing
@@ -346,7 +347,7 @@ function SolveProblemPage() {
     if (typeof input === 'string') {
       const trimmed = input.trim();
       if (trimmed.includes('=')) {
-        const parts = trimmed.split(/,\s*(?![^\[\]]*\])/);
+        const parts = trimmed.split(/,\s*(?![^[\]]*\])/);
         const args = [];
         for (const part of parts) {
           if (part.includes('=')) {
