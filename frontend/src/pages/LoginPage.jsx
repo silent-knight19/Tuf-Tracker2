@@ -1,31 +1,5 @@
 import { useAuthStore } from '../stores/authStore';
-import { useEffect, useState } from 'react';
-
-// Animated background orb component
-const FloatingOrb = ({ className, delay = 0 }) => (
-  <div 
-    className={`absolute rounded-full blur-3xl opacity-20 animate-pulse ${className}`}
-    style={{ animationDelay: `${delay}s`, animationDuration: '8s' }}
-  />
-);
-
-// Code bracket decoration
-const CodeBracket = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <path d="M8 9l-3 3 3 3m8 0l3-3-3-3" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-// Algorithm node decoration
-const AlgorithmNode = ({ className }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <circle cx="12" cy="5" r="2" />
-    <circle cx="5" cy="12" r="2" />
-    <circle cx="19" cy="12" r="2" />
-    <circle cx="12" cy="19" r="2" />
-    <path d="M12 7v4l-5 3M12 13l5 3" strokeLinecap="round" />
-  </svg>
-);
+import { Flame, ShieldCheck, Zap, Sparkles } from 'lucide-react';
 
 function LoginPage() {
   const { signInWithGoogle, loading, error } = useAuthStore();
@@ -33,91 +7,65 @@ function LoginPage() {
   const handleGoogleLogin = async () => {
     try {
       await signInWithGoogle();
-    } catch (error) {
-      console.error('Auth error:', error);
+    } catch (err) {
+      console.error('Auth error:', err);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-dark-950 p-4 relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0 overflow-hidden">
-        <FloatingOrb 
-          className="w-96 h-96 bg-brand-orange -top-48 -left-48" 
-          delay={0} 
-        />
-        <FloatingOrb 
-          className="w-80 h-80 bg-brand-yellow top-1/2 -right-40" 
-          delay={2} 
-        />
-        <FloatingOrb 
-          className="w-64 h-64 bg-brand-orange bottom-20 left-1/4" 
-          delay={4} 
-        />
-        
-        {/* Grid Pattern Overlay */}
-        <div 
-          className="absolute inset-0 opacity-[0.02]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(255,161,22,0.5) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(255,161,22,0.5) 1px, transparent 1px)`,
-            backgroundSize: '60px 60px'
-          }}
-        />
-      </div>
+    <div className="min-h-screen bg-dark-950 flex items-center justify-center p-4 relative overflow-hidden selection:bg-brand-orange/30">
+      {/* Ambient Atmospheric Radial Lights */}
+      <div className="absolute top-1/4 -left-20 w-96 h-96 bg-brand-orange/[0.07] blur-[100px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-blue-500/[0.05] blur-[120px] rounded-full pointer-events-none" />
+      
+      {/* Subtle Grid Pattern */}
+      <div 
+        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 0)', backgroundSize: '32px 32px' }}
+      />
 
-      {/* Floating Decorative Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <CodeBracket className="absolute top-20 left-10 w-8 h-8 text-dark-800 rotate-12 opacity-50" />
-        <CodeBracket className="absolute bottom-32 right-16 w-10 h-10 text-dark-800 -rotate-12 opacity-40" />
-        <AlgorithmNode className="absolute top-1/3 right-20 w-12 h-12 text-dark-800 opacity-30" />
-        <AlgorithmNode className="absolute bottom-20 left-20 w-6 h-6 text-dark-800 opacity-40" />
-      </div>
-
-      {/* Main Card */}
+      {/* Main Glass Card */}
       <div className="relative z-10 max-w-md w-full animate-in fade-in slide-in-from-bottom-6 duration-700">
-        {/* Glassmorphism Card */}
-        <div className="relative bg-dark-900/60 backdrop-blur-xl border border-dark-800/60 rounded-2xl p-8 shadow-2xl">
-          {/* Top Glow Line */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-brand-orange/50 to-transparent" />
-          
-          {/* Corner Accents */}
-          <div className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 border-brand-orange/30 rounded-tl-2xl" />
-          <div className="absolute top-0 right-0 w-8 h-8 border-r-2 border-t-2 border-brand-orange/30 rounded-tr-2xl" />
-          <div className="absolute bottom-0 left-0 w-8 h-8 border-l-2 border-b-2 border-brand-orange/30 rounded-bl-2xl" />
-          <div className="absolute bottom-0 right-0 w-8 h-8 border-r-2 border-b-2 border-brand-orange/30 rounded-br-2xl" />
+        <div className="glass-panel rounded-3xl p-8 sm:p-10 shadow-2xl relative overflow-hidden">
+          {/* Subtle Top Rim Highlight */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-px bg-gradient-to-r from-transparent via-brand-orange/40 to-transparent" />
 
           {/* Header Section */}
           <div className="text-center mb-8">
-            {/* Logo Icon */}
-            <div className="flex justify-center mb-8">
-              <img 
-                src="/logo.png" 
-                alt="TufTracker" 
-                className="w-30 h-24 object-contain"
-              />
+            {/* Geometric Flame Emblem */}
+            <div className="inline-flex items-center justify-center mb-5">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-orange via-brand-amber to-amber-600 flex items-center justify-center text-white shadow-lg shadow-brand-orange/25">
+                <Flame className="w-8 h-8 fill-white" />
+              </div>
             </div>
             
-            {/* Subtitle */}
-            <p className="text-dark-400 text-lg font-light tracking-wide">
-              Master Data Structures & Algorithms
-            </p>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              Tuf<span className="text-brand-orange">Tracker</span>
+            </h1>
             
-            {/* Tagline */}
-            <div className="flex items-center justify-center gap-2 mt-3">
-              <span className="h-px w-8 bg-dark-700" />
-              <span className="text-dark-500 text-xs uppercase tracking-wider">Track. Learn. Succeed.</span>
-              <span className="h-px w-8 bg-dark-700" />
+            <p className="text-dark-300 text-sm font-normal mt-2 leading-relaxed">
+              Master Data Structures & Algorithms with AI Spaced Repetition
+            </p>
+
+            {/* Feature Badges */}
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-2xs font-semibold text-dark-300">
+                <Zap className="w-2.5 h-2.5 text-brand-orange" /> SDE Sheets
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-2xs font-semibold text-dark-300">
+                <Sparkles className="w-2.5 h-2.5 text-brand-amber" /> AI Debrief
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-2xs font-semibold text-dark-300">
+                <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" /> Retention
+              </span>
             </div>
           </div>
 
-          {/* Error Message */}
+          {/* Error Notice */}
           {error && (
-            <div className="mb-6 bg-difficulty-hard/10 border border-difficulty-hard/20 text-difficulty-hard px-4 py-3 rounded-xl text-sm flex items-center gap-2">
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {error}
+            <div className="mb-6 bg-rose-500/10 border border-rose-500/20 text-rose-400 px-4 py-3 rounded-xl text-xs flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
@@ -125,19 +73,19 @@ function LoginPage() {
           <button
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="group w-full font-medium py-4 px-6 rounded-xl flex items-center justify-center gap-3 
-                       bg-dark-800 hover:bg-dark-700 text-dark-100 
-                       border border-dark-700 hover:border-dark-600
-                       transition-all duration-300 ease-out
-                       focus:outline-none focus:ring-2 focus:ring-brand-orange/50 focus:ring-offset-2 focus:ring-offset-dark-900
+            className="group w-full font-semibold py-3.5 px-5 rounded-xl flex items-center justify-center gap-3 
+                       bg-white/[0.05] hover:bg-white/[0.1] text-white 
+                       border border-white/[0.1] hover:border-white/[0.2]
+                       transition-all duration-200 ease-spring active:scale-[0.98]
+                       focus:outline-none focus:ring-2 focus:ring-brand-orange/40
                        disabled:opacity-50 disabled:cursor-not-allowed
-                       shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30"
+                       shadow-luxe"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-dark-400 border-t-brand-orange rounded-full animate-spin" />
             ) : (
               <>
-                <div className="w-5 h-5 relative">
+                <div className="w-5 h-5 shrink-0">
                   <svg className="w-full h-full" viewBox="0 0 24 24">
                     <path
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -157,43 +105,22 @@ function LoginPage() {
                     />
                   </svg>
                 </div>
-                <span className="group-hover:text-white transition-colors">Continue with Google</span>
+                <span className="text-sm font-medium">Continue with Google</span>
               </>
             )}
           </button>
 
-          {/* Divider */}
-          <div className="flex items-center gap-4 my-6">
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-dark-700 to-transparent" />
-            <span className="text-dark-600 text-xs uppercase tracking-wider">or</span>
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-dark-700 to-transparent" />
-          </div>
-
-          {/* Guest Info */}
-          <div className="text-center">
-            <p className="text-dark-500 text-sm">
-              Sign in to track your progress and access all features
-            </p>
-          </div>
-
-          {/* Footer */}
-          <div className="mt-8 pt-6 border-t border-dark-800/60">
-            <p className="text-dark-600 text-xs text-center leading-relaxed">
-              By continuing, you agree to our{' '}
-              <a href="#" className="text-brand-orange/70 hover:text-brand-orange transition-colors">
-                Terms of Service
-              </a>{' '}
-              and{' '}
-              <a href="#" className="text-brand-orange/70 hover:text-brand-orange transition-colors">
-                Privacy Policy
-              </a>
+          {/* Privacy Note */}
+          <div className="mt-8 pt-6 border-t border-white/[0.06] text-center">
+            <p className="text-dark-400 text-2xs leading-relaxed">
+              By signing in, you agree to our Terms and Privacy Guidelines.
             </p>
           </div>
         </div>
 
-        {/* Bottom decorative text */}
-        <p className="text-center text-dark-700 text-xs mt-6 tracking-widest uppercase">
-          Level up your coding journey
+        {/* Minimalist Footer */}
+        <p className="text-center text-dark-500 text-2xs mt-6 tracking-wider uppercase font-semibold">
+          Architected for algorithmic mastery
         </p>
       </div>
     </div>

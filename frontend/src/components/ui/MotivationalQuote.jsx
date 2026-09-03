@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useQuoteStore } from '../../stores/quoteStore';
-import { Quote, Zap } from 'lucide-react';
+import { Quote, Sparkles } from 'lucide-react';
 
-const MotivationalQuote = ({ category = null, className = "", variant = "card", animate = true, size = "md", hideAuthor = false }) => {
+const MotivationalQuote = ({ category = null, className = "", variant = "card", animate = true, hideAuthor = false }) => {
   const { quotes, fetchQuotes, getRandomQuote } = useQuoteStore();
   const [activeQuote, setActiveQuote] = useState(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -13,13 +13,13 @@ const MotivationalQuote = ({ category = null, className = "", variant = "card", 
     }
   }, [quotes.length, fetchQuotes]);
 
-  // Initial quote or rotation function
+  // Rotate quote with subtle cross-fade
   const rotateQuote = () => {
     setIsVisible(false);
     setTimeout(() => {
       setActiveQuote(getRandomQuote(category));
       setIsVisible(true);
-    }, 500);
+    }, 400);
   };
 
   useEffect(() => {
@@ -27,10 +27,10 @@ const MotivationalQuote = ({ category = null, className = "", variant = "card", 
       const timer = setTimeout(() => {
         rotateQuote();
       }, 50);
-      
+
       let interval;
       if (animate) {
-        interval = setInterval(rotateQuote, 30000); // 30s cycle
+        interval = setInterval(rotateQuote, 30000);
       }
       return () => {
         clearTimeout(timer);
@@ -42,63 +42,98 @@ const MotivationalQuote = ({ category = null, className = "", variant = "card", 
 
   if (!activeQuote) return null;
 
-  const transitionClass = isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1";
-
-  // Size mapping
-  const sizes = {
-    sm: { padding: "p-3", gap: "gap-2", quoteIcon: "w-3.5 h-3.5", categoryText: "text-[7px]", quoteText: "text-sm", authorText: "text-[8px]", line: "w-3" },
-    md: { padding: "p-5", gap: "gap-3.5", quoteIcon: "w-5 h-5", categoryText: "text-[9px]", quoteText: "text-lg", authorText: "text-[10px]", line: "w-5" },
-    lg: { padding: "p-6", gap: "gap-4", quoteIcon: "w-6 h-6", categoryText: "text-[9px]", quoteText: "text-[19px]", authorText: "text-[10px]", line: "w-7" },
-    xl: { padding: "p-10", gap: "gap-8", quoteIcon: "w-10 h-10", categoryText: "text-xs", quoteText: "text-4xl", authorText: "text-sm", line: "w-12" }
-  };
-
-  const s = sizes[size] || sizes.md;
+  const transitionClass = isVisible 
+    ? "opacity-100 translate-y-0 filter blur-0" 
+    : "opacity-0 translate-y-1 filter blur-[1px]";
 
   if (variant === "subtle") {
     return (
-      <div className={`flex items-center gap-1.5 transition-all duration-700 ease-out ${transitionClass} ${className}`}>
-        <Zap className="w-3.5 h-3.5 text-brand-orange/60" />
-        <span className="text-[10px] font-black tracking-tight uppercase text-brand-orange">"{activeQuote.text}"</span>
+      <div className={`flex items-center gap-2 transition-all duration-500 ease-spring ${transitionClass} ${className}`}>
+        <Sparkles className="w-3.5 h-3.5 text-brand-amber shrink-0" />
+        <span className="text-xs text-dark-300 italic truncate">"{activeQuote.text}"</span>
+        {!hideAuthor && (
+          <span className="text-[10px] text-dark-500 font-medium shrink-0">— {activeQuote.author}</span>
+        )}
       </div>
     );
   }
 
   if (variant === "ghost") {
     return (
-      <div className={`flex items-center gap-4 px-5 py-2.5 bg-dark-900/40 backdrop-blur-md border border-dark-800/40 rounded-xl transition-all duration-700 ease-out w-full justify-center ${transitionClass} ${className}`}>
-        <Quote className="w-4 h-4 text-brand-orange/50 shrink-0" />
-        <p className="text-base font-black text-brand-orange tracking-tight leading-relaxed">
-          {activeQuote.text}
+      <div className={`flex items-center gap-3 px-4 py-2 bg-dark-900/40 backdrop-blur-md border border-white/[0.06] rounded-xl transition-all duration-500 ease-spring ${transitionClass} ${className}`}>
+        <Quote className="w-3.5 h-3.5 text-brand-orange/70 shrink-0" />
+        <p className="text-xs sm:text-sm text-dark-200 font-medium tracking-tight">
+          "{activeQuote.text}"
         </p>
         {!hideAuthor && (
-          <>
-            <div className="h-4 w-px bg-dark-800 shrink-0" />
-            <span className="text-xs font-black text-dark-500 uppercase tracking-widest shrink-0 whitespace-nowrap">{activeQuote.author}</span>
-          </>
+          <span className="text-2xs text-dark-400 font-medium shrink-0 ml-auto pl-2 border-l border-white/[0.06]">
+            {activeQuote.author}
+          </span>
         )}
       </div>
     );
   }
 
-  return (
-    <div className={`relative overflow-hidden group transition-all duration-700 ease-out ${transitionClass} ${className}`}>
-      {/* Background Glow */}
-      <div className="absolute -top-10 -right-10 w-28 h-28 bg-brand-orange/5 blur-[45px] rounded-full group-hover:bg-brand-orange/10 transition-all duration-700" />
-      
-      <div className={`relative z-10 ${s.padding} bg-dark-900/40 backdrop-blur-xl border border-dark-800/60 rounded-2xl flex flex-col ${s.gap}`}>
-        <div className="flex items-center justify-between">
-          <Quote className={`${s.quoteIcon} text-brand-orange/60`} />
-          <span className={`${s.categoryText} font-black text-dark-600 uppercase tracking-[0.25em]`}>{activeQuote.category || 'Insight'}</span>
+  if (variant === "banner") {
+    return (
+      <div className={`glass-panel rounded-xl px-4 py-2.5 flex items-center justify-between gap-4 transition-all duration-500 ease-spring ${transitionClass} ${className}`}>
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-6 h-6 rounded-lg bg-brand-orange/10 border border-brand-orange/20 flex items-center justify-center shrink-0">
+            <Quote className="w-3 h-3 text-brand-orange" />
+          </div>
+          <p className="text-xs text-dark-200 font-medium truncate">
+            "{activeQuote.text}"
+          </p>
         </div>
-        
-        <p className={`${s.quoteText} font-black text-brand-orange leading-relaxed tracking-tight group-hover:drop-shadow-[0_0_12px_rgba(249,115,22,0.3)] transition-all`}>
+        <div className="flex items-center gap-3 shrink-0">
+          {!hideAuthor && (
+            <span className="text-2xs text-dark-400 font-medium">
+              — {activeQuote.author}
+            </span>
+          )}
+          <button
+            onClick={rotateQuote}
+            title="Next inspirational thought"
+            className="p-1 rounded-md text-dark-500 hover:text-white hover:bg-white/[0.05] transition-colors"
+          >
+            <Sparkles className="w-3 h-3 text-brand-amber" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Card Variant
+  return (
+    <div className={`relative overflow-hidden group rounded-2xl glass-panel transition-all duration-500 ease-spring ${transitionClass} ${className}`}>
+      {/* Subtle Ambient Radial Highlight */}
+      <div className="absolute top-0 right-0 w-48 h-32 bg-brand-orange/[0.04] blur-2xl rounded-full pointer-events-none" />
+
+      <div className="relative z-10 p-4 sm:p-5 flex flex-col gap-2.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-brand-orange/10 border border-brand-orange/20 flex items-center justify-center">
+              <Quote className="w-3 h-3 text-brand-orange" />
+            </div>
+            <span className="text-2xs font-semibold uppercase tracking-wider text-dark-400">Daily Directive</span>
+          </div>
+
+          {activeQuote.category && (
+            <span className="text-2xs font-medium text-brand-amber bg-brand-orange/[0.08] px-2 py-0.5 rounded-md border border-brand-orange/15">
+              {activeQuote.category}
+            </span>
+          )}
+        </div>
+
+        <p className="text-sm sm:text-[15px] font-medium text-white/95 leading-relaxed tracking-tight">
           "{activeQuote.text}"
         </p>
-        
-        <div className="flex items-center justify-end gap-2.5 mt-1.5">
-          <div className={`h-px ${s.line} bg-dark-800`} />
-          <span className={`${s.authorText} font-black text-dark-500 uppercase tracking-widest`}>{activeQuote.author}</span>
-        </div>
+
+        {!hideAuthor && (
+          <div className="flex items-center justify-end gap-2 pt-1 border-t border-white/[0.04]">
+            <span className="text-2xs text-dark-400 font-medium tracking-tight">— {activeQuote.author}</span>
+          </div>
+        )}
       </div>
     </div>
   );

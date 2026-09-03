@@ -1,171 +1,186 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
-import { LayoutDashboard, BarChart2, RotateCw, LogOut, BookOpen, Target, Code, Building2, Cpu, Layers, FileText } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  BarChart2, 
+  RotateCw, 
+  LogOut, 
+  BookOpen, 
+  Target, 
+  Code, 
+  Building2, 
+  Cpu, 
+  Layers, 
+  FileText,
+  Flame,
+  ChevronRight
+} from 'lucide-react';
 
 function Sidebar({ open }) {
   const location = useLocation();
   const { signOut, user } = useAuthStore();
 
   const mainNavigation = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard, color: 'text-blue-400' },
-    { name: 'Sheets', path: '/sheets', icon: Layers, color: 'text-pink-400' },
-    { name: 'Analytics', path: '/analytics', icon: BarChart2, color: 'text-green-400' },
-    { name: 'Revision', path: '/revision', icon: RotateCw, color: 'text-brand-orange' },
-    { name: 'Learn', path: '/learn', icon: BookOpen, color: 'text-purple-400' },
+    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+    { name: 'Curated Sheets', path: '/sheets', icon: Layers },
+    { name: 'Analytics', path: '/analytics', icon: BarChart2 },
+    { name: 'Spaced Revision', path: '/revision', icon: RotateCw },
+    { name: 'Learn & Patterns', path: '/learn', icon: BookOpen },
   ];
 
   const practiceNavigation = [
-    { name: 'Pattern Focus', path: '/practice/patterns', icon: Target, color: 'text-purple-400', desc: 'Master algorithms' },
-    { name: 'Company Prep', path: '/practice/companies', icon: Building2, color: 'text-green-400', desc: 'FAANG practice' },
-    { name: 'Mock Interview', path: '/practice/interview', icon: Cpu, color: 'text-blue-400', desc: 'AI-powered' },
-    { name: 'Problem Bank', path: '/practice/solve', icon: Code, color: 'text-brand-orange', desc: 'Your collection' },
+    { name: 'Pattern Focus', path: '/practice/patterns', icon: Target, desc: 'Algorithmic paradigms' },
+    { name: 'Company Hub', path: '/practice/companies', icon: Building2, desc: 'Target company sheets' },
+    { name: 'Mock Interview', path: '/practice/interview', icon: Cpu, desc: 'AI interactive debrief' },
+    { name: 'Problem Bank', path: '/practice/solve', icon: Code, desc: 'Custom collection' },
   ];
 
-  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
+  const isActive = (path) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
 
   return (
     <aside
-      className={`bg-dark-950 border-r border-dark-800/60 flex flex-col transition-all duration-500 ease-in-out z-50 shadow-2xl ${
+      className={`bg-dark-950/90 backdrop-blur-2xl border-r border-white/[0.07] flex flex-col transition-all duration-300 ease-spring z-50 select-none ${
         open ? 'w-64' : 'w-0'
       } overflow-hidden`}
     >
-      {/* Logo Area */}
-      <div className="h-16 border-b border-dark-800/60 flex items-center px-6 relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-orange/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-        <div className="flex items-center gap-3 relative z-10">
-          <h1 className="text-xl font-black tracking-tighter text-white uppercase group-hover:tracking-normal transition-all duration-500">
-            Tuf<span className="text-brand-orange">Tracker</span>
-          </h1>
-        </div>
+      {/* Brand Header */}
+      <div className="h-16 border-b border-white/[0.06] flex items-center px-5 relative shrink-0">
+        <Link to="/" className="flex items-center gap-3 group">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-orange to-brand-amber flex items-center justify-center text-white shadow-md shadow-brand-orange/25 group-hover:shadow-brand-orange/40 transition-shadow">
+            <Flame className="w-4.5 h-4.5 fill-white text-white" />
+          </div>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-extrabold text-white tracking-tight">Tuf<span className="text-brand-orange">Tracker</span></span>
+              <span className="text-[10px] font-semibold text-brand-amber bg-brand-orange/10 px-1.5 py-0.2 rounded-md border border-brand-orange/20">PRO</span>
+            </div>
+            <span className="text-[10px] text-dark-400 font-medium tracking-tight">DSA Mastery Platform</span>
+          </div>
+        </Link>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-4 pt-6 pb-0 space-y-8 overflow-y-auto custom-scrollbar">
-        {/* Main Navigator */}
-        <div className="space-y-1.5">
-          <div className="px-3 mb-2">
-            <span className="text-[10px] font-black text-dark-600 uppercase tracking-[0.2em]">Framework</span>
+      {/* Navigation Links */}
+      <nav className="flex-1 px-3.5 pt-5 space-y-6 overflow-y-auto no-scrollbar">
+        {/* Core Navigation */}
+        <div className="space-y-1">
+          <div className="px-2.5 pb-1.5">
+            <span className="text-[10px] font-semibold text-dark-400 uppercase tracking-wider">Framework</span>
           </div>
-          {mainNavigation.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`group flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-300 ${
-                isActive(item.path) 
-                  ? 'bg-brand-orange/10 text-white shadow-[0_0_20px_rgba(0,0,0,0.2)]' 
-                  : 'text-dark-400 hover:text-dark-100 hover:bg-dark-900/50'
-              }`}
-            >
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-                isActive(item.path) ? 'bg-brand-orange/20 shadow-inner' : 'bg-dark-900 group-hover:bg-dark-800'
-              }`}>
-                <item.icon className={`w-4.5 h-4.5 transition-colors ${isActive(item.path) ? 'text-brand-orange' : 'text-dark-500 group-hover:text-dark-300'}`} />
-              </div>
-              <span className={`font-bold text-sm tracking-tight ${isActive(item.path) ? 'text-white' : 'text-dark-400'}`}>
-                {item.name}
-              </span>
-              {isActive(item.path) && (
-                <div className="ml-auto w-1 h-1 rounded-full bg-brand-orange shadow-[0_0_8px_rgba(249,115,22,0.8)]" />
-              )}
-            </Link>
-          ))}
-        </div>
-
-        {/* Practice Navigator */}
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-3 px-3 mb-4">
-            <span className="text-[10px] font-black text-dark-600 uppercase tracking-[0.2em]">Training Labs</span>
-            <div className="h-px flex-1 bg-dark-800/60" />
-          </div>
-          
-          <div className="space-y-1">
-            {practiceNavigation.map((item) => (
+          {mainNavigation.map((item) => {
+            const active = isActive(item.path);
+            return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 ${
-                  isActive(item.path) 
-                    ? 'bg-dark-900 text-white border border-dark-800 shadow-xl' 
-                    : 'text-dark-500 hover:text-dark-200'
+                className={`group flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+                  active 
+                    ? 'bg-white/[0.06] text-white border-l-2 border-brand-orange rounded-l-none pl-2.5 shadow-sm' 
+                    : 'text-dark-300 hover:text-white hover:bg-white/[0.04]'
                 }`}
               >
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 ${
-                  isActive(item.path) 
-                    ? 'bg-dark-800 border border-dark-700 shadow-inner' 
-                    : 'bg-dark-950 border border-transparent group-hover:border-dark-800'
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+                  active 
+                    ? 'bg-brand-orange/15 text-brand-orange border border-brand-orange/25 shadow-[0_0_10px_rgba(249,115,22,0.15)]' 
+                    : 'bg-white/[0.03] text-dark-400 group-hover:text-dark-200 group-hover:bg-white/[0.06]'
                 }`}>
-                  <item.icon className={`w-5 h-5 ${isActive(item.path) ? item.color : 'text-dark-600 group-hover:' + item.color.replace('text-', 'text-')}`} />
+                  <item.icon className="w-4 h-4" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <span className="font-bold text-[13px] block tracking-tight">{item.name}</span>
-                  <span className="text-[10px] text-dark-600 font-bold uppercase tracking-wider block mt-0.5">{item.desc}</span>
-                </div>
-                {isActive(item.path) && (
-                  <div className="w-1.5 h-6 rounded-full bg-brand-orange animate-in slide-in-from-right duration-500" />
-                )}
+                <span className="truncate">{item.name}</span>
               </Link>
-            ))}
-          </div>
+            );
+          })}
         </div>
 
-        {/* Quick Links - Strivers Sheet */}
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-3 px-3 mb-2">
-            <span className="text-[10px] font-black text-dark-600 uppercase tracking-[0.2em]">Quick Links</span>
-            <div className="h-px flex-1 bg-dark-800/60" />
+        {/* Practice Labs */}
+        <div className="space-y-1">
+          <div className="px-2.5 pb-1.5 flex items-center justify-between">
+            <span className="text-[10px] font-semibold text-dark-400 uppercase tracking-wider">Training Labs</span>
+          </div>
+          {practiceNavigation.map((item) => {
+            const active = isActive(item.path);
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`group flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+                  active 
+                    ? 'bg-white/[0.06] text-white border-l-2 border-brand-orange rounded-l-none pl-2.5 shadow-sm' 
+                    : 'text-dark-300 hover:text-white hover:bg-white/[0.04]'
+                }`}
+              >
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+                  active 
+                    ? 'bg-brand-orange/15 text-brand-orange border border-brand-orange/25 shadow-[0_0_10px_rgba(249,115,22,0.15)]' 
+                    : 'bg-white/[0.03] text-dark-400 group-hover:text-dark-200 group-hover:bg-white/[0.06]'
+                }`}>
+                  <item.icon className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="truncate block leading-tight">{item.name}</span>
+                  <span className="text-[10px] text-dark-400 font-normal block truncate mt-0.5">{item.desc}</span>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Curated SDE Sheets */}
+        <div className="space-y-1">
+          <div className="px-2.5 pb-1.5">
+            <span className="text-[10px] font-semibold text-dark-400 uppercase tracking-wider">Featured Sheet</span>
           </div>
           <Link
             to="/sheets/strivers"
-            className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 ${
-              isActive('/sheets/strivers') 
-                ? 'bg-[#312922]/10 text-white border border-[#312922]/20 shadow-xl' 
-                : 'text-dark-500 hover:text-[#5a4d44] hover:bg-dark-900/50'
+            className={`group flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+              isActive('/sheets/strivers')
+                ? 'bg-white/[0.06] text-white border-l-2 border-brand-orange rounded-l-none pl-2.5 shadow-sm'
+                : 'text-dark-300 hover:text-white hover:bg-white/[0.04]'
             }`}
           >
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-500 ${
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
               isActive('/sheets/strivers') 
-                ? 'bg-[#312922]/20 border border-[#312922]/30' 
-                : 'bg-dark-950 border border-dark-800 group-hover:border-[#312922]/30'
+                ? 'bg-brand-orange/15 text-brand-orange border border-brand-orange/25 shadow-[0_0_10px_rgba(249,115,22,0.15)]' 
+                : 'bg-white/[0.03] text-dark-400 group-hover:text-dark-200'
             }`}>
-              <FileText className={`w-5 h-5 ${isActive('/sheets/strivers') ? 'text-[#5a4d44]' : 'text-dark-600 group-hover:text-[#5a4d44]'}`} />
+              <FileText className="w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0">
-              <span className="font-bold text-[13px] block tracking-tight">Strivers A2Z</span>
-              <span className="text-[10px] text-dark-600 font-bold uppercase tracking-wider block mt-0.5">454 Problems</span>
+              <span className="truncate block leading-tight">Strivers A2Z</span>
+              <span className="text-[10px] text-brand-amber font-normal block truncate mt-0.5">454 Core Questions</span>
             </div>
-            {isActive('/sheets/strivers') && (
-              <div className="w-1.5 h-6 rounded-full bg-[#5a4d44] animate-in slide-in-from-right duration-500" />
-            )}
           </Link>
         </div>
       </nav>
 
-      {/* Compact Profile & Eject Section */}
-      <div className="p-3 bg-dark-900/30 border-t border-dark-800/60 backdrop-blur-md">
-        <div className="flex items-center gap-3">
+      {/* User Profile & Session Footer */}
+      <div className="p-3 border-t border-white/[0.06] bg-dark-900/60 shrink-0">
+        <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/[0.04] transition-colors">
           {/* Avatar with Status */}
           <div className="relative shrink-0">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-orange to-orange-700 flex items-center justify-center text-white font-black text-xs shadow-lg">
-              {user?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase()}
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-orange to-brand-amber flex items-center justify-center text-white font-bold text-xs shadow-sm">
+              {user?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-dark-900 rounded-full" />
+            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-dark-950 rounded-full" />
           </div>
 
-          {/* User Info (Compact) */}
+          {/* User Info */}
           <div className="flex-1 min-w-0">
-            <div className="text-[10px] font-black text-white truncate uppercase tracking-wider">
-              {user?.displayName || 'Candidate'}
+            <div className="text-xs font-semibold text-white truncate">
+              {user?.displayName || 'Engineer'}
             </div>
-            <div className="text-[9px] font-bold text-dark-600 truncate leading-none mt-0.5">{user?.email}</div>
+            <div className="text-[10px] text-dark-400 truncate leading-none mt-0.5">{user?.email || 'Logged in'}</div>
           </div>
 
-          {/* Minimal Eject Button */}
+          {/* Eject / Sign Out Button */}
           <button
             onClick={signOut}
-            title="Eject Session"
-            className="group p-2.5 rounded-lg bg-dark-950 border border-dark-800 hover:bg-red-500/10 hover:border-red-500 hover:shadow-[0_0_30px_rgba(239,68,68,0.5)] text-dark-500 hover:text-red-400 transition-all duration-300 active:scale-90 hover:scale-[1.5]"
+            title="Sign out"
+            className="p-1.5 rounded-lg text-dark-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
           >
-            <LogOut className="w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-[2]" />
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
       </div>

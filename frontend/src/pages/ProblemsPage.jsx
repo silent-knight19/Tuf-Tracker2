@@ -1,15 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useProblemStore } from '../stores/problemStore';
 import { useCompanyStore } from '../stores/companyStore';
 import { useRevisionStore } from '../stores/revisionStore';
 import SolvedProblemsStats from '../components/features/SolvedProblemsStats';
 import ProblemCard from '../components/features/ProblemCard';
 import AddProblemModal from '../components/features/AddProblemModal';
+import MotivationalQuote from '../components/ui/MotivationalQuote';
 import { CheckCircle2, Plus, ChevronDown, ChevronRight, Search, X } from 'lucide-react';
 
 function ProblemsPage() {
-  const navigate = useNavigate();
   const { companyName } = useParams();
   const { problems, loading: problemsLoading, fetchProblems, addProblem, updateProblem } = useProblemStore();
   const { companyProblems, fetchCompanyProblems, loading: companyLoading } = useCompanyStore();
@@ -157,29 +157,34 @@ function ProblemsPage() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-5">
-      {/* LeetCode Style Stats */}
+    <div className="p-6 sm:p-8 max-w-7xl mx-auto space-y-5">
+      {/* 21st.dev Style Bento Stats Grid */}
       <SolvedProblemsStats 
         customProblems={companyName ? companyProblems : null} 
         onShowAddModal={() => setIsModalOpen(true)}
       />
 
-      {/* Search and Filters */}
-      <div className="flex flex-wrap gap-4 bg-dark-900/40 backdrop-blur-md py-3 px-6 rounded-2xl border border-dark-800 shadow-xl">
-        <div className="relative flex-1 min-w-[300px]">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2">
-            <Search className="w-5 h-5 text-dark-500" />
+      {/* Daily Directive Focus Banner */}
+      <MotivationalQuote category="Focus" variant="banner" />
+
+      {/* Search and Filters Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-dark-900/60 backdrop-blur-xl p-3 sm:p-3.5 rounded-2xl border border-white/[0.07] shadow-luxe">
+        {/* Search Input */}
+        <div className="relative flex-1 min-w-[240px]">
+          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+            <Search className="w-4 h-4 text-dark-400" />
           </div>
           <input
+            id="problem-search-input"
             type="text"
             value={searchQuery}
-            placeholder="Search by title, topic, or pattern..."
-            className="w-full bg-dark-950 border border-dark-800 rounded-xl pl-12 pr-10 py-3 text-white placeholder-dark-600 focus:border-brand-orange/50 focus:outline-none transition-all"
+            placeholder="Search problems by title, topic, or pattern..."
+            className="w-full bg-dark-950/80 border border-white/[0.08] rounded-xl pl-10 pr-10 py-2 text-xs sm:text-sm text-white placeholder-dark-400 focus:border-brand-orange/50 focus:ring-2 focus:ring-brand-orange/15 focus:outline-none transition-all shadow-inner"
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           {searchQuery && (
             <button 
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-white transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-white transition-colors"
               onClick={() => setSearchQuery('')}
             >
               <X className="w-4 h-4" />
@@ -187,24 +192,38 @@ function ProblemsPage() {
           )}
         </div>
         
-        <div className="flex items-center gap-3">
-          <select 
-            value={difficultyFilter}
-            className="bg-dark-950 border border-dark-800 rounded-xl px-4 py-3 text-sm font-bold text-dark-200 focus:border-brand-orange/50 focus:outline-none cursor-pointer hover:bg-dark-900 transition-colors"
-            onChange={(e) => setDifficultyFilter(e.target.value)}
-          >
-            <option value="">Difficulty</option>
-            <option value="Easy">Easy</option>
-            <option value="Medium">Medium</option>
-            <option value="Hard">Hard</option>
-          </select>
+        {/* Segmented Controls & Platform */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Segmented Difficulty Pills */}
+          <div className="flex items-center p-1 rounded-xl bg-dark-950/80 border border-white/[0.08]">
+            {[
+              { label: 'All', value: '', dot: null },
+              { label: 'Easy', value: 'Easy', dot: 'bg-emerald-400' },
+              { label: 'Medium', value: 'Medium', dot: 'bg-amber-400' },
+              { label: 'Hard', value: 'Hard', dot: 'bg-rose-400' }
+            ].map(diff => (
+              <button
+                key={diff.label}
+                onClick={() => setDifficultyFilter(diff.value)}
+                className={`px-2.5 py-1 rounded-lg text-2xs font-semibold transition-all flex items-center gap-1.5 ${
+                  difficultyFilter === diff.value 
+                    ? 'bg-white/[0.1] text-white shadow-sm' 
+                    : 'text-dark-400 hover:text-dark-200'
+                }`}
+              >
+                {diff.dot && <span className={`w-1.5 h-1.5 rounded-full ${diff.dot}`} />}
+                <span>{diff.label}</span>
+              </button>
+            ))}
+          </div>
 
+          {/* Platform Selector */}
           <select 
             value={platformFilter}
-            className="bg-dark-950 border border-dark-800 rounded-xl px-4 py-3 text-sm font-bold text-dark-200 focus:border-brand-orange/50 focus:outline-none cursor-pointer hover:bg-dark-900 transition-colors"
+            className="bg-dark-950/80 border border-white/[0.08] rounded-xl px-3 py-1.5 text-2xs font-semibold text-dark-200 focus:border-brand-orange/50 focus:outline-none cursor-pointer hover:bg-dark-900 transition-colors shadow-inner"
             onChange={(e) => setPlatformFilter(e.target.value)}
           >
-            <option value="">Platform</option>
+            <option value="">All Platforms</option>
             <option value="LeetCode">LeetCode</option>
             <option value="GeeksforGeeks">GeeksforGeeks</option>
             <option value="CodeForces">CodeForces</option>
@@ -212,7 +231,7 @@ function ProblemsPage() {
 
           {hasActiveFilters && (
             <button 
-              className="px-4 py-3 text-xs font-black uppercase tracking-widest text-brand-orange hover:text-white transition-colors flex items-center gap-2"
+              className="px-2.5 py-1 text-2xs font-semibold text-brand-orange hover:text-white transition-colors flex items-center gap-1 rounded-lg hover:bg-brand-orange/10"
               onClick={clearAllFilters}
             >
               <X className="w-3 h-3" />
@@ -224,13 +243,13 @@ function ProblemsPage() {
 
       {/* Results Summary */}
       {hasActiveFilters && (
-        <div className="text-sm text-dark-400">
-          Showing <span className="text-brand-orange font-bold">{filteredProblems.length}</span> of <span className="font-bold">{totalProblems}</span> problems
+        <div className="text-xs text-dark-400 px-1">
+          Showing <span className="text-brand-orange font-semibold">{filteredProblems.length}</span> of <span className="font-semibold text-white">{totalProblems}</span> problems
         </div>
       )}
 
-      {/* Problem List */}
-      <div className="space-y-3">
+      {/* Problem Cards Presentation */}
+      <div className="space-y-8">
         {companyName ? (
           // Company View List
           <>
@@ -241,10 +260,10 @@ function ProblemsPage() {
             )}
 
             {totalProblems > 0 && filteredProblems.length === 0 && !loading && (
-              <div className="card text-center py-12 bg-dark-900/20 border-dashed border-dark-800">
-                <p className="text-dark-400">No problems match your search.</p>
+              <div className="card text-center py-12 bg-dark-900/40 border-dashed border-white/[0.1]">
+                <p className="text-dark-400 text-sm">No problems match your current filters.</p>
                 <button 
-                  className="text-brand-orange text-sm font-black mt-2 hover:underline" 
+                  className="text-brand-orange text-xs font-semibold mt-2 hover:underline inline-block" 
                   onClick={clearAllFilters}
                 >
                   Clear All Filters
@@ -252,47 +271,49 @@ function ProblemsPage() {
               </div>
             )}
 
-            {filteredProblems.map((problem, index) => {
-              const trackedProblem = problems.find(p => p.title === problem.title);
-              const isRealTracked = trackedProblem && trackedProblem.status !== 'ViewOnly';
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredProblems.map((problem, index) => {
+                const trackedProblem = problems.find(p => p.title === problem.title);
+                const isRealTracked = trackedProblem && trackedProblem.status !== 'ViewOnly';
 
-              const mergedProblem = {
-                ...problem,
-                ...trackedProblem,
-                isTracked: isRealTracked,
-                onAdd: async () => {
-                  if (trackedProblem) {
-                    await updateProblem(trackedProblem.id, { status: 'Todo' });
-                  } else {
-                    handleAddProblem(problem, 'Todo');
+                const mergedProblem = {
+                  ...problem,
+                  ...trackedProblem,
+                  isTracked: isRealTracked,
+                  onAdd: async () => {
+                    if (trackedProblem) {
+                      await updateProblem(trackedProblem.id, { status: 'Todo' });
+                    } else {
+                      handleAddProblem(problem, 'Todo');
+                    }
                   }
-                }
-              };
+                };
 
-              return (
-                <div key={index} className="cursor-pointer">
-                  <ProblemCard 
-                    problem={mergedProblem} 
-                    onClick={() => {
-                      if (trackedProblem) {
-                        window.open(`/problem/${trackedProblem.id}`, '_blank');
-                      } else {
-                        const localId = Date.now().toString();
-                        localStorage.setItem(`view_problem_${localId}`, JSON.stringify(problem));
-                        window.open(`/problem/view?localId=${localId}`, '_blank');
-                      }
-                    }}
-                  />
-                </div>
-              );
-            })}
+                return (
+                  <div key={index}>
+                    <ProblemCard 
+                      problem={mergedProblem} 
+                      onClick={() => {
+                        if (trackedProblem) {
+                          window.open(`/problem/${trackedProblem.id}`, '_blank');
+                        } else {
+                          const localId = Date.now().toString();
+                          localStorage.setItem(`view_problem_${localId}`, JSON.stringify(problem));
+                          window.open(`/problem/view?localId=${localId}`, '_blank');
+                        }
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </>
         ) : (
-          // Standard User Problems List with Pattern Groups
+          // Standard User Problems Grouped by Patterns in a Grid
           <>
             {totalProblems === 0 && !loading && (
-              <div className="card text-center py-12">
-                <p className="text-dark-400 mb-4">No problems yet</p>
+              <div className="card text-center py-16 space-y-4">
+                <p className="text-dark-300 font-medium">No problems tracked yet.</p>
                 <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
                   Add Your First Problem
                 </button>
@@ -300,10 +321,10 @@ function ProblemsPage() {
             )}
 
             {totalProblems > 0 && filteredProblems.length === 0 && !loading && (
-              <div className="card text-center py-12 bg-dark-900/20 border-dashed border-dark-800">
-                <p className="text-dark-400">No problems match your search.</p>
+              <div className="card text-center py-12 bg-dark-900/40 border-dashed border-white/[0.1]">
+                <p className="text-dark-400 text-sm">No problems match your search.</p>
                 <button 
-                  className="text-brand-orange text-sm font-black mt-2 hover:underline" 
+                  className="text-brand-orange text-xs font-semibold mt-2 hover:underline inline-block" 
                   onClick={clearAllFilters}
                 >
                   Clear All Filters
@@ -312,38 +333,40 @@ function ProblemsPage() {
             )}
 
             {groupedProblems && groupedProblems.map((group, index) => {
-              // Default to expanded only for the first group (index 0)
               const isCollapsed = collapsedGroups[group.name] === undefined ? index !== 0 : collapsedGroups[group.name];
               
               return (
-                <div key={group.name} className="space-y-6 pt-4 first:pt-0">
+                <div key={group.name} className="space-y-4">
+                  {/* Refined Section Header */}
                   <div 
-                    className="flex items-center gap-4 group/header cursor-pointer select-none"
+                    className="flex items-center justify-between py-1 group/header cursor-pointer select-none"
                     onClick={() => toggleGroup(group.name)}
                   >
-                    <div className="flex items-center gap-3">
-                      {isCollapsed ? (
-                        <ChevronRight className="w-5 h-5 text-dark-500 group-hover/header:text-brand-orange transition-colors" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-brand-orange" />
-                      )}
-                      <h2 className="text-2xl font-black text-white/90 tracking-tight flex items-center gap-3">
-                        <span className={`w-2 h-8 bg-brand-orange rounded-full shadow-[0_0_15px_rgba(249,115,22,0.5)] transition-all duration-500 ${isCollapsed ? 'scale-y-50 opacity-50' : 'group-hover/header:scale-y-125'}`} />
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-5 h-5 rounded-md flex items-center justify-center bg-white/[0.04] text-dark-400 group-hover/header:text-brand-orange group-hover/header:bg-white/[0.08] transition-colors">
+                        {isCollapsed ? (
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        ) : (
+                          <ChevronDown className="w-3.5 h-3.5 text-brand-orange" />
+                        )}
+                      </div>
+                      <h2 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
                         {group.name}
                       </h2>
                     </div>
                     
-                    <div className="h-px flex-1 bg-gradient-to-r from-dark-800 to-transparent opacity-50" />
-                    
-                    <span className="text-xs font-black text-dark-500 uppercase tracking-widest bg-dark-900/50 px-3 py-1 rounded-full border border-dark-800/50">
-                      {group.problems.length} {group.problems.length === 1 ? 'Problem' : 'Problems'}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xs font-semibold text-dark-400 bg-white/[0.03] border border-white/[0.06] px-2.5 py-0.5 rounded-full">
+                        {group.problems.length} {group.problems.length === 1 ? 'problem' : 'problems'}
+                      </span>
+                    </div>
                   </div>
                   
+                  {/* Adaptive Responsive Cards Grid */}
                   {!isCollapsed && (
-                    <div className="space-y-4 px-1 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in slide-in-from-top-1 duration-200">
                       {group.problems.map((problem) => (
-                        <div key={`${group.name}-${problem.id}`} className="cursor-pointer">
+                        <div key={`${group.name}-${problem.id}`}>
                           <ProblemCard problem={problem} />
                         </div>
                       ))}

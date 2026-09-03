@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useProblemStore } from '../../stores/problemStore';
 import { useScrollLock } from '../../hooks/useScrollLock';
 import { Cpu, RotateCw, Lightbulb, X, ExternalLink } from 'lucide-react';
+import { isSafeHttpUrl } from '../ui/SafeMarkdown';
 
 function ProblemDetailsModal({ problem, isOpen, onClose }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -201,7 +202,7 @@ function ProblemDetailsModal({ problem, isOpen, onClose }) {
             </div>
             <div className="flex gap-2 text-sm text-dark-400">
               <span>{problem.platform}</span>
-              {problem.platformUrl && (
+              {isSafeHttpUrl(problem.platformUrl) && (
                 <>
                   <span>•</span>
                   <a href={problem.platformUrl} target="_blank" rel="noopener noreferrer" className="text-brand-orange hover:underline flex items-center gap-1">

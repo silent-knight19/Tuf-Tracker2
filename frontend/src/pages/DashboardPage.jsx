@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Sidebar from '../components/layout/Sidebar';
 import ProblemsPage from './ProblemsPage';
 import AnalyticsPage from './AnalyticsPage';
@@ -17,10 +17,10 @@ import CompanyQuestionsPage from './CompanyQuestionsPage';
 import { useProblemStore } from '../stores/problemStore';
 import { Flame, PanelLeft, Search } from 'lucide-react';
 import { useAutoHideHeader } from '../hooks/useAutoHideHeader';
-import MotivationalQuote from '../components/ui/MotivationalQuote';
 
 // Update function signature to accept children
 function DashboardPage({ children }) {
+  const location = useLocation();
   const { fetchProblems, problems } = useProblemStore();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const mainContentRef = useRef(null);
@@ -113,50 +113,86 @@ function DashboardPage({ children }) {
     return streakCount;
   }, [problems]);
 
+  // Calculate total solved count
+  const solvedCount = useMemo(() => {
+    if (!problems) return 0;
+    return problems.filter(p => p.status === 'Solved' || p.status === 'Completed' || p.solvedAt).length;
+  }, [problems]);
+
   return (
-    <div className="flex h-screen overflow-hidden bg-dark-950">
+    <div className="flex h-screen overflow-hidden bg-dark-950 text-dark-100">
       {/* Sidebar */}
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar - Fixed position for proper auto-hide */}
-        <header className={`fixed top-0 right-0 left-0 h-[72px] z-40 border-b border-dark-800/60 flex items-center justify-between px-8 bg-dark-950/80 backdrop-blur-xl transition-all duration-500 ease-in-out ${
-          headerVisible ? 'translate-y-0' : '-translate-y-full'
-        } ${sidebarOpen ? 'shadow-none' : 'shadow-[0_4px_20px_-5px_rgba(0,0,0,0.5)]'}`} style={{ left: sidebarOpen ? '16rem' : '0' }}>
-          
-          <div className="flex items-center">
+        {/* Top Navigation Bar - Clean Frosted Glass */}
+        <header 
+          className={`fixed top-0 right-0 z-40 h-16 border-b border-white/[0.06] flex items-center justify-between px-6 bg-dark-950/80 backdrop-blur-xl transition-all duration-300 ease-spring ${
+            headerVisible ? 'translate-y-0' : '-translate-y-full'
+          }`} 
+          style={{ left: sidebarOpen ? '16rem' : '0' }}
+        >
+          {/* Left: Sidebar Toggle & Breadcrumbs */}
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-3 -ml-3 text-dark-500 hover:text-white hover:bg-dark-800/40 rounded-xl transition-all group active:scale-90 relative z-10"
+              className="p-2 -ml-2 text-dark-400 hover:text-white hover:bg-white/[0.06] rounded-xl transition-all active:scale-95"
               title={sidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
             >
-              <PanelLeft className={`w-6 h-6 transition-transform duration-500 ease-out ${sidebarOpen ? '' : 'rotate-180 opacity-50'}`} />
+              <PanelLeft className={`w-5 h-5 transition-transform duration-300 ${sidebarOpen ? '' : 'rotate-180 opacity-60'}`} />
             </button>
+            <div className="hidden sm:flex items-center gap-2 text-xs">
+              <span className="text-dark-500 font-medium">Workspace</span>
+              <span className="text-dark-600">/</span>
+              <span className="text-white font-semibold capitalize">
+                {location.pathname === '/' || location.pathname === '/problems' ? 'Dashboard' :
+                 location.pathname.startsWith('/sheets') ? 'Curated Sheets' :
+                 location.pathname.startsWith('/analytics') ? 'Analytics' :
+                 location.pathname.startsWith('/revision') ? 'Spaced Revision' :
+                 location.pathname.startsWith('/company') ? 'Company Prep' : 'Overview'}
+              </span>
+            </div>
           </div>
  
-          <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 flex items-center justify-center max-w-3xl w-full px-4">
-            <MotivationalQuote category="Focus" variant="ghost" />
+          {/* Center: Raycast Command Palette Trigger */}
+          <div className="flex items-center justify-center max-w-md w-full px-4">
+            <div 
+              onClick={() => {
+                const searchInput = document.getElementById('problem-search-input');
+                if (searchInput) searchInput.focus();
+              }}
+              className="w-full group flex items-center justify-between px-3.5 py-1.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.15] text-dark-400 hover:text-dark-200 transition-all duration-200 cursor-pointer shadow-inner"
+            >
+              <div className="flex items-center gap-2.5 text-xs truncate">
+                <Search className="w-3.5 h-3.5 text-dark-500 group-hover:text-brand-orange transition-colors" />
+                <span className="truncate">Search problems, tags, companies...</span>
+              </div>
+              <kbd className="hidden md:inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono text-dark-400 bg-white/[0.05] border border-white/[0.1] rounded">
+                ⌘K
+              </kbd>
+            </div>
           </div>
 
-          <div className="flex items-center gap-6 ml-auto">
-            {/* Streak Counter - Premium Pill */}
-            <div className={`group flex items-center gap-3.5 px-5 py-2 rounded-full border transition-all duration-500 cursor-default ${
+          {/* Right: Quick Executive Stats */}
+          <div className="flex items-center gap-2.5 ml-auto">
+            {/* Solved Problems Pill */}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.07] text-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)]" />
+              <span className="text-dark-400 font-medium">Solved:</span>
+              <span className="text-white font-semibold">{solvedCount}</span>
+            </div>
+
+            {/* Streak Counter */}
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-300 ${
               streak > 0 
-                ? 'bg-brand-orange/5 border-brand-orange/20 shadow-[0_0_15px_rgba(249,115,22,0.1)] hover:bg-brand-orange/10 hover:border-brand-orange/30' 
-                : 'bg-dark-900 border-dark-800'
+                ? 'bg-brand-orange/10 border-brand-orange/30 text-white shadow-sm shadow-brand-orange/10' 
+                : 'bg-white/[0.03] border-white/[0.07] text-dark-400'
             }`}>
-              <div className="relative">
-                <Flame className={`w-6 h-6 transition-all duration-300 ${streak > 0 ? 'text-brand-orange fill-brand-orange/20 drop-shadow-[0_0_10px_rgba(249,115,22,0.4)]' : 'text-dark-500'}`} />
-                {streak > 0 && (
-                  <div className="absolute inset-0 bg-brand-orange/40 blur-xl rounded-full animate-pulse" />
-                )}
-              </div>
-              <div className="flex flex-col -space-y-1">
-                <span className={`text-[11px] font-black uppercase tracking-tighter ${streak > 0 ? 'text-brand-orange/70' : 'text-dark-500'}`}>Streak</span>
-                <span className={`text-[17.25px] font-black transition-colors ${streak > 0 ? 'text-white' : 'text-dark-400'}`}>
-                  {streak} Days
-                </span>
+              <Flame className={`w-4 h-4 transition-colors ${streak > 0 ? 'text-brand-orange fill-brand-orange animate-pulse-subtle' : 'text-dark-500'}`} />
+              <div className="flex items-center gap-1.5 text-xs font-semibold">
+                <span className="text-white">{streak}</span>
+                <span className="text-dark-400 font-normal text-2xs">Day Streak</span>
               </div>
             </div>
           </div>

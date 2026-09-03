@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, Zap, ExternalLink, Cpu, ChevronRight, Eye, EyeOff, Lightbulb, Terminal, GripVertical, RotateCw } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import SafeMarkdown, { isSafeHttpUrl } from '../components/ui/SafeMarkdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import api from '../utils/api';
@@ -458,7 +458,7 @@ function SolveUserProblemPage() {
           </div>
           
           <div className="flex items-center gap-4 relative z-20">
-            {!isBlindMode && problem.platformUrl && (
+            {!isBlindMode && isSafeHttpUrl(problem.platformUrl) && (
               <a 
                 href={problem.platformUrl} 
                 target="_blank" 
@@ -518,7 +518,7 @@ function SolveUserProblemPage() {
               <div className="bg-dark-900 p-5 rounded-xl border border-dark-800">
                 <h2 className="text-[1.15rem] font-[800] text-white mb-4">Description</h2>
                 <div className="prose prose-invert max-w-none text-dark-200 text-[1.1rem] font-[450] leading-loose">
-                  <ReactMarkdown
+                  <SafeMarkdown
                     components={{
                       p: ({node, children}) => <p className="mb-4 last:mb-0 leading-7 text-[15px] tracking-wide text-dark-300">{children}</p>,
                       strong: ({node, children}) => <strong className="text-brand-orange font-bold">{children}</strong>,
@@ -543,7 +543,7 @@ function SolveUserProblemPage() {
                     }}
                   >
                     {typeof displayDescription === 'string' ? displayDescription : displayDescription.description}
-                  </ReactMarkdown>
+                  </SafeMarkdown>
                 </div>
                 
                 {displayDescription.functionSignature && (

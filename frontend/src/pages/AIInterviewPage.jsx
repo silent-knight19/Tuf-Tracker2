@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Zap, ExternalLink, Cpu, ChevronRight, Eye, EyeOff, Lightbulb, Terminal, GripVertical } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import SafeMarkdown from '../components/ui/SafeMarkdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import api from '../utils/api';
@@ -582,7 +582,7 @@ function AIInterviewPage() {
           <div className="bg-dark-900 p-5 rounded-xl border border-dark-800">
             <h2 className="text-[1.15rem] font-[800] text-white mb-4">Description</h2>
             <div className="prose prose-invert max-w-none text-dark-200 text-[1.1rem] font-[450] leading-relaxed">
-              <ReactMarkdown>{typeof problem.description === 'object' ? JSON.stringify(problem.description) : problem.description}</ReactMarkdown>
+              <SafeMarkdown>{typeof problem.description === 'object' ? JSON.stringify(problem.description) : problem.description}</SafeMarkdown>
             </div>
             
             {/* Function Signature */}
@@ -611,12 +611,12 @@ function AIInterviewPage() {
                       {example.explanation && (
                         <div className="pt-3 text-dark-200 font-sans text-[14.5px] font-[450] leading-relaxed">
                           <span className="text-dark-400 font-[800] uppercase tracking-wider block mb-1.5">Explanation:</span>
-                          <ReactMarkdown components={{
+                          <SafeMarkdown components={{
                             p: ({node, ...props}) => <span {...props} />,
                             code: ({node, ...props}) => <code className="bg-dark-800 px-1.5 py-0.5 rounded text-brand-orange font-bold" {...props} />
                           }}>
                             {example.explanation}
-                          </ReactMarkdown>
+                          </SafeMarkdown>
                         </div>
                       )}
                     </div>

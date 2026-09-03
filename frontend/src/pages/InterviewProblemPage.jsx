@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Cpu, ChevronRight, Eye, EyeOff, Lightbulb, ExternalLink, Terminal, GripVertical } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import SafeMarkdown, { isSafeHttpUrl } from '../components/ui/SafeMarkdown';
 import api from '../utils/api';
 import { auth } from '../config/firebase';
 import CodePanel from '../components/features/code/CodePanel';
@@ -309,7 +309,7 @@ function InterviewProblemPage() {
           </div>
           
           <div className="flex items-center gap-3">
-            {problem.problemLink && (
+            {isSafeHttpUrl(problem.problemLink) && (
               <a 
                 href={problem.problemLink} 
                 target="_blank" 
@@ -351,7 +351,7 @@ function InterviewProblemPage() {
               <div className="bg-dark-900 p-5 rounded-xl border border-dark-800">
                 <h2 className="text-lg font-bold text-white mb-4">Description</h2>
                 <div className="prose prose-invert max-w-none text-dark-300 leading-loose">
-                  <ReactMarkdown
+                  <SafeMarkdown
                     components={{
                       p: ({node, children}) => <p className="mb-4 last:mb-0 leading-7 text-[15px] tracking-wide text-dark-300">{children}</p>,
                       strong: ({node, children}) => <strong className="text-brand-orange font-bold">{children}</strong>,
@@ -376,7 +376,7 @@ function InterviewProblemPage() {
                     }}
                   >
                     {typeof description === 'string' ? description : description.description}
-                  </ReactMarkdown>
+                  </SafeMarkdown>
                 </div>
                 {description.functionSignature && (
                   <div className="mt-4 p-3 bg-dark-950 rounded-lg border border-dark-800">

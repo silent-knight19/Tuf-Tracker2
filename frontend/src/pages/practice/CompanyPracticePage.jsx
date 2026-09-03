@@ -52,16 +52,6 @@ const CompanyPracticePage = () => {
   const [selectedDifficulty, setSelectedDifficulty] = useState('Medium');
   const navigate = useNavigate();
 
-  // Extract all companies user has added/interacted with
-  const userCompanies = useMemo(() => {
-    const companies = problems.flatMap(p => {
-      if (Array.isArray(p.companies)) return p.companies;
-      if (p.company) return [p.company];
-      return [];
-    });
-    return [...new Set(companies)].sort();
-  }, [problems]);
-
   // What: Function to handle clicking on a specific company.
   // How: Uses React Router's `navigate` to switch the URL.
   // Why: The route in App.jsx and DashboardPage.jsx expects `/company-prep/:companyName` instead of `/practice/company-prep/`, so we navigate directly there to avoid white screen bugs!
@@ -78,20 +68,6 @@ const CompanyPracticePage = () => {
   const uniqueTopics = useMemo(() => [...new Set([
     ...problems.flatMap(p => p.topics || [])
   ])].sort(), [problems]);
-
-  const getCompanyLogo = (companyName) => {
-    const lowerName = companyName.toLowerCase().replace(/\s+/g, '');
-    
-    // 1. Check verified manual list first
-    if (COMPANY_LOGOS[lowerName]) return COMPANY_LOGOS[lowerName];
-    
-    // 2. Check TOP_COMPANIES list for matches
-    const topMatch = TOP_COMPANIES.find(c => c.name.toLowerCase() === companyName.toLowerCase());
-    if (topMatch) return topMatch.logo;
-
-    // 3. Fallback to Google Favicon dynamically
-    return `https://www.google.com/s2/favicons?domain=${lowerName}.com&sz=128`;
-  };
 
   const handleCompanyPractice = async (overrideCompany = null) => {
     const company = overrideCompany || selectedCompany;

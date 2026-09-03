@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { X, MessageSquare, Send, Award, BrainCircuit, Lightbulb, Loader2, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../../utils/api';
-import ReactMarkdown from 'react-markdown';
+import SafeMarkdown from '../../ui/SafeMarkdown';
 import { auth } from '../../../config/firebase';
 import { useScrollLock } from '../../../hooks/useScrollLock';
 
@@ -219,7 +219,7 @@ function GuidedDebriefModal({ isOpen, onClose, problemTitle, difficulty, onCompl
                      <BrainCircuit className="w-4 h-4" /> Strategic Advice
                    </h4>
                    <div className="prose prose-invert prose-sm max-w-none text-dark-200">
-                     <ReactMarkdown>{analysis.advice}</ReactMarkdown>
+                     <SafeMarkdown>{analysis.advice}</SafeMarkdown>
                    </div>
                 </div>
 

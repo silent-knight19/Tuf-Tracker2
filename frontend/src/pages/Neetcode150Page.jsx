@@ -192,7 +192,7 @@ function Neetcode150Page() {
                 {/* Problems List */}
                 {isExpanded && (
                   <div className="border-t border-dark-800/50">
-                    {category.problems.map((problem, index) => {
+                    {category.problems.map((problem) => {
                       const isSolved = solvedProblems.has(problem.id);
                       
                       return (

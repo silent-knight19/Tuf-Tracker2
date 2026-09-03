@@ -1,147 +1,190 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --bg-canvas: #07080d;
+    --bg-surface: #0c0e15;
+    --bg-card: #121522;
+    --bg-card-hover: #171b2b;
+    --border-subtle: rgba(255, 255, 255, 0.07);
+    --border-highlight: rgba(255, 255, 255, 0.14);
+    --accent-orange: #f97316;
+    --accent-amber: #fb923c;
+  }
+
   * {
-    @apply border-dark-800;
+    @apply border-dark-700/50;
+    box-sizing: border-box;
+  }
+
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
   }
 
   body {
-    @apply bg-dark-950 text-dark-100 antialiased;
+    @apply bg-dark-950 text-dark-100 antialiased font-sans selection:bg-brand-orange/30 selection:text-white;
+    background-color: var(--bg-canvas);
+    /* Subtle radial atmospheric glow */
+    background-image: 
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(249, 115, 22, 0.05), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(59, 130, 246, 0.03), transparent);
+    background-attachment: fixed;
+    min-height: 100vh;
   }
 
-  /* Custom Scrollbar */
+  /* Refined, Minimal Custom Scrollbar */
   ::-webkit-scrollbar {
-    @apply w-2 h-2;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-dark-900;
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-dark-700 rounded-full;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 9999px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-dark-600;
+    background: rgba(255, 255, 255, 0.22);
   }
 }
 
 @layer components {
 
-  /* Button Styles */
+  /* Modern Elevated Buttons with Micro-Physics */
   .btn {
-    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-dark-950;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-dark-950 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98];
   }
 
   .btn-primary {
-    @apply bg-brand-orange hover:bg-brand-orange/90 text-white focus:ring-brand-orange;
+    @apply bg-gradient-to-b from-brand-orange to-brand-orange/95 hover:from-brand-amber hover:to-brand-orange text-white shadow-md shadow-brand-orange/20 hover:shadow-lg hover:shadow-brand-orange/30 border border-brand-amber/30 focus:ring-brand-orange;
   }
 
   .btn-secondary {
-    @apply bg-dark-800 hover:bg-dark-700 text-dark-100 focus:ring-dark-700;
+    @apply bg-dark-800/80 hover:bg-dark-700/90 text-dark-100 border border-white/[0.08] hover:border-white/[0.16] shadow-sm hover:shadow focus:ring-dark-600;
   }
 
   .btn-ghost {
-    @apply bg-transparent hover:bg-dark-800 text-dark-300 focus:ring-dark-700;
+    @apply bg-transparent hover:bg-white/[0.06] text-dark-300 hover:text-white focus:ring-dark-700;
   }
 
-  /* Card Styles */
+  .btn-glass {
+    @apply bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-md text-dark-200 hover:text-white border border-white/[0.08] hover:border-white/[0.16] shadow-inner-rim;
+  }
+
+  /* Handcrafted Obsidian Cards with Inner Rim Lighting */
   .card {
-    @apply bg-dark-900 border border-dark-800 rounded-lg p-4 transition-all duration-200;
+    @apply bg-dark-850/70 backdrop-blur-xl border border-white/[0.07] rounded-2xl p-5 transition-all duration-300 shadow-luxe;
   }
 
   .card-hover {
-    @apply hover:border-dark-700 hover:shadow-lg;
+    @apply hover:bg-dark-800/80 hover:border-white/[0.14] hover:shadow-luxe-hover hover:-translate-y-0.5;
   }
 
-  /* Input Styles */
+  /* Sleek Input Fields */
   .input {
-    @apply bg-dark-900 border border-dark-800 rounded-lg px-4 py-2 text-dark-100 placeholder-dark-500 focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-transparent transition-all duration-200;
+    @apply bg-dark-900/80 border border-white/[0.09] rounded-xl px-4 py-2.5 text-sm text-white placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-brand-orange/60 focus:border-brand-orange/50 transition-all duration-200 shadow-inner;
   }
 
   .input-error {
-    @apply border-difficulty-hard focus:ring-difficulty-hard;
+    @apply border-difficulty-hard/60 focus:ring-difficulty-hard/60 text-difficulty-hard;
   }
 
-  /* Badge Styles */
+  /* Refined Badges with Luminous Glow */
   .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium;
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold tracking-tight;
   }
 
   .badge-easy {
-    @apply bg-difficulty-easy/10 text-difficulty-easy border border-difficulty-easy/20;
+    @apply bg-difficulty-easy/10 text-difficulty-easy border border-difficulty-easy/25 shadow-sm shadow-difficulty-easy/10;
   }
 
   .badge-medium {
-    @apply bg-difficulty-medium/10 text-difficulty-medium border border-difficulty-medium/20;
+    @apply bg-difficulty-medium/10 text-difficulty-medium border border-difficulty-medium/25 shadow-sm shadow-difficulty-medium/10;
   }
 
   .badge-hard {
-    @apply bg-difficulty-hard/10 text-difficulty-hard border border-difficulty-hard/20;
+    @apply bg-difficulty-hard/10 text-difficulty-hard border border-difficulty-hard/25 shadow-sm shadow-difficulty-hard/10;
   }
 
-  /* Modal Overlay */
+  /* Modal Glass Overlay */
   .modal-overlay {
-    @apply fixed inset-0 bg-black/60 backdrop-blur-sm z-40;
+    @apply fixed inset-0 bg-black/75 backdrop-blur-md z-40 transition-opacity;
   }
 
   .modal-content {
-    @apply bg-dark-900 rounded-xl shadow-2xl border border-dark-800 max-w-2xl w-full max-h-[90vh] overflow-y-auto;
+    @apply bg-dark-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/[0.1] max-w-2xl w-full max-h-[90vh] overflow-y-auto;
   }
 
-  /* LeetCode-style Divider */
   .divider {
-    @apply border-t border-dark-800 my-4;
+    @apply border-t border-white/[0.06] my-4;
   }
 
-  /* Sidebar Link */
+  /* Sidebar Links */
   .sidebar-link {
-    @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-dark-400 hover:text-dark-100 hover:bg-dark-800 transition-all duration-200 cursor-pointer;
+    @apply flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-dark-300 hover:text-white hover:bg-white/[0.05] transition-all duration-200 cursor-pointer text-sm font-medium;
   }
 
   .sidebar-link-active {
-    @apply text-brand-orange bg-brand-orange/10 hover:bg-brand-orange/15;
+    @apply text-white bg-gradient-to-r from-brand-orange/15 to-transparent border-l-2 border-brand-orange font-semibold shadow-inner-rim;
   }
 }
 
 @layer utilities {
+  /* Ambient Glassmorphism Panel */
+  .glass-panel {
+    background: rgba(14, 17, 26, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.06), 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+  }
+
+  /* Subtle Card Sheen */
+  .card-sheen {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-sheen::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.12) 50%, transparent 100%);
+  }
+
+  /* Refined Text Gradient */
   .text-gradient {
-    @apply bg-gradient-to-r from-brand-orange to-brand-yellow bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-white via-white/90 to-dark-300 bg-clip-text text-transparent;
+  }
+
+  .text-gradient-amber {
+    @apply bg-gradient-to-r from-brand-orange via-brand-amber to-brand-yellow bg-clip-text text-transparent;
   }
 
   .glass-effect {
-    @apply bg-dark-900/50 backdrop-blur-lg border border-dark-800/50;
+    @apply bg-dark-900/60 backdrop-blur-xl border border-white/[0.08] shadow-luxe;
   }
 
   .transition-smooth {
-    @apply transition-all duration-300 ease-in-out;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  /* Animated gradient text */
-  .animate-gradient {
-    animation: gradient-shift 3s ease infinite;
-  }
-
-  @keyframes gradient-shift {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-  }
-
-  /* Hide scrollbar for Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
 
-  /* Hide scrollbar for IE, Edge and Firefox */
   .no-scrollbar {
     -ms-overflow-style: none;
-    /* IE and Edge */
     scrollbar-width: none;
-    /* Firefox */
   }
 }

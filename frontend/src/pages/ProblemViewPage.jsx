@@ -21,7 +21,7 @@ import {
   Link,
   CheckCircle2
 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import SafeMarkdown, { isSafeHttpUrl } from '../components/ui/SafeMarkdown';
 import remarkGfm from 'remark-gfm';
 
 function ProblemViewPage() {
@@ -337,30 +337,30 @@ function ProblemViewPage() {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <span className="text-dark-400 text-sm">
-            {isViewOnly ? 'Preview' : 'Problem List'}
+          <span className="text-dark-400 text-xs font-medium">
+            {isViewOnly ? 'Problem Preview' : 'My Collection'}
           </span>
         </div>
-        <div className="flex items-center gap-3">
-          {problem.platformUrl && (
+        <div className="flex items-center gap-2.5">
+          {isSafeHttpUrl(problem.platformUrl) && (
             <a 
               href={problem.platformUrl} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 hover:text-amber-400 rounded-lg text-sm font-bold transition-all border border-amber-500/20 hover:border-amber-500/50 flex items-center gap-2 shadow-lg shadow-amber-500/5"
+              className="px-3 py-1.5 bg-white/[0.03] hover:bg-white/[0.08] text-dark-200 hover:text-white rounded-xl text-xs font-medium transition-all border border-white/[0.08] hover:border-white/[0.16] flex items-center gap-1.5 shadow-sm"
               title={`Open on ${problem.platform}`}
             >
-              <ExternalLink className="w-4 h-4" />
+              <ExternalLink className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">{problem.platform || 'LeetCode'}</span>
             </a>
           )}
           {!isViewOnly && (
             <button
               onClick={() => window.open(`/solve/${problem.id}`, '_blank')}
-              className="text-white hover:text-white text-sm flex items-center gap-1.5 font-bold bg-brand-orange hover:bg-orange-600 px-3 py-1.5 rounded-lg border border-brand-orange/20 transition-all shadow-lg shadow-brand-orange/20"
+              className="btn btn-primary text-xs py-1.5 px-3.5 shadow-sm"
             >
-              <Zap className="w-4 h-4 fill-current" />
-              <span className="hidden sm:inline">Solve with AI</span>
+              <Zap className="w-3.5 h-3.5 fill-current" />
+              <span className="hidden sm:inline">Solve in IDE</span>
             </button>
           )}
           {isViewOnly && (
@@ -383,55 +383,57 @@ function ProblemViewPage() {
                   console.error('Failed to add problem:', error);
                 }
               }}
-              className="btn btn-primary text-sm flex items-center gap-2"
+              className="btn btn-primary text-xs py-1.5 px-3.5"
             >
-              <Plus className="w-4 h-4" />
-              Add to My Problems
+              <Plus className="w-3.5 h-3.5" />
+              Add to Collection
             </button>
           )}
-          <button className="btn btn-ghost text-sm">
-            <List className="w-4 h-4" />
-          </button>
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Workspace Layout */}
       <div className="flex-1 flex overflow-hidden" ref={containerRef}>
         {/* Left Panel - Problem Description */}
         <div 
-          className="flex flex-col border-r border-dark-800"
+          className="flex flex-col border-r border-white/[0.07] bg-dark-950/60"
           style={{ width: `${leftWidth}%` }}
         >
           {/* Problem Header */}
-          <div className="p-4 border-b border-dark-800">
-            <div className="flex items-center gap-3 mb-3">
-              <h1 className="text-2xl font-extrabold text-white">{problem.title}</h1>
-              <span className={`badge font-medium ${
-                problem.difficulty === 'Hard' ? 'badge-hard' :
-                problem.difficulty === 'Medium' ? 'badge-medium' :
-                'badge-easy'
+          <div className="p-5 border-b border-white/[0.07]">
+            <div className="flex items-center gap-3 mb-2.5">
+              <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">{problem.title}</h1>
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-2xs font-semibold border ${
+                problem.difficulty === 'Hard' ? 'bg-rose-500/10 text-rose-400 border-rose-500/25' :
+                problem.difficulty === 'Medium' ? 'bg-amber-500/10 text-amber-400 border-amber-500/25' :
+                'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
               }`}>
-                {problem.difficulty}
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  problem.difficulty === 'Hard' ? 'bg-rose-400 shadow-[0_0_6px_rgba(244,63,94,0.8)]' :
+                  problem.difficulty === 'Medium' ? 'bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.8)]' :
+                  'bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.8)]'
+                }`} />
+                {problem.difficulty || 'Medium'}
               </span>
             </div>
-            <div className="flex flex-wrap gap-2 mb-3">
+            <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
               {problem.topics?.map(topic => (
-                <span key={topic} className="badge bg-dark-800 text-dark-300 border-dark-700 text-xs font-medium">
+                <span key={topic} className="text-2xs font-medium text-dark-300 bg-white/[0.03] border border-white/[0.06] px-2 py-0.5 rounded-md">
                   {topic}
                 </span>
               ))}
               {problem.patterns?.map(pattern => (
-                <span key={pattern} className="badge bg-brand-orange/10 text-brand-orange border-brand-orange/20 text-xs font-medium">
+                <span key={pattern} className="text-2xs font-medium text-brand-amber bg-brand-orange/[0.06] border border-brand-orange/15 px-2 py-0.5 rounded-md">
                   {pattern}
                 </span>
               ))}
             </div>
             
             {problem.companies && problem.companies.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-3 items-center">
-                <span className="text-xs text-dark-400 mr-1 font-medium">Companies:</span>
+              <div className="flex flex-wrap gap-1.5 items-center">
+                <span className="text-2xs text-dark-400 font-medium mr-1">Target Companies:</span>
                 {problem.companies.map(company => (
-                  <span key={company} className="px-2 py-0.5 rounded text-[10px] bg-dark-800 text-dark-400 border border-dark-700 font-medium">
+                  <span key={company} className="px-2 py-0.2 rounded-md text-2xs bg-white/[0.02] text-dark-300 border border-white/[0.05] font-medium">
                     {company}
                   </span>
                 ))}
@@ -451,7 +453,7 @@ function ProblemViewPage() {
                   <>
                     {/* Problem Statement */}
                     <div className="text-dark-200 font-medium leading-loose mb-8">
-                      <ReactMarkdown 
+                      <SafeMarkdown 
                         remarkPlugins={[remarkGfm]}
                         components={{
                           p: ({node, children}) => <p className="mb-4 last:mb-0 leading-7 text-[15px] tracking-wide">{children}</p>,
@@ -479,7 +481,7 @@ function ProblemViewPage() {
                         {typeof problem.description === 'string' 
                           ? problem.description 
                           : problem.description?.statement || problem.description?.description || ''}
-                      </ReactMarkdown>
+                      </SafeMarkdown>
                     </div>
 
                     {/* Examples */}
@@ -509,9 +511,9 @@ function ProblemViewPage() {
                         <ul className="list-none space-y-1">
                           {problem.description.constraints.map((constraint, idx) => (
                             <li key={idx} className="text-dark-300 text-sm font-medium">
-                            • <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ p: ({children}) => <span className="inline-block">{children}</span> }}>
+                            • <SafeMarkdown remarkPlugins={[remarkGfm]} components={{ p: ({children}) => <span className="inline-block">{children}</span> }}>
                                 {constraint}
-                              </ReactMarkdown>
+                              </SafeMarkdown>
                             </li>
                           ))}
                         </ul>
@@ -725,9 +727,9 @@ function ProblemViewPage() {
             ) : aiSections ? (
               <div className="space-y-4">
                 {aiSections.isRaw ? (
-                  // Fallback for raw markdown
+                  // S9: raw AI markdown renders through the sanitizer, never as HTML.
                   <div className="bg-dark-950 rounded-lg p-4 prose prose-invert prose-sm max-w-none">
-                     <div dangerouslySetInnerHTML={{ __html: aiSections.raw.replace(/\n/g, '<br/>') }} />
+                    <SafeMarkdown>{aiSections.raw}</SafeMarkdown>
                   </div>
                 ) : (
                   <>

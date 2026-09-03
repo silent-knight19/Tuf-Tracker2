@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { CheckCircle, Circle, Clock, Activity, Target, BrainCircuit } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import SafeMarkdown from '../../ui/SafeMarkdown';
 
 function RevisionContent({ revision, onLogTime }) {
   // Timeline Logic
@@ -146,7 +146,7 @@ function RevisionContent({ revision, onLogTime }) {
                </h3>
                
                <div className="prose prose-invert max-w-none text-dark-200">
-                 <ReactMarkdown>{revision.aiAdvice}</ReactMarkdown>
+                 <SafeMarkdown>{revision.aiAdvice}</SafeMarkdown>
                </div>
              </div>
           </div>

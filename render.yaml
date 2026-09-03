@@ -6,9 +6,25 @@ services:
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
+    # S17: health gate probes the PUBLIC /health endpoint (the old path hit
+    # an authenticated route and could never report healthy correctly).
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 3001
-    healthCheckPath: /api/problems
+      # S17: sync:false = dashboard-managed, never from the repo. Secrets must
+      # NEVER appear as `value:` here or anywhere in git.
+      - key: FRONTEND_URL
+        sync: false
+      - key: BACKEND_URL
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false
+      - key: FIREBASE_DATABASE_URL
+        sync: false
+      - key: ADMIN_EMAILS
+        sync: false

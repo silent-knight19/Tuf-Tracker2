@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Cpu, ChevronRight, Eye, EyeOff, Lightbulb, ExternalLink, Terminal, GripVertical, Code2, ListChecks, PlayCircle } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import SafeMarkdown, { isSafeHttpUrl } from '../components/ui/SafeMarkdown';
 import api from '../utils/api';
 import { auth } from '../config/firebase';
 import CodePanel from '../components/features/code/CodePanel';
@@ -412,46 +412,50 @@ function SolveProblemPage() {
         className="h-full flex flex-col border-r border-dark-800 bg-dark-950 relative"
         style={{ width: `${leftPanelWidth}%` }}
       >
-        {/* Left Header - Glassmorphic */}
-        {/* Left Header - Glassmorphic */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-dark-800 bg-dark-950/80 backdrop-blur-md sticky top-0 z-20">
-          <div className="flex items-center gap-4 min-w-0">
+        {/* Left Header - Sleek Obsidian Glass */}
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.07] bg-dark-950/90 backdrop-blur-xl sticky top-0 z-20">
+          <div className="flex items-center gap-3.5 min-w-0">
             <button 
               onClick={() => navigate('/revision')}
-              className="p-2 hover:bg-dark-800/50 rounded-xl transition-all text-dark-400 hover:text-dark-100 group border border-transparent hover:border-dark-700"
+              className="p-1.5 hover:bg-white/[0.06] rounded-lg transition-all text-dark-400 hover:text-white group border border-transparent hover:border-white/[0.1]"
               title="Back to Review"
             >
-              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             </button>
             <div className="min-w-0">
-              <h1 className="text-lg font-bold text-dark-100 truncate leading-tight">{problem.problemTitle}</h1>
-              <div className="flex items-center gap-2 mt-1">
-                 <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border ${
-                  (problem.difficulty || 'Medium') === 'Easy' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                  (problem.difficulty || 'Medium') === 'Medium' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                  'bg-red-500/10 text-red-400 border-red-500/20'
+              <h1 className="text-sm sm:text-base font-semibold text-white truncate leading-snug">{problem.problemTitle}</h1>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.2 rounded-full text-2xs font-semibold border ${
+                  (problem.difficulty || 'Medium') === 'Easy' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                  (problem.difficulty || 'Medium') === 'Medium' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                  'bg-rose-500/10 text-rose-400 border-rose-500/20'
                 }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${
+                    (problem.difficulty || 'Medium') === 'Easy' ? 'bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.8)]' :
+                    (problem.difficulty || 'Medium') === 'Medium' ? 'bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.8)]' :
+                    'bg-rose-400 shadow-[0_0_6px_rgba(244,63,94,0.8)]'
+                  }`} />
                   {problem.difficulty || 'Medium'}
                 </span>
                 {problem.topic && (
-                   <span className="text-xs text-dark-400 flex items-center gap-1">
-                     <span className="w-1 h-1 rounded-full bg-dark-600"></span>
-                     {problem.topic}
-                   </span>
+                  <span className="text-2xs text-dark-400 font-medium flex items-center gap-1">
+                    <span>·</span>
+                    {problem.topic}
+                  </span>
                 )}
               </div>
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
-            {problem.problemLink && (
+          <div className="flex items-center gap-2.5">
+            {isSafeHttpUrl(problem.problemLink) && (
               <a 
                 href={problem.problemLink} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 hover:text-amber-400 rounded-lg text-sm font-bold transition-all border border-amber-500/20 hover:border-amber-500/50 flex items-center gap-2 shadow-lg shadow-amber-500/5"
+                className="px-2.5 py-1.5 bg-white/[0.04] hover:bg-white/[0.08] text-dark-200 hover:text-white rounded-lg text-xs font-medium transition-all border border-white/[0.08] hover:border-white/[0.16] flex items-center gap-1.5 shadow-sm"
               >
-                <ExternalLink className="w-4 h-4" />
+                <ExternalLink className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">{problem.platform || 'LeetCode'}</span>
               </a>
             )}
@@ -459,12 +463,12 @@ function SolveProblemPage() {
               <button 
                 onClick={handleAIAssist}
                 disabled={loadingHelp || loadingDescription}
-                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-dark-100 rounded-xl text-sm font-semibold shadow-lg shadow-blue-500/20 transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2 border border-blue-400/20"
+                className="btn btn-primary text-xs py-1.5 px-3 shadow-sm"
               >
                 {loadingHelp ? (
-                  <Cpu className="w-4 h-4 animate-spin" />
+                  <Cpu className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <Terminal className="w-4 h-4" />
+                  <Terminal className="w-3.5 h-3.5" />
                 )}
                 <span className="hidden sm:inline">AI Assist</span>
               </button>
@@ -488,7 +492,7 @@ function SolveProblemPage() {
                    <h2 className="text-sm font-bold uppercase tracking-widest">Problem Statement</h2>
                 </div>
                 <div className="prose prose-invert prose-p:text-dark-300 prose-headings:text-dark-100 max-w-none text-base leading-loose">
-                  <ReactMarkdown 
+                  <SafeMarkdown 
                     components={{
                       p: ({node, children}) => <p className="mb-4 last:mb-0 leading-7 text-[15px] tracking-wide text-dark-300">{children}</p>,
                       strong: ({node, children}) => <strong className="text-brand-orange font-bold">{children}</strong>,
@@ -515,7 +519,7 @@ function SolveProblemPage() {
                     }}
                   >
                     {typeof description === 'string' ? description : description.description}
-                  </ReactMarkdown>
+                  </SafeMarkdown>
                 </div>
                 
                 {/* Function Signature */}
@@ -557,12 +561,12 @@ function SolveProblemPage() {
                           {example.explanation && (
                             <div className="pt-2 pl-[60px] text-dark-300 font-sans text-sm leading-relaxed border-t border-dark-800/50 mt-3">
                               <span className="text-dark-500 font-bold text-xs uppercase tracking-wider inline-block mb-1 mr-2">Explanation:</span>
-                              <ReactMarkdown components={{
+                              <SafeMarkdown components={{
                                 p: ({node, ...props}) => <span {...props} />,
                                 code: ({node, ...props}) => <code className="bg-dark-800 px-1 py-0.5 rounded text-brand-orange text-xs" {...props} />
                               }}>
                                 {example.explanation}
-                              </ReactMarkdown>
+                              </SafeMarkdown>
                             </div>
                           )}
                         </div>
