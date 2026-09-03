@@ -3,11 +3,16 @@ const router = express.Router();
 const aiService = require('../services/ai.service');
 const cacheService = require('../services/cache.service');
 const { verifyToken } = require('./auth.routes');
+const { validate } = require('../middleware/validate');
+const S = require('../middleware/schemas');
+// S8: per-user op-class quotas + 429 mapping (order: auth -> validate -> limit).
+const { aiLimit, sendAiError } = require('../services/ai.limits');
+const { denyAuthz } = require('../middleware/errors');
 const { db } = require('../config/firebase.config');
 
 
 // POST /api/ai/similar-problem
-router.post('/similar-problem', verifyToken, async (req, res) => {
+router.post('/similar-problem', verifyToken, validate(S.ai.similar), aiLimit('standard'), async (req, res) => {
   try {
     const { problemId } = req.body;
 
@@ -24,6 +29,13 @@ router.post('/similar-problem', verifyToken, async (req, res) => {
 
     const problemData = problemDoc.data();
     
+    // S3: ownership check — the revision id is user-controlled; never serve
+    // another user's revision content (IDOR/BOLA). Fail closed for legacy
+    // docs without a userId as well.
+    if (!problemData || problemData.userId !== req.user.uid) {
+      return denyAuthz(res, req, 'ai:similar-problem');
+    }
+
     // Generate similar problem
     const aiProblem = await aiService.generateSimilarProblem(
       problemData.problemTitle,
@@ -36,12 +48,12 @@ router.post('/similar-problem', verifyToken, async (req, res) => {
 
   } catch (error) {
     console.error('Error generating similar problem:', error);
-    res.status(500).json({ error: 'Failed to generate similar problem', details: error.message });
+    return sendAiError(res, error);
   }
 });
 
 // POST /api/ai/custom-problem
-router.post('/custom-problem', verifyToken, async (req, res) => {
+router.post('/custom-problem', verifyToken, validate(S.ai.custom), aiLimit('heavy'), async (req, res) => {
   try {
     const { pattern, topic, difficulty } = req.body;
 
@@ -59,12 +71,12 @@ router.post('/custom-problem', verifyToken, async (req, res) => {
 
   } catch (error) {
     console.error('Error generating custom problem:', error);
-    res.status(500).json({ error: 'Failed to generate custom problem', details: error.message });
+    return sendAiError(res, error);
   }
 });
 
 // POST /api/ai/company-problem
-router.post('/company-problem', verifyToken, async (req, res) => {
+router.post('/company-problem', verifyToken, validate(S.ai.companyProblem), aiLimit('heavy'), async (req, res) => {
   try {
     const { company, topic, pattern, difficulty } = req.body;
 
@@ -83,12 +95,12 @@ router.post('/company-problem', verifyToken, async (req, res) => {
 
   } catch (error) {
     console.error('Error generating company problem:', error);
-    res.status(500).json({ error: 'Failed to generate company problem', details: error.message });
+    return sendAiError(res, error);
   }
 });
 
 // POST /api/ai/problem-help
-router.post('/problem-help', verifyToken, async (req, res) => {
+router.post('/problem-help', verifyToken, validate(S.ai.problemHelp), aiLimit('heavy'), async (req, res) => {
   try {
     const { title, description, difficulty, forceRefresh, pattern, examples, constraints, functionSignature, mode, providedSolution, existingEdgeCases } = req.body;
 
@@ -157,12 +169,12 @@ router.post('/problem-help', verifyToken, async (req, res) => {
 
   } catch (error) {
     console.error('Error generating problem help:', error);
-    res.status(500).json({ error: 'Failed to generate problem help', details: error.message });
+    return sendAiError(res, error);
   }
 });
 
 // POST /api/ai/problem-description
-router.post('/problem-description', verifyToken, async (req, res) => {
+router.post('/problem-description', verifyToken, validate(S.ai.problemDescription), aiLimit('standard'), async (req, res) => {
   try {
     const { title, platform, difficulty, topics, patterns } = req.body;
 
@@ -194,12 +206,12 @@ router.post('/problem-description', verifyToken, async (req, res) => {
 
   } catch (error) {
     console.error('Error generating problem description:', error);
-    res.status(500).json({ error: 'Failed to generate problem description', details: error.message });
+    return sendAiError(res, error);
   }
 });
 
 // POST /api/ai/edge-cases
-router.post('/edge-cases', verifyToken, async (req, res) => {
+router.post('/edge-cases', verifyToken, validate(S.ai.edgeCases), aiLimit('heavy'), async (req, res) => {
   try {
     const { title, description, examples, constraints, functionSignature, providedSolution } = req.body;
     
@@ -245,12 +257,12 @@ router.post('/edge-cases', verifyToken, async (req, res) => {
     res.json(edgeCases);
   } catch (error) {
     console.error('Error generating edge cases:', error);
-    res.status(500).json({ error: error.message || 'Failed to generate edge cases' });
+    return sendAiError(res, error);
   }
 });
 
 // POST /api/ai/learning-notes
-router.post('/learning-notes', verifyToken, async (req, res) => {
+router.post('/learning-notes', verifyToken, validate(S.ai.learningNotes), aiLimit('standard'), async (req, res) => {
   try {
     const { pattern, topic, forceRefresh } = req.body;
 
@@ -287,7 +299,7 @@ router.post('/learning-notes', verifyToken, async (req, res) => {
 
   } catch (error) {
     console.error('Error generating learning notes:', error);
-    res.status(500).json({ error: 'Failed to generate learning notes', details: error.message });
+    return sendAiError(res, error);
   }
 });
 
@@ -295,7 +307,7 @@ router.post('/learning-notes', verifyToken, async (req, res) => {
 // POST /api/ai/test-cases
 // Generate 20 high-quality test cases (OpenRouter)
 // ============================================================
-router.post('/test-cases', verifyToken, async (req, res) => {
+router.post('/test-cases', verifyToken, validate(S.ai.testCases), aiLimit('heavy'), async (req, res) => {
   try {
     const { title, description, constraints, functionSignature, forceRefresh } = req.body;
     
@@ -332,7 +344,7 @@ router.post('/test-cases', verifyToken, async (req, res) => {
     res.json(testCases);
   } catch (error) {
     console.error('Error generating test cases:', error);
-    res.status(500).json({ error: error.message || 'Failed to generate test cases' });
+    return sendAiError(res, error);
   }
 });
 
@@ -340,7 +352,7 @@ router.post('/test-cases', verifyToken, async (req, res) => {
 // POST /api/ai/solution
 // Generate hints + solution (OpenRouter) - INDEPENDENT endpoint
 // ============================================================
-router.post('/solution', verifyToken, async (req, res) => {
+router.post('/solution', verifyToken, validate(S.ai.solution), aiLimit('heavy'), async (req, res) => {
   try {
     const { title, description, difficulty, functionSignature, testCases } = req.body;
     
@@ -367,7 +379,7 @@ router.post('/solution', verifyToken, async (req, res) => {
     res.json(solutionData);
   } catch (error) {
     console.error('Error generating solution:', error);
-    res.status(500).json({ error: error.message || 'Failed to generate solution' });
+    return sendAiError(res, error);
   }
 });
 
@@ -375,7 +387,7 @@ router.post('/solution', verifyToken, async (req, res) => {
 // POST /api/ai/analyze-code
 // Analyze user's code with comprehensive feedback
 // ============================================================
-router.post('/analyze-code', verifyToken, async (req, res) => {
+router.post('/analyze-code', verifyToken, validate(S.ai.analyzeCode), aiLimit('heavy'), async (req, res) => {
   try {
     const { code, problemDescription, examples, constraints, optimalComplexity, executionFeedback } = req.body;
     
@@ -397,7 +409,7 @@ router.post('/analyze-code', verifyToken, async (req, res) => {
     res.json(analysis);
   } catch (error) {
     console.error('Error analyzing code:', error);
-    res.status(500).json({ error: error.message || 'Failed to analyze code' });
+    return sendAiError(res, error);
   }
 });
 
@@ -405,7 +417,7 @@ router.post('/analyze-code', verifyToken, async (req, res) => {
 // POST /api/ai/debrief/questions
 // Get probing questions for debrief
 // ============================================================
-router.post('/debrief/questions', verifyToken, async (req, res) => {
+router.post('/debrief/questions', verifyToken, validate(S.ai.debriefQuestions), aiLimit('standard'), async (req, res) => {
   try {
     const { title, difficulty } = req.body;
     if (!title) return res.status(400).json({ error: 'Title is required' });
@@ -414,7 +426,7 @@ router.post('/debrief/questions', verifyToken, async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('Error getting debrief questions:', error);
-    res.status(500).json({ error: 'Failed to generate questions' });
+    return sendAiError(res, error);
   }
 });
 
@@ -422,7 +434,7 @@ router.post('/debrief/questions', verifyToken, async (req, res) => {
 // POST /api/ai/debrief/analyze
 // Analyze answers and return confidence score + advice
 // ============================================================
-router.post('/debrief/analyze', verifyToken, async (req, res) => {
+router.post('/debrief/analyze', verifyToken, validate(S.ai.debriefAnalyze), aiLimit('standard'), async (req, res) => {
   try {
     const { title, questions, answers } = req.body;
     if (!title || !questions || !answers) {
@@ -433,7 +445,7 @@ router.post('/debrief/analyze', verifyToken, async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('Error analyzing debrief:', error);
-    res.status(500).json({ error: 'Failed to analyze debrief' });
+    return sendAiError(res, error);
   }
 });
 

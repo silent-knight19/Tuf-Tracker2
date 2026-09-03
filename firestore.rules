@@ -1,0 +1,137 @@
+// TufTracker 2 — Firestore Security Rules (S3 authored, S12 hardened).
+//
+// Defense in depth behind the Express API (which uses the Admin SDK and
+// bypasses these rules). Direct client-SDK access is deny-by-default:
+// owners can read/write ONLY their own docs, server-controlled collections
+// are server-only, and ownership fields are immutable.
+//
+// Deploy:  firebase deploy --only firestore:rules
+// Test:    firebase emulators:exec --only firestore "npm run test:rules"
+//          (S19 wires the emulator matrix; S3 covers server-side tests.)
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    // Owner value must be stable across updates (no ownership transfer,
+    // no UID swapping via crafted writes).
+    function ownerUnchanged() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+    // ---- users/{uid}: owner-read, server-write-only ---------------------
+    // XP / streaks / aggregates are computed server-side (revision review
+    // path). No client — not even the owner — may write here, so users can
+    // never self-award XP, streaks, or readiness state.
+    match /users/{uid} {
+      allow get: if isOwner(uid);
+      allow list: if false;
+      allow create, update, delete: if false;
+    }
+
+    // ---- problems/{problemId}: strict owner scope -----------------------
+    // S12: key allowlists mirror the API contract. Clients may only create
+    // known fields and may never touch server-controlled scheduling/identity
+    // fields on update — forged difficulty/topics poison only the author's
+    // own analytics, and even that is schema-bounded.
+    function problemCreateKeysOk() {
+      return request.resource.data.keys().hasOnly([
+        'userId', 'title', 'platform', 'platformUrl', 'difficulty', 'topics',
+        'patterns', 'companies', 'notes', 'approach', 'code', 'solvedAt',
+        'revisionDates', 'nextRevision', 'isAIGenerated', 'createdAt',
+        'updatedAt', 'description', 'aiNotes'
+      ]);
+    }
+    function problemUpdateKeysOk() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'notes', 'approach', 'code', 'difficulty', 'topics', 'patterns',
+        'updatedAt'
+      ]);
+    }
+    match /problems/{problemId} {
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && problemCreateKeysOk();
+      allow get, list: if signedIn()
+        && resource.data.userId == request.auth.uid;
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && ownerUnchanged()
+        && problemUpdateKeysOk();
+      allow delete: if signedIn()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // ---- revisions/{revisionId}: strict owner scope ---------------------
+    // userId AND problemId are immutable: a revision can never be re-pointed
+    // at another user's problem or re-owned.
+    // S12: XP-adjacent scheduling fields (phase, nextDueDate, scheduledReviews,
+    // totalReviews, archived, …) are server-only — the review endpoint mutates
+    // them via the Admin SDK, so clients can never self-advance schedules or
+    // forge the counters XP is computed from.
+    function revisionCreateKeysOk() {
+      return request.resource.data.keys().hasOnly([
+        'userId', 'problemId', 'problemTitle', 'pattern', 'patterns', 'topics',
+        'difficulty', 'coreIdea', 'algorithmSteps', 'edgeCases', 'notes',
+        'confidenceScore', 'aiAdvice', 'phase', 'nextDueDate',
+        'scheduledReviews', 'totalReviews', 'lastReviewedAt', 'archived',
+        'createdAt', 'updatedAt'
+      ]);
+    }
+    function revisionUpdateKeysOk() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'problemTitle', 'pattern', 'patterns', 'topics', 'difficulty',
+        'coreIdea', 'algorithmSteps', 'edgeCases', 'notes', 'confidenceScore',
+        'aiAdvice', 'updatedAt'
+      ]);
+    }
+    match /revisions/{revisionId} {
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && revisionCreateKeysOk();
+      allow get, list: if signedIn()
+        && resource.data.userId == request.auth.uid;
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && ownerUnchanged()
+        && request.resource.data.problemId == resource.data.problemId
+        && revisionUpdateKeysOk();
+      allow delete: if signedIn()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // ---- AI caches: server-only -----------------------------------------
+    // Shared, title-keyed cost-saving caches. Served exclusively through the
+    // API (Admin SDK bypasses rules); clients must not read/write them
+    // directly — this also blocks client-side cache poisoning.
+    match /ai_cache_help/{doc} { allow read, write: if false; }
+    match /ai_cache_notes/{doc} { allow read, write: if false; }
+    match /ai_cache_descriptions/{doc} { allow read, write: if false; }
+    match /ai_cache_edgecases/{doc} { allow read, write: if false; }
+    match /ai_cache_learning/{doc} { allow read, write: if false; }
+    match /ai_cache_testcases/{doc} { allow read, write: if false; }
+    match /ai_cache_solutions/{doc} { allow read, write: if false; }
+
+    // ---- quotes: public read (shown pre-login), server-write-only -------
+    match /quotes/{quoteId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    // ---- default deny ----------------------------------------------------
+    // No other collection is client-accessible. New collections MUST add an
+    // explicit match block here AND a server-side ownership check (S3).
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

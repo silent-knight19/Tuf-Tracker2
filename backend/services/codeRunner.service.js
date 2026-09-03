@@ -1,10 +1,39 @@
-const { exec } = require('child_process');
+/**
+ * S5: hostile-workload executor. User Java is untrusted input, not data.
+ *
+ * Shell elimination: every process is spawned with execFile argv arrays —
+ * there is NO shell, so no user-influenced string is ever interpreted
+ * (no `bash -c`, no glob expansion, no interpolation). The `timeout(1)`
+ * binary (Linux/production) is itself an argv element, not a shell wrapper.
+ *
+ * Portable controls (verified in CI/dev AND production):
+ *  temp dirs 0700 with random names, TMPDIR inside the sandbox, minimal env,
+ *  JVM heap/stack/direct-memory caps, user.dir pinned to the sandbox,
+ *  explicit .java file lists (no globs), .class count + sandbox size caps,
+ *  Node + kernel timeouts, per-stream output truncation, service-level input
+ *  caps (internal AI callers bypass HTTP validation).
+ *
+ * Explicitly NOT provided here (needs platform isolation → S17 + §8 of
+ * docs/security/s5-code-runner.md): user/cgroup/network namespaces, seccomp,
+ * read-only rootfs, UID separation. This module must never be described as
+ * a complete sandbox on its own.
+ */
+const { execFile } = require('child_process');
 const { promisify } = require('util');
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
 
-const execPromise = promisify(exec);
+const execFilePromise = promisify(execFile);
+const { runnerPool } = require('./runner.pool');
+
+// Service-level backstops (HTTP validation in S4 is the first gate; AI
+// service paths call runJava directly and must hit these).
+const MAX_SOURCE_BYTES = 100 * 1024;
+const MAX_STDIN_BYTES = 256 * 1024;
+const MAX_OUTPUT_BYTES = 100 * 1024;
+const MAX_CLASS_FILES = 64;
+const MAX_SANDBOX_BYTES = 10 * 1024 * 1024;
 
 class CodeRunnerService {
   constructor() {
@@ -13,23 +42,61 @@ class CodeRunnerService {
       run: 10000
     };
     this.maxBuffer = 1024 * 1024;
-    
-    // Platform detection: ulimit/timeout work on Linux but not macOS
+
+    // Platform detection: timeout(1) exists on Linux/production, not macOS.
     this.isLinux = os.platform() === 'linux';
-    
-    // Security limits for sandboxed execution (applied on Linux/production only)
+
     this.limits = {
-      maxProcesses: 50,       // Prevents fork bombs during runtime (-u)
-      maxFileSizeKB: 10240,   // 10MB max file writes (-f)
-      timeoutSeconds: 10       // Kernel-level timeout
+      compileTimeoutSeconds: 25,
+      runTimeoutSeconds: 10,
+      maxClassFiles: MAX_CLASS_FILES,
+      maxSandboxBytes: MAX_SANDBOX_BYTES,
     };
   }
 
-  async runJava(source, stdin = '') {
+  /**
+   * Execute hostile Java with admission control.
+   * `opts.principal` (token uid for HTTP, 'internal:ai' for AI validation)
+   * keys the S6 pool: overload returns a retryable result, never throws.
+   */
+  async runJava(source, stdin = '', opts = {}) {
     const startTime = Date.now();
     let tempDir = null;
-    
+    let slot = null;
+
+    // S6: admission BEFORE any work (compile included). Fail fast when the
+    // pool is saturated so a volley degrades to 429s, not to a dead backend.
     try {
+      slot = await runnerPool.acquire(opts.principal || 'anonymous');
+    } catch (poolError) {
+      try {
+        require('./securityLog').secEvent('runner.rejected', { principal: opts.principal || 'anonymous' }, { result: 'deny', reason: 'pool-saturated' });
+      } catch { /* logging never breaks execution */ }
+      return {
+        stdout: '',
+        stderr: 'Server busy: too many concurrent executions. Try again shortly.',
+        exitCode: 1,
+        timedOut: false,
+        stage: 'queued',
+        retryable: true
+      };
+    }
+
+    try {
+      // Service-level backstops for direct (non-HTTP) callers.
+      if (Buffer.byteLength(source || '', 'utf8') > MAX_SOURCE_BYTES) {
+        try {
+          require('./securityLog').secEvent('runner.rejected', { principal: opts.principal || 'anonymous' }, { result: 'deny', reason: 'source-cap' });
+        } catch { /* logging never breaks execution */ }
+        throw new Error('Source code too large');
+      }
+      if (Buffer.byteLength(stdin || '', 'utf8') > MAX_STDIN_BYTES) {
+        try {
+          require('./securityLog').secEvent('runner.rejected', { principal: opts.principal || 'anonymous' }, { result: 'deny', reason: 'input-cap' });
+        } catch { /* logging never breaks execution */ }
+        throw new Error('Input too large');
+      }
+
       tempDir = await this.createTempDir();
       const isDirectMain = source.includes('public static void main(String[] args)');
 
@@ -59,24 +126,34 @@ class CodeRunnerService {
 
       // Execute
       const runResult = await this.execute(tempDir, stdin, isDirectMain);
-      
+
       return {
         stdout: runResult.stdout,
         stderr: runResult.stderr,
         exitCode: runResult.exitCode,
         timedOut: runResult.timedOut,
+        truncated: !!runResult.truncated,
         stage: 'run'
       };
 
     } catch (error) {
+      // S11: internal failures are generic to callers; detail goes to
+      // scrubbed logs only. (HTTP callers get precise S4 400s first.)
+      try {
+        const { scrub } = require('../middleware/errors');
+        console.error('[runner] internal failure:', JSON.stringify(scrub(error)).slice(0, 500));
+      } catch {
+        console.error('[runner] internal failure (unloggable)');
+      }
       return {
         stdout: '',
-        stderr: `Server Error: ${error.message}`,
+        stderr: 'Server error',
         exitCode: 1,
         timedOut: false,
         stage: 'error'
       };
     } finally {
+      if (slot) slot.release();
       if (tempDir) {
         await this.cleanup(tempDir);
       }
@@ -108,14 +185,24 @@ class CodeRunnerService {
 
   async createTempDir() {
     const prefix = path.join(os.tmpdir(), 'java-');
-    return await fs.mkdtemp(prefix);
+    const dir = await fs.mkdtemp(prefix);
+    // Owner-only: sibling users/processes on shared /tmp must not list,
+    // read, or plant files (classpath poisoning) in our sandbox.
+    await fs.chmod(dir, 0o700);
+    return dir;
   }
 
-  getSafeEnv() {
+  /**
+   * Minimal environment for the child. Secrets are NEVER passed through:
+   * the backend process env (Firebase/AI keys) is not inherited.
+   * TMPDIR points inside the sandbox so JVM temp files are contained and
+   * removed by cleanup().
+   */
+  getSafeEnv(tempDir) {
     return {
-      PATH: process.env.PATH || '/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin',
+      PATH: '/usr/bin:/bin',
       JAVA_HOME: process.env.JAVA_HOME || '',
-      TMPDIR: os.tmpdir(),
+      TMPDIR: tempDir,
       LANG: 'en_US.UTF-8',
       LC_ALL: 'en_US.UTF-8'
     };
@@ -126,67 +213,151 @@ class CodeRunnerService {
     return `// === Solution.java ===\n${solutionInfo.code}\n\n// === Main.java (Reflection Runner) ===\n${this.getRunnerCode()}\n\n// === input.json ===\n${testInput}`;
   }
 
+  /**
+   * Build the compile argv. Returns { cmd, args } — never a shell string.
+   * On Linux the `timeout(1)` binary provides the kernel-level kill; the
+   * Node-level timeout below it is the backstop (and the only one on macOS).
+   * Exposed for tests (assert no shell, assert flags).
+   */
+  buildCompileCommand(javaFiles) {
+    const javacArgs = [
+      '-J-Xmx128m', '-J-Xms16m', '-encoding', 'UTF-8',
+      ...javaFiles,
+    ];
+    if (this.isLinux) {
+      return {
+        cmd: 'timeout',
+        args: ['-k', '5s', `${this.limits.compileTimeoutSeconds}s`, 'javac', ...javacArgs],
+      };
+    }
+    return { cmd: 'javac', args: javacArgs };
+  }
+
+  /**
+   * Build the run argv. JVM flags bound the heap, per-thread stack (deep
+   * recursion dies fast with StackOverflowError instead of consuming RAM),
+   * direct buffers, and pin user.dir to the sandbox so relative file access
+   * cannot reach the application tree by accident (absolute paths remain a
+   * platform-isolation problem → S17).
+   */
+  buildRunCommand(tempDir, extraArgs) {
+    const javaArgs = [
+      '-Xmx64m', '-Xms16m',
+      '-Xss256k',
+      '-XX:MaxDirectMemorySize=16m',
+      `-Duser.dir=${tempDir}`,
+      'Main',
+      ...extraArgs,
+    ];
+    if (this.isLinux) {
+      return {
+        cmd: 'timeout',
+        args: ['-k', '3s', `${this.limits.runTimeoutSeconds}s`, 'java', ...javaArgs],
+      };
+    }
+    return { cmd: 'java', args: javaArgs };
+  }
+
+  /** Compiler-bomb backstop: cap emitted class count + sandbox footprint. */
+  async enforceCompileCaps(tempDir) {
+    let classFiles = 0;
+    let totalBytes = 0;
+    const stack = [tempDir];
+    while (stack.length > 0) {
+      const dir = stack.pop();
+      const items = await fs.readdir(dir, { withFileTypes: true });
+      for (const item of items) {
+        const full = path.join(dir, item.name);
+        if (item.isDirectory()) {
+          stack.push(full);
+        } else {
+          if (item.name.endsWith('.class')) classFiles += 1;
+          try {
+            totalBytes += (await fs.stat(full)).size;
+          } catch {
+            // Raced deletion — ignore, cleanup handles it.
+          }
+        }
+      }
+    }
+    if (classFiles > this.limits.maxClassFiles || totalBytes > this.limits.maxSandboxBytes) {
+      throw new Error('Compilation produced too many artifacts');
+    }
+  }
+
+  /** Truncate a stream to the output budget, flagging truncation. */
+  clipOutput(text) {
+    const s = text || '';
+    if (Buffer.byteLength(s, 'utf8') <= MAX_OUTPUT_BYTES) return { text: s, truncated: false };
+    return { text: Buffer.from(s, 'utf8').subarray(0, MAX_OUTPUT_BYTES).toString('utf8'), truncated: true };
+  }
+
   async compile(tempDir, isDirectMain) {
     try {
-      // On Linux (production): Use ulimit for file size limit + timeout
-      // On macOS (development): Just run javac with Node.js timeout
-      const javaCmd = 'javac -J-Xmx128m -J-Xms16m -encoding UTF-8 *.java';
-      const cmd = this.isLinux 
-        ? `bash -c "ulimit -f ${this.limits.maxFileSizeKB} && timeout 25s ${javaCmd}"`
-        : javaCmd;
-      
-      await execPromise(cmd, {
+      // Explicit file list — no glob, no shell. Only files this module wrote
+      // can exist here (0700 dir), but never trust the directory listing for
+      // anything but .java names we created.
+      const items = await fs.readdir(tempDir);
+      const javaFiles = items.filter((f) => f.endsWith('.java')).sort();
+      if (javaFiles.length === 0 || javaFiles.length > 8) {
+        return { success: false, error: 'Unexpected source layout' };
+      }
+
+      const { cmd, args } = this.buildCompileCommand(javaFiles);
+      await execFilePromise(cmd, args, {
         cwd: tempDir,
         timeout: this.timeout.compile,
         maxBuffer: this.maxBuffer,
-        env: this.getSafeEnv()
+        env: this.getSafeEnv(tempDir),
+        windowsHide: true,
       });
+      await this.enforceCompileCaps(tempDir);
       return { success: true };
     } catch (error) {
       let msg = error.stderr || error.stdout || error.message || 'Compilation failed';
-      // Clean up error message to hide internal paths
+      // Hide internal paths (temp dir name is random per run, still strip it).
       const escapedPath = tempDir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       msg = msg.replace(new RegExp(escapedPath + '/?', 'g'), '');
-      return { success: false, error: msg.trim() };
+      return { success: false, error: this.clipOutput(msg.trim()).text };
     }
   }
 
   async execute(tempDir, stdin, isDirectMain) {
     try {
-      const javaArgs = isDirectMain ? 'Main' : 'Main input.json';
-      const javaCmd = `java -Xmx64m -Xms16m ${javaArgs}`;
-      
-      // On Linux (production): SANDBOXED EXECUTION with ulimit + timeout
-      // - ulimit -u: Limits max processes (fork bomb protection)
-      // - ulimit -f: Limits file size (disk abuse protection)
-      // - timeout: Kernel-level timeout (more reliable than Node.js)
-      // On macOS (development): Just run java with Node.js timeout
-      const cmd = this.isLinux
-        ? `bash -c "ulimit -u ${this.limits.maxProcesses} -f ${this.limits.maxFileSizeKB} && timeout ${this.limits.timeoutSeconds}s ${javaCmd}"`
-        : javaCmd;
-      
-      const result = await execPromise(cmd, {
+      const extraArgs = isDirectMain ? [] : ['input.json'];
+      const { cmd, args } = this.buildRunCommand(tempDir, extraArgs);
+
+      const result = await execFilePromise(cmd, args, {
         cwd: tempDir,
         timeout: this.timeout.run + 2000, // Node timeout slightly longer for safety
         maxBuffer: this.maxBuffer,
-        env: this.getSafeEnv(),
+        env: this.getSafeEnv(tempDir),
+        windowsHide: true,
         input: isDirectMain ? stdin : undefined
       });
 
+      const out = this.clipOutput(result.stdout);
+      const err = this.clipOutput(result.stderr);
       return {
-        stdout: result.stdout || '',
-        stderr: result.stderr || '',
+        stdout: out.text,
+        stderr: err.truncated ? `${err.text}\n[truncated]` : err.text,
         exitCode: 0,
-        timedOut: false
+        timedOut: false,
+        truncated: out.truncated
       };
 
     } catch (error) {
-      // Exit code 124 = timeout command killed the process (Linux only)
+      // Exit code 124 = timeout(1) killed the process (Linux only).
+      // err.killed = Node-level timeout fired. maxBuffer exceed carries
+      // partial stdio on the error object — preserve it, clipped.
       const timedOut = error.killed || error.code === 124;
+      const out = this.clipOutput(error.stdout);
+      const rawErr = timedOut ? 'Execution Timed Out' : (error.stderr || error.message);
+      const err = this.clipOutput(rawErr);
       return {
-        stdout: error.stdout || '',
-        stderr: timedOut ? 'Execution Timed Out' : (error.stderr || error.message),
-        exitCode: error.code || 1,
+        stdout: out.text,
+        stderr: err.text,
+        exitCode: typeof error.code === 'number' ? error.code : 1,
         timedOut
       };
     }
@@ -457,4 +628,13 @@ public class Main {
   }
 }
 
-module.exports = new CodeRunnerService();
+const service = new CodeRunnerService();
+// Test-visible budgets (S5/S6 regression surface).
+service.constants = {
+  MAX_SOURCE_BYTES,
+  MAX_STDIN_BYTES,
+  MAX_OUTPUT_BYTES,
+  MAX_CLASS_FILES,
+  MAX_SANDBOX_BYTES,
+};
+module.exports = service;

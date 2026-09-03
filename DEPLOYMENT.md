@@ -23,13 +23,17 @@ We use **Render** for the backend because it supports Docker, which allows us to
     *   **Runtime:** `Docker` (Important! Do not select Node)
     *   **Region:** Select one close to you (e.g., Singapore, Oregon).
     *   **Instance Type:** Free (or Starter).
-5.  **Environment Variables:**
-    Scroll down to "Environment Variables" and add the following:
+5.  **Environment Variables (S17: dashboard-only, never in git):**
+    The blueprint (`render.yaml`) declares every variable with `sync: false`,
+    so values live ONLY in the Render dashboard. Scroll down to "Environment Variables" and set:
     *   `PORT`: `3001`
-    *   `GEMINI_API_KEY`: `your_gemini_api_key`
+    *   `FRONTEND_URL`: `https://your-frontend.vercel.app` (no trailing slash — required; boot refuses localhost in production)
+    *   `BACKEND_URL`: `https://tuftracker-backend.onrender.com` (no trailing slash, not localhost)
+    *   `GROQ_API_KEY`: `your_groq_api_key`
     *   `FIREBASE_DATABASE_URL`: `your_firebase_database_url` (if used)
     *   `FIREBASE_SERVICE_ACCOUNT`: Paste the **entire content** of your `serviceAccountKey.json` file as a single string.
         *   *Note: Ensure there are no newlines if possible, though Render usually handles it.*
+    *   `ADMIN_EMAILS`: `you@example.com` (admin allowlist for `POST /api/quotes/refresh`; unset = deny-all)
 6.  Click **Create Web Service**.
 
 Render will now build your Docker image (installing Node.js and Java) and deploy the server.
@@ -80,5 +84,6 @@ Vercel will build and deploy your frontend.
 
 ## Troubleshooting
 
-*   **Backend Health Check:** Visit `https://your-backend-url.onrender.com/` to see if it responds (e.g., "API is running").
+*   **Backend Health Check:** Visit `https://your-backend-url.onrender.com/health` — expect `{"status":"ok",...}`. (`/` is not a route; the platform health gate uses `/health`.)
+*   **Hardening notes (S17):** the image runs as unprivileged `node` (never root) on Node 22 LTS, installs production deps only (`npm ci`), and exposes nothing but the API port. Render free-tier disks are **ephemeral**: the company-tags file write-back is best-effort and inert in production (in-memory data rules). For no-sleep + steadier runner performance, prefer the **Starter** instance type over Free (billing decision — not set in `render.yaml`). The Java runner shares this container (see `docs/security/s5-code-runner.md`); a dedicated isolated runner service is the tracked follow-up, not part of this deploy.
 *   **Frontend API Connection:** Open the browser console on your deployed site. If you see CORS errors or 404s, check the `VITE_API_URL` variable in Vercel.

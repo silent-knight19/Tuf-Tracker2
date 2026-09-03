@@ -1,7 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { db, admin } = require('../config/firebase.config');
+const { db } = require('../config/firebase.config');
 const { verifyToken } = require('./auth.routes');
+const { validate } = require('../middleware/validate');
+const S = require('../middleware/schemas');
+const { limitTier } = require('../middleware/rateLimit');
+const { denyAuthz } = require('../middleware/errors');
+const { aiLimit, sendAiError } = require('../services/ai.limits');
 const problemAnalyzer = require('../services/problem-analyzer.service');
 const revisionService = require('../services/revision.service');
 const spacedRepetitionService = require('../services/spaced-repetition.service');
@@ -10,7 +15,7 @@ const cacheService = require('../services/cache.service');
 const companyReadiness = require('../services/company-readiness.service');
 
 // GET /api/problems - Get all problems for a user
-router.get('/', verifyToken, async (req, res) => {
+router.get('/', verifyToken, validate(S.problems.list), limitTier('standard'), async (req, res) => {
   try {
     console.log('--- FETCHING PROBLEMS ---');
     console.log('Current user UID:', req.user.uid);
@@ -92,7 +97,7 @@ router.get('/', verifyToken, async (req, res) => {
 });
 
 // POST /api/problems - Add a new problem
-router.post('/', verifyToken, async (req, res) => {
+router.post('/', verifyToken, validate(S.problems.create), limitTier('create'), async (req, res) => {
   try {
     const { title, platform, platformUrl, notes, approach, code } = req.body;
 
@@ -213,7 +218,7 @@ router.post('/', verifyToken, async (req, res) => {
 });
 
 // GET /api/problems/:id - Get a single problem
-router.get('/:id', verifyToken, async (req, res) => {
+router.get('/:id', verifyToken, validate(S.problems.byId), limitTier('standard'), async (req, res) => {
   try {
     const doc = await db.collection('problems').doc(req.params.id).get();
 
@@ -225,7 +230,7 @@ router.get('/:id', verifyToken, async (req, res) => {
 
     // Verify ownership
     if (problem.userId !== req.user.uid) {
-      return res.status(403).json({ error: 'Unauthorized' });
+      return denyAuthz(res, req, 'problems:item');
     }
 
     // Lazy migration: If companies/patterns are missing or outdated, re-analyze and update
@@ -272,7 +277,7 @@ router.get('/:id', verifyToken, async (req, res) => {
 });
 
 // PUT /api/problems/:id - Update a problem
-router.put('/:id', verifyToken, async (req, res) => {
+router.put('/:id', verifyToken, validate(S.problems.update), limitTier('standard'), async (req, res) => {
   try {
     const { notes, approach, code, difficulty, topics, patterns, aiNotes } = req.body;
 
@@ -285,7 +290,7 @@ router.put('/:id', verifyToken, async (req, res) => {
     const problem = doc.data();
 
     if (problem.userId !== req.user.uid) {
-      return res.status(403).json({ error: 'Unauthorized' });
+      return denyAuthz(res, req, 'problems:item');
     }
 
     const updates = {
@@ -310,7 +315,7 @@ router.put('/:id', verifyToken, async (req, res) => {
 });
 
 // DELETE /api/problems/:id - Delete a problem
-router.delete('/:id', verifyToken, async (req, res) => {
+router.delete('/:id', verifyToken, validate(S.problems.byId), limitTier('standard'), async (req, res) => {
   try {
     const doc = await db.collection('problems').doc(req.params.id).get();
 
@@ -321,7 +326,7 @@ router.delete('/:id', verifyToken, async (req, res) => {
     const problem = doc.data();
 
     if (problem.userId !== req.user.uid) {
-      return res.status(403).json({ error: 'Unauthorized' });
+      return denyAuthz(res, req, 'problems:item');
     }
 
     await db.collection('problems').doc(req.params.id).delete();
@@ -350,7 +355,7 @@ router.delete('/:id', verifyToken, async (req, res) => {
 });
 
 // POST /api/problems/analyze - Analyze a problem without saving
-router.post('/analyze', verifyToken, async (req, res) => {
+router.post('/analyze', verifyToken, validate(S.problems.analyze), limitTier('create'), aiLimit('standard'), async (req, res) => {
   try {
     const { title, platform, platformUrl } = req.body;
 
@@ -367,12 +372,12 @@ router.post('/analyze', verifyToken, async (req, res) => {
     res.json(analysis);
   } catch (error) {
     console.error('Error analyzing problem:', error);
-    res.status(500).json({ error: 'Failed to analyze problem' });
+    return sendAiError(res, error);
   }
 });
 
 // POST /api/problems/:id/generate-notes - Generate AI study notes for a problem
-router.post('/:id/generate-notes', verifyToken, async (req, res) => {
+router.post('/:id/generate-notes', verifyToken, validate({ params: S.problems.byId.params, body: S.problems.forceRefreshBody.body }), limitTier('standard'), aiLimit('standard'), async (req, res) => {
   try {
     const doc = await db.collection('problems').doc(req.params.id).get();
 
@@ -383,7 +388,7 @@ router.post('/:id/generate-notes', verifyToken, async (req, res) => {
     const problem = doc.data();
 
     if (problem.userId !== req.user.uid) {
-      return res.status(403).json({ error: 'Unauthorized' });
+      return denyAuthz(res, req, 'problems:item');
     }
 
     const aiService = require('../services/ai.service');
@@ -416,13 +421,13 @@ router.post('/:id/generate-notes', verifyToken, async (req, res) => {
     res.json({ notes });
   } catch (error) {
     console.error('Error generating notes:', error);
-    res.status(500).json({ error: error.message || 'Failed to generate notes' });
+    return sendAiError(res, error);
   }
 });
 
 // POST /api/problems/generate-notes-preview - Generate AI study notes
 // SECURED: Requires authentication to protect AI quota
-router.post('/generate-notes-preview', verifyToken, async (req, res) => {
+router.post('/generate-notes-preview', verifyToken, validate(S.problems.generateNotesPreview), limitTier('standard'), aiLimit('standard'), async (req, res) => {
   try {
     const { title, platform, platformUrl, difficulty, topics, patterns } = req.body;
 
@@ -460,13 +465,13 @@ router.post('/generate-notes-preview', verifyToken, async (req, res) => {
     res.json({ notes });
   } catch (error) {
     console.error('Error generating preview notes:', error);
-    res.status(500).json({ error: error.message || 'Failed to generate study notes. Please try again.' });
+    return sendAiError(res, error);
   }
 });
 
 // POST /api/problems/generate-description-preview - Generate description
 // SECURED: Requires authentication to protect AI quota
-router.post('/generate-description-preview', verifyToken, async (req, res) => {
+router.post('/generate-description-preview', verifyToken, validate(S.problems.generateDescriptionPreview), limitTier('standard'), aiLimit('standard'), async (req, res) => {
   try {
     const { title, platform, difficulty, topics, patterns } = req.body;
 
@@ -493,32 +498,30 @@ router.post('/generate-description-preview', verifyToken, async (req, res) => {
     res.json({ description });
   } catch (error) {
     console.error('Error generating preview description:', error);
-    res.status(500).json({ error: error.message || 'Failed to generate problem description. Please try again.' });
+    return sendAiError(res, error);
   }
 });
 
 // Generate problem description
-router.post('/:id/generate-description', verifyToken, async (req, res) => {
+// S3: canonical `problems` collection + ownership check. The previous
+// implementation read/wrote `users/{uid}/problems/{id}` (a collection nothing
+// else uses) and persisted the raw request body (`...problem`) — both removed.
+// The request body is no longer used for persistence.
+router.post('/:id/generate-description', verifyToken, validate(S.problems.generateDescription), limitTier('standard'), aiLimit('standard'), async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.uid;
 
-    // Try to get the problem from Firestore
-    const problemRef = db.collection('users').doc(userId).collection('problems').doc(id);
+    const problemRef = db.collection('problems').doc(id);
     const problemDoc = await problemRef.get();
 
-    let problem;
-    let shouldSave = false;
-
     if (!problemDoc.exists) {
-      // If problem doesn't exist in Firestore, use data from request body
-      if (!req.body.title) {
-        return res.status(404).json({ error: 'Problem not found and no problem data provided' });
-      }
-      problem = req.body;
-      shouldSave = true; // We'll create it after generating description
-    } else {
-      problem = problemDoc.data();
+      return res.status(404).json({ error: 'Problem not found' });
+    }
+
+    const problem = problemDoc.data();
+
+    if (!problem || problem.userId !== req.user.uid) {
+      return denyAuthz(res, req, 'problems:item');
     }
 
     const cacheKey = `desc_${cacheService.normalizeKey(problem.title)}`;
@@ -537,27 +540,15 @@ router.post('/:id/generate-description', verifyToken, async (req, res) => {
       }
     );
 
-    // Update or create problem with description
-    if (shouldSave) {
-      // Create new problem document with the description
-      await problemRef.set({
-        ...problem,
-        description,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-    } else {
-      // Update existing problem
-      await problemRef.update({
-        description,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-    }
+    await problemRef.update({
+      description,
+      updatedAt: new Date()
+    });
 
     res.json({ description });
   } catch (error) {
     console.error('Error generating problem description:', error);
-    res.status(500).json({ error: error.message });
+    return sendAiError(res, error);
   }
 });
 

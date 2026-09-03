@@ -4,22 +4,29 @@
 
 const express = require('express');
 const router = express.Router();
-const { exec } = require('child_process');
+// S5: execFile argv only — no shell anywhere on the runner surface.
+const { execFile } = require('child_process');
 const { promisify } = require('util');
 const codeRunnerService = require('../services/codeRunner.service');
 const { verifyToken } = require('./auth.routes');
+// S2: diagnostics burn CPU / disclose runner internals — authenticated only.
+// (No frontend caller uses these; only POST /java is used by the UI.)
+const { authenticate } = require('../middleware/auth.middleware');
+const { validate } = require('../middleware/validate');
+const S = require('../middleware/schemas');
+const { limitTier } = require('../middleware/rateLimit');
 
-const execPromise = promisify(exec);
+const execFilePromise = promisify(execFile);
 
 /**
  * GET /api/run/status
  * Health check endpoint - verifies Java is available
  */
-router.get('/status', async (req, res) => {
+router.get('/status', limitTier('public'), async (req, res) => {
   try {
     const [javaResult, javacResult] = await Promise.all([
-      execPromise('java -version', { timeout: 5000 }).catch(e => ({ stderr: e.stderr || e.message })),
-      execPromise('javac -version', { timeout: 5000 }).catch(e => ({ stderr: e.stderr || e.message }))
+      execFilePromise('java', ['-version'], { timeout: 5000 }).catch(e => ({ stderr: e.stderr || e.message })),
+      execFilePromise('javac', ['-version'], { timeout: 5000 }).catch(e => ({ stderr: e.stderr || e.message }))
     ]);
 
     res.json({
@@ -35,9 +42,11 @@ router.get('/status', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
+    // S11: toolchain internals stay server-side.
     res.status(500).json({
       status: 'ERROR',
-      error: error.message
+      error: 'Java toolchain unavailable',
+      requestId: req.id || null
     });
   }
 });
@@ -45,8 +54,9 @@ router.get('/status', async (req, res) => {
 /**
  * GET /api/run/test
  * Test endpoint - runs a simple Java program
+ * S2: authenticated (each call compiles + runs Java).
  */
-router.get('/test', async (req, res) => {
+router.get('/test', authenticate, limitTier('execute'), async (req, res) => {
   const simpleCode = `public class Main {
     public static void main(String[] args) {
         System.out.println("Hello from Java!");
@@ -65,7 +75,8 @@ router.get('/test', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: 'Test failed',
-      error: error.message
+      error: 'Execution failed',
+      requestId: req.id || null
     });
   }
 });
@@ -73,8 +84,9 @@ router.get('/test', async (req, res) => {
 /**
  * GET /api/run/debug
  * Debug endpoint - shows generated Java code for a sample Solution
+ * S2: authenticated (discloses runner internals).
  */
-router.get('/debug', (req, res) => {
+router.get('/debug', authenticate, limitTier('execute'), (req, res) => {
   const solutionCode = `class Solution {
     public int add(int a, int b) {
         return a + b;
@@ -97,7 +109,7 @@ router.get('/debug', (req, res) => {
  * Main endpoint - executes user's Java code
  * Requires authentication
  */
-router.post('/java', verifyToken, async (req, res) => {
+router.post('/java', verifyToken, validate(S.codeRunner.run), limitTier('execute'), async (req, res) => {
   const startTime = Date.now();
   
   try {
@@ -121,21 +133,33 @@ router.post('/java', verifyToken, async (req, res) => {
     console.log(`[API] Code execution request from user ${req.user?.uid || 'unknown'}`);
     console.log(`[API] Problem: ${problemId || 'N/A'}, Source: ${source.length} bytes, Stdin: ${stdin?.length || 0} bytes`);
 
-    // Execute the code
-    const result = await codeRunnerService.runJava(source, stdin || '');
+    // S6: principal-keyed admission; saturated pool degrades to 429.
+    const result = await codeRunnerService.runJava(source, stdin || '', {
+      principal: req.user?.uid || 'anonymous',
+    });
 
     const elapsed = Date.now() - startTime;
     console.log(`[API] Execution complete in ${elapsed}ms, exitCode: ${result.exitCode}`);
 
+    if (result.retryable) {
+      res.set('Retry-After', '5');
+      try {
+        require('../services/securityLog').secEvent('runner.rejected', req, { result: 'deny', reason: 'pool-saturated', retryAfterSec: 5 });
+      } catch { /* logging never breaks limiting */ }
+      return res.status(429).json(result);
+    }
+
     res.json(result);
 
   } catch (error) {
-    console.error('[API] Error in code execution:', error);
+    // S11: unexpected failures are generic + correlated; details stay in logs.
+    console.error(`[API] Error in code execution (id=${req.id || '-'}):`, error);
     res.status(500).json({
       stdout: '',
-      stderr: `Server error: ${error.message}`,
+      stderr: 'Server error',
       exitCode: 1,
-      timedOut: false
+      timedOut: false,
+      requestId: req.id || null
     });
   }
 });

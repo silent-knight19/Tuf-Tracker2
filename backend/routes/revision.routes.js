@@ -1,11 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { db } = require('../config/firebase.config');
+const { db, admin } = require('../config/firebase.config');
 const { verifyToken } = require('./auth.routes');
+const { validate } = require('../middleware/validate');
+const S = require('../middleware/schemas');
+const { limitTier } = require('../middleware/rateLimit');
+const { denyAuthz } = require('../middleware/errors');
 const spacedRepetitionService = require('../services/spaced-repetition.service');
 
 // GET /api/revisions - Get all revisions for user
-router.get('/', verifyToken, async (req, res) => {
+router.get('/', verifyToken, limitTier('standard'), async (req, res) => {
   try {
     const snapshot = await db.collection('revisions')
       .where('userId', '==', req.user.uid)
@@ -79,7 +83,7 @@ router.get('/', verifyToken, async (req, res) => {
 });
 
 // GET /api/revisions/due-today - Get problems due today
-router.get('/due-today', verifyToken, async (req, res) => {
+router.get('/due-today', verifyToken, limitTier('standard'), async (req, res) => {
   try {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -168,7 +172,7 @@ router.get('/due-today', verifyToken, async (req, res) => {
 });
 
 // GET /api/revisions/:id - Get a single revision
-router.get('/:id', verifyToken, async (req, res) => {
+router.get('/:id', verifyToken, validate(S.revisions.byId), limitTier('standard'), async (req, res) => {
   try {
     const doc = await db.collection('revisions').doc(req.params.id).get();
 
@@ -179,7 +183,7 @@ router.get('/:id', verifyToken, async (req, res) => {
     const data = doc.data();
 
     if (data.userId !== req.user.uid) {
-      return res.status(403).json({ error: 'Unauthorized' });
+      return denyAuthz(res, req, 'revisions:item');
     }
 
     const revision = {
@@ -201,9 +205,16 @@ router.get('/:id', verifyToken, async (req, res) => {
 });
 
 // POST /api/revisions - Add problem to revision queue
-router.post('/', verifyToken, async (req, res) => {
+router.post('/', verifyToken, validate(S.revisions.create), limitTier('create'), async (req, res) => {
   try {
     const { problemId, problemTitle, coreIdea, pattern, patterns, topics, difficulty } = req.body;
+
+    // S3: problemId is the dedup key and the link to the problems collection.
+    // Required: without it the lookup below becomes a `== undefined` query
+    // with database-dependent matching semantics.
+    if (!problemId) {
+      return res.status(400).json({ error: 'Problem ID is required' });
+    }
 
     // Check if problem already in revision queue (by ID)
     const existingById = await db.collection('revisions')
@@ -269,7 +280,7 @@ router.post('/', verifyToken, async (req, res) => {
 });
 
 // POST /api/revisions/:id/review - Complete a review
-router.post('/:id/review', verifyToken, async (req, res) => {
+router.post('/:id/review', verifyToken, validate(S.revisions.review), limitTier('review'), async (req, res) => {
   try {
     const { id } = req.params;
     const { confidence, notes, coreIdea, algorithmSteps, edgeCases, timeTaken } = req.body;
@@ -284,7 +295,23 @@ router.post('/:id/review', verifyToken, async (req, res) => {
     const revision = doc.data();
 
     if (revision.userId !== req.user.uid) {
-      return res.status(403).json({ error: 'Unauthorized' });
+      return denyAuthz(res, req, 'revisions:item');
+    }
+
+    // S12: anti-farm cooldown. One XP-bearing review per revision per minute:
+    // scripted floods degrade to 429s instead of minting XP at request speed.
+    // (Genuine back-to-back reviews take minutes; 60s never binds real UX.)
+    if (revision.lastReviewedAt) {
+      const last = revision.lastReviewedAt.toDate
+        ? revision.lastReviewedAt.toDate()
+        : new Date(revision.lastReviewedAt);
+      if (!Number.isNaN(last.getTime()) && Date.now() - last.getTime() < 60000) {
+        res.set('Retry-After', '60');
+        try {
+          require('../services/securityLog').secEvent('ratelimit.hit', req, { result: 'deny', tier: 'review-cooldown', retryAfterSec: 60 });
+        } catch { /* logging never breaks limiting */ }
+        return res.status(429).json({ error: 'Review submitted too recently', retryAfterSec: 60 });
+      }
     }
 
     // Calculate next review based on confidence
@@ -361,7 +388,7 @@ router.post('/:id/review', verifyToken, async (req, res) => {
 });
 
 // PATCH /api/revisions/:id/log-time - Log time for a specific phase
-router.patch('/:id/log-time', verifyToken, async (req, res) => {
+router.patch('/:id/log-time', verifyToken, validate(S.revisions.logTime), limitTier('standard'), async (req, res) => {
   try {
     const { id } = req.params;
     const { phase, timeTaken } = req.body;
@@ -376,7 +403,7 @@ router.patch('/:id/log-time', verifyToken, async (req, res) => {
     const revision = doc.data();
 
     if (revision.userId !== req.user.uid) {
-      return res.status(403).json({ error: 'Unauthorized' });
+      return denyAuthz(res, req, 'revisions:item');
     }
 
     // Update timeTaken for the specific phase
@@ -407,7 +434,7 @@ router.patch('/:id/log-time', verifyToken, async (req, res) => {
 });
 
 // DELETE /api/revisions/:id - Remove from revision queue
-router.delete('/:id', verifyToken, async (req, res) => {
+router.delete('/:id', verifyToken, validate(S.revisions.byId), limitTier('standard'), async (req, res) => {
   try {
     const { id } = req.params;
     const docRef = db.collection('revisions').doc(id);
@@ -420,7 +447,7 @@ router.delete('/:id', verifyToken, async (req, res) => {
     const revision = doc.data();
 
     if (revision.userId !== req.user.uid) {
-      return res.status(403).json({ error: 'Unauthorized' });
+      return denyAuthz(res, req, 'revisions:item');
     }
 
     await docRef.delete();
@@ -432,10 +459,10 @@ router.delete('/:id', verifyToken, async (req, res) => {
 });
 
 // PATCH /api/revisions/:id - Update revision notes/data
-router.patch('/:id', verifyToken, async (req, res) => {
+router.patch('/:id', verifyToken, validate(S.revisions.patch), limitTier('standard'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { coreIdea, algorithmSteps, edgeCases, notes } = req.body;
+    const { coreIdea, algorithmSteps, edgeCases, notes, confidenceScore, aiAdvice } = req.body;
 
     const docRef = db.collection('revisions').doc(id);
     const doc = await docRef.get();
@@ -447,7 +474,7 @@ router.patch('/:id', verifyToken, async (req, res) => {
     const revision = doc.data();
 
     if (revision.userId !== req.user.uid) {
-      return res.status(403).json({ error: 'Unauthorized' });
+      return denyAuthz(res, req, 'revisions:item');
     }
 
     const updateData = { updatedAt: new Date() };
@@ -455,6 +482,8 @@ router.patch('/:id', verifyToken, async (req, res) => {
     if (algorithmSteps !== undefined) updateData.algorithmSteps = algorithmSteps;
     if (edgeCases !== undefined) updateData.edgeCases = edgeCases;
     if (notes !== undefined) updateData.notes = notes;
+    if (confidenceScore !== undefined) updateData.confidenceScore = confidenceScore;
+    if (aiAdvice !== undefined) updateData.aiAdvice = aiAdvice;
 
     await docRef.update(updateData);
 
@@ -472,7 +501,7 @@ router.patch('/:id', verifyToken, async (req, res) => {
 
 
 // POST /api/revisions/practice-session - Get random solved problems
-router.post('/practice-session', verifyToken, async (req, res) => {
+router.post('/practice-session', verifyToken, validate(S.revisions.practice), limitTier('standard'), async (req, res) => {
   try {
     const { count = 1 } = req.body;
     
@@ -498,7 +527,7 @@ router.post('/practice-session', verifyToken, async (req, res) => {
     res.json({ sessionIds: selectedIds });
   } catch (error) {
     console.error('Error generating practice session:', error);
-    res.status(500).json({ error: 'Failed to generate practice session', details: error.message });
+    res.status(500).json({ error: 'Failed to generate practice session', requestId: req.id || null });
   }
 });
 
@@ -512,7 +541,11 @@ async function updateUserStats(userId, xpEarned) {
 
     const userData = userDoc.data();
     const now = new Date();
-    const lastActive = userData.lastActiveDate ? userData.lastActiveDate.toDate() : null;
+    // S12: accept Timestamp, Date, or ISO string — our own writes store Dates.
+    const rawActive = userData.lastActiveDate;
+    const lastActive = rawActive
+      ? (typeof rawActive.toDate === 'function' ? rawActive.toDate() : new Date(rawActive))
+      : null;
 
     let currentStreak = userData.currentStreak || 0;
     
@@ -532,8 +565,10 @@ async function updateUserStats(userId, xpEarned) {
       currentStreak = 1;
     }
 
+    // S12: atomic XP credit — concurrent reviews must both count (no lost
+    // updates from read-modify-write races).
     await userRef.update({
-      totalXP: (userData.totalXP || 0) + xpEarned,
+      totalXP: admin.firestore.FieldValue.increment(xpEarned),
       currentStreak,
       longestStreak: Math.max(userData.longestStreak || 0, currentStreak),
       lastActiveDate: now

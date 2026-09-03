@@ -2,10 +2,13 @@ const express = require('express');
 const router = express.Router();
 const { db } = require('../config/firebase.config');
 const { verifyToken } = require('./auth.routes');
+const { validate } = require('../middleware/validate');
+const S = require('../middleware/schemas');
+const { limitTier } = require('../middleware/rateLimit');
 const analyticsService = require('../services/analytics.service');
 
 // GET /api/analytics/dashboard - Single query endpoint that computes all metrics (saves 83% Firestore reads)
-router.get('/dashboard', verifyToken, async (req, res) => {
+router.get('/dashboard', verifyToken, validate(S.analytics), limitTier('scan'), async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 30;
     const snapshot = await db.collection('problems')
@@ -41,7 +44,7 @@ router.get('/dashboard', verifyToken, async (req, res) => {
 });
 
 // GET /api/analytics/overview - Get overall statistics
-router.get('/overview', verifyToken, async (req, res) => {
+router.get('/overview', verifyToken, limitTier('scan'), async (req, res) => {
   try {
     const snapshot = await db.collection('problems')
       .where('userId', '==', req.user.uid)
@@ -77,7 +80,7 @@ router.get('/overview', verifyToken, async (req, res) => {
 });
 
 // GET /api/analytics/topics - Get topic distribution
-router.get('/topics', verifyToken, async (req, res) => {
+router.get('/topics', verifyToken, limitTier('scan'), async (req, res) => {
   try {
     const snapshot = await db.collection('problems')
       .where('userId', '==', req.user.uid)
@@ -98,7 +101,7 @@ router.get('/topics', verifyToken, async (req, res) => {
 });
 
 // GET /api/analytics/patterns - Get pattern coverage
-router.get('/patterns', verifyToken, async (req, res) => {
+router.get('/patterns', verifyToken, limitTier('scan'), async (req, res) => {
   try {
     const snapshot = await db.collection('problems')
       .where('userId', '==', req.user.uid)
@@ -119,7 +122,7 @@ router.get('/patterns', verifyToken, async (req, res) => {
 });
 
 // GET /api/analytics/platforms - Get platform distribution
-router.get('/platforms', verifyToken, async (req, res) => {
+router.get('/platforms', verifyToken, limitTier('scan'), async (req, res) => {
   try {
     const snapshot = await db.collection('problems')
       .where('userId', '==', req.user.uid)
@@ -140,7 +143,7 @@ router.get('/platforms', verifyToken, async (req, res) => {
 });
 
 // GET /api/analytics/difficulty - Get difficulty distribution
-router.get('/difficulty', verifyToken, async (req, res) => {
+router.get('/difficulty', verifyToken, limitTier('scan'), async (req, res) => {
   try {
     const snapshot = await db.collection('problems')
       .where('userId', '==', req.user.uid)
@@ -161,7 +164,7 @@ router.get('/difficulty', verifyToken, async (req, res) => {
 });
 
 // GET /api/analytics/heatmap - Get activity heatmap data
-router.get('/heatmap', verifyToken, async (req, res) => {
+router.get('/heatmap', verifyToken, limitTier('scan'), async (req, res) => {
   try {
     const snapshot = await db.collection('problems')
       .where('userId', '==', req.user.uid)
@@ -182,7 +185,7 @@ router.get('/heatmap', verifyToken, async (req, res) => {
 });
 
 // GET /api/analytics/timeline - Get progress timeline
-router.get('/timeline', verifyToken, async (req, res) => {
+router.get('/timeline', verifyToken, validate(S.analytics), limitTier('scan'), async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 30;
 

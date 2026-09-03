@@ -1,8 +1,10 @@
-const { getFirestore, Timestamp } = require('@google-cloud/firestore');
-
 /**
  * Spaced Repetition Service
  * Handles scheduling logic for the revision system
+ *
+ * Note: this module is pure scheduling math + call-site-injected `db`.
+ * (An unused `@google-cloud/firestore` import was removed in S3 so there is
+ * exactly one Firestore client: the Admin SDK in config/firebase.config.js.)
  */
 class SpacedRepetitionService {
   /**
