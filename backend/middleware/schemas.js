@@ -16,7 +16,7 @@ const v = require('./validate');
 
 const {
   string, number, boolean, arrayOf, union, object,
-  optional, nullable, req, docId, urlString, scalar, dsaArg,
+  optional, nullable, req, docId, urlString, scalar, dsaArg, safeJson,
 } = v;
 
 // --- shared fragments -------------------------------------------------------
@@ -75,6 +75,7 @@ const problems = {
       notes: optional(string({ min: 0, max: 50000 })),
       approach: optional(string({ min: 0, max: 50000 })),
       code: optional(string({ min: 0, max: 100000 })),
+      aiNotes: optional(safeJson(6, 100000)),
       // IGNORED (compat: ProblemsPage/AddProblemModal send these; the
       // server-side analyzer is authoritative and handlers must not persist them).
       difficulty: optional(difficulty()),
@@ -93,7 +94,7 @@ const problems = {
       difficulty: optional(difficulty()),
       topics: optional(topicList()),
       patterns: optional(topicList()),
-      aiNotes: optional(string({ min: 0, max: 50000 })),
+      aiNotes: optional(safeJson(6, 100000)),
       status: optional(string({ min: 0, max: 30 })), // IGNORED (compat: ProblemsPage sends it)
     }, { strict: true, minKeys: 1 }),
   },

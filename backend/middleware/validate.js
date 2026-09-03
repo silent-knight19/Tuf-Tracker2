@@ -229,6 +229,54 @@ function dsaArg(maxDepth = 3) {
   };
 }
 
+/** Safe bounded arbitrary JSON tree for AI notes/structured content. */
+function safeJson(maxDepth = 6, maxStr = 100000) {
+  return (v, path, errors) => {
+    if (v === null || v === undefined) return null;
+    if (typeof v === 'string') {
+      if (v.length > maxStr) return fail(errors, path, `must be at most ${maxStr} characters`);
+      return v;
+    }
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) return fail(errors, path, 'must be a finite number');
+      return v;
+    }
+    if (typeof v === 'boolean') {
+      return v;
+    }
+    if (Array.isArray(v)) {
+      if (v.length > 200) return fail(errors, path, 'must have at most 200 items');
+      if (maxDepth <= 1) return fail(errors, path, 'nested structure exceeds maximum allowed depth');
+      let bad = false;
+      const out = v.map((item, i) => {
+        const r = safeJson(maxDepth - 1, maxStr)(item, `${path}[${i}]`, errors);
+        if (r === undefined) bad = true;
+        return r;
+      });
+      return bad ? undefined : out;
+    }
+    if (isPlainObject(v)) {
+      if (maxDepth <= 1) return fail(errors, path, 'nested structure exceeds maximum allowed depth');
+      const keys = Object.keys(v);
+      if (keys.length > 50) return fail(errors, path, 'must have at most 50 fields');
+      let bad = false;
+      const out = {};
+      for (const k of keys) {
+        if (k.length > 100) {
+          fail(errors, `${path}.${k}`, 'key must be at most 100 characters');
+          bad = true;
+          continue;
+        }
+        const r = safeJson(maxDepth - 1, maxStr)(v[k], `${path}.${k}`, errors);
+        if (r === undefined) bad = true;
+        else out[k] = r;
+      }
+      return bad ? undefined : out;
+    }
+    return fail(errors, path, 'must be a string, number, boolean, array, or object');
+  };
+}
+
 // --- middleware -------------------------------------------------------------
 
 function validate(schemas) {
@@ -266,5 +314,6 @@ module.exports = {
   urlString,
   scalar,
   dsaArg,
+  safeJson,
   validate,
 };

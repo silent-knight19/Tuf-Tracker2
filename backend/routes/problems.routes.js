@@ -418,6 +418,16 @@ router.post('/:id/generate-notes', verifyToken, validate({ params: S.problems.by
       }
     );
 
+    // Auto-persist generated notes to problem document
+    try {
+      await db.collection('problems').doc(req.params.id).update({
+        aiNotes: notes,
+        updatedAt: new Date()
+      });
+    } catch (saveErr) {
+      console.warn('Failed to auto-persist aiNotes to problem doc:', saveErr.message);
+    }
+
     res.json({ notes });
   } catch (error) {
     console.error('Error generating notes:', error);
