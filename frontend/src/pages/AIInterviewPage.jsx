@@ -302,7 +302,7 @@ function AIInterviewPage() {
         forceRefresh: forceRefresh,
         mode: mode,
         providedSolution: providedSolution,
-        existingEdgeCases: edgeCases // Pass existing edge cases to avoid redundant generation
+        existingEdgeCases: (forceRefresh || mode === 'edge_cases_only') ? null : (edgeCases || null)
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });

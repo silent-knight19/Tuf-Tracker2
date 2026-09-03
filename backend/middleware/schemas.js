@@ -16,7 +16,7 @@ const v = require('./validate');
 
 const {
   string, number, boolean, arrayOf, union, object,
-  optional, nullable, req, docId, urlString, scalar,
+  optional, nullable, req, docId, urlString, scalar, dsaArg,
 } = v;
 
 // --- shared fragments -------------------------------------------------------
@@ -30,24 +30,24 @@ const boolOpt = () => boolean();
 
 // AI-echo example object (frontend + cached AI shapes).
 const exampleItem = () => object({
-  input: nullable(union([string({ min: 1, max: 4000 }), number(), boolean()])),
-  output: nullable(union([string({ min: 1, max: 4000 }), number(), boolean()])),
+  input: nullable(dsaArg()),
+  output: nullable(dsaArg()),
   explanation: nullable(string({ min: 1, max: 4000 })),
   name: nullable(string({ min: 1, max: 200 })),
-  expected: nullable(union([string({ min: 1, max: 4000 }), number(), boolean()])),
-  expectedOutput: nullable(union([string({ min: 1, max: 4000 }), number(), boolean()])),
+  expected: nullable(dsaArg()),
+  expectedOutput: nullable(dsaArg()),
   category: nullable(string({ min: 1, max: 60 })),
-  args: nullable(arrayOf(scalar(2000), { max: 20 })),
+  args: nullable(arrayOf(dsaArg(), { max: 20 })),
 }, { strict: true });
 
 // Generic bounded AI-echo item (test cases, edge cases): known keys validated,
 // nothing else admitted.
 const echoItem = () => object({
   name: nullable(string({ min: 1, max: 200 })),
-  input: nullable(union([string({ min: 1, max: 4000 }), number(), boolean()])),
-  args: nullable(arrayOf(scalar(2000), { max: 20 })),
-  expected: nullable(union([string({ min: 1, max: 4000 }), number(), boolean()])),
-  expectedOutput: nullable(union([string({ min: 1, max: 4000 }), number(), boolean()])),
+  input: nullable(dsaArg()),
+  args: nullable(arrayOf(dsaArg(), { max: 20 })),
+  expected: nullable(dsaArg()),
+  expectedOutput: nullable(dsaArg()),
   category: nullable(string({ min: 1, max: 60 })),
 }, { strict: true });
 

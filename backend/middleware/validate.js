@@ -181,6 +181,54 @@ function scalar(maxStr = 2000) {
   return union([string({ min: 1, max: maxStr }), number(), boolean()]);
 }
 
+/** Safe bounded leaf or container for DSA test inputs/arguments (scalars, 1D/2D arrays, input dicts). */
+function dsaArg(maxDepth = 3) {
+  return (v, path, errors) => {
+    if (v === null || v === undefined) return null;
+    if (typeof v === 'string') {
+      if (v.length > 4000) return fail(errors, path, 'must be at most 4000 characters');
+      return v;
+    }
+    if (typeof v === 'number') {
+      if (!Number.isFinite(v)) return fail(errors, path, 'must be a finite number');
+      return v;
+    }
+    if (typeof v === 'boolean') {
+      return v;
+    }
+    if (Array.isArray(v)) {
+      if (v.length > 100) return fail(errors, path, 'must have at most 100 items');
+      if (maxDepth <= 1) return fail(errors, path, 'nested array exceeds maximum allowed depth');
+      let bad = false;
+      const out = v.map((item, i) => {
+        const r = dsaArg(maxDepth - 1)(item, `${path}[${i}]`, errors);
+        if (r === undefined) bad = true;
+        return r;
+      });
+      return bad ? undefined : out;
+    }
+    if (isPlainObject(v)) {
+      if (maxDepth <= 1) return fail(errors, path, 'nested object exceeds maximum allowed depth');
+      const keys = Object.keys(v);
+      if (keys.length > 20) return fail(errors, path, 'must have at most 20 fields');
+      let bad = false;
+      const out = {};
+      for (const k of keys) {
+        if (k.length > 100) {
+          fail(errors, `${path}.${k}`, 'key must be at most 100 characters');
+          bad = true;
+          continue;
+        }
+        const r = dsaArg(maxDepth - 1)(v[k], `${path}.${k}`, errors);
+        if (r === undefined) bad = true;
+        else out[k] = r;
+      }
+      return bad ? undefined : out;
+    }
+    return fail(errors, path, 'must be a string, number, boolean, array, or object');
+  };
+}
+
 // --- middleware -------------------------------------------------------------
 
 function validate(schemas) {
@@ -217,5 +265,6 @@ module.exports = {
   docId,
   urlString,
   scalar,
+  dsaArg,
   validate,
 };
