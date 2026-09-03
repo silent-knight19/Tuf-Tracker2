@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ArrowRight, BookOpen, Clock, Target, Sparkles, Trophy } from 'lucide-react';
+import { ArrowRight, BookOpen, Clock, Target, Trophy, Layers } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 function SheetsPage() {
@@ -136,8 +136,8 @@ function SheetsPage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-white/[0.06]">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-orange/10 border border-brand-orange/20 text-brand-orange text-2xs font-semibold uppercase tracking-wider">
-              <Sparkles className="w-2.5 h-2.5" /> Curated Tracks
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-2xs font-semibold uppercase tracking-wider">
+              <BookOpen className="w-2.5 h-2.5" /> Curated Roadmaps
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Curated SDE Roadmaps</h1>

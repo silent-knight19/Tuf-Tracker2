@@ -22,6 +22,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import SafeMarkdown, { isSafeHttpUrl } from '../components/ui/SafeMarkdown';
+import StudyGuideView from '../components/features/ai/StudyGuideView';
 import remarkGfm from 'remark-gfm';
 
 function ProblemViewPage() {
@@ -682,25 +683,6 @@ function ProblemViewPage() {
               </div>
             )}
 
-            {notesTab === 'ai-guide' && (
-              <button
-                onClick={handleGenerateNotes}
-                disabled={isGenerating}
-                className="btn btn-primary text-sm px-3 py-1.5 flex items-center gap-2"
-              >
-                {isGenerating ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    {aiSections ? <RotateCw className="w-4 h-4" /> : <Cpu className="w-4 h-4" />}
-                    {aiSections ? 'Regenerate' : 'Generate'}
-                  </>
-                )}
-              </button>
-            )}
           </div>
 
           {/* Notes Content */}
@@ -724,236 +706,12 @@ function ProblemViewPage() {
                   {notes || <span className="text-dark-500 italic">No notes yet. Click Edit to add your notes.</span>}
                 </div>
               )
-            ) : aiSections ? (
-              <div className="space-y-4">
-                {aiSections.isRaw ? (
-                  // S9: raw AI markdown renders through the sanitizer, never as HTML.
-                  <div className="bg-dark-950 rounded-lg p-4 prose prose-invert prose-sm max-w-none">
-                    <SafeMarkdown>{aiSections.raw}</SafeMarkdown>
-                  </div>
-                ) : (
-                  <>
-                    {/* Modern Educational Schema Sections */}
-                    {aiSections.keyInsights && Array.isArray(aiSections.keyInsights) && (
-                      <div className="bg-dark-950 rounded-lg p-4">
-                        <h3 className="text-sm font-bold text-brand-orange mb-3 flex items-center gap-2">
-                          <Zap className="w-4 h-4" />
-                          Key Insights
-                        </h3>
-                        <ul className="space-y-2">
-                          {aiSections.keyInsights.map((insight, idx) => (
-                            <li key={idx} className="text-sm font-medium text-dark-300 flex gap-2">
-                              <span className="text-brand-orange text-xs mt-1 shrink-0 px-1.5 py-0.5 bg-brand-orange/10 rounded">{idx + 1}</span>
-                              {insight}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {aiSections.approach && (
-                      <div className="bg-dark-950 rounded-lg p-4">
-                        <h3 className="text-sm font-bold text-blue-400 mb-2 flex items-center gap-2">
-                          <Target className="w-4 h-4" />
-                          Approach
-                        </h3>
-                        {Array.isArray(aiSections.approach) ? (
-                          <ul className="space-y-2">
-                            {aiSections.approach.map((step, idx) => (
-                              <li key={idx} className="text-sm font-medium text-dark-300 flex gap-2">
-                                <span className="text-blue-400 mt-1.5 shrink-0">•</span>
-                                {step}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <div className="text-sm font-medium text-dark-300 leading-relaxed whitespace-pre-wrap">
-                            {aiSections.approach}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Shared Solution Rendering Logic (supports both legacy and new solutions object) */}
-                    {(() => {
-                      const solutions = aiSections.solutions || {
-                        brute: aiSections.bruteForce,
-                        better: aiSections.better,
-                        optimal: aiSections.optimal
-                      };
-
-                      if (!solutions.brute && !solutions.better && !solutions.optimal) return null;
-
-                      return (
-                        <div className="bg-dark-950 rounded-lg p-4">
-                          <div className="flex gap-2 mb-4">
-                            {solutions.brute?.code && (
-                              <button
-                                onClick={() => setSolutionTab('brute')}
-                                className={`px-3 py-1.5 rounded text-sm font-semibold transition-colors ${
-                                  solutionTab === 'brute' ? 'bg-brand-orange text-white' : 'bg-dark-800 text-dark-400'
-                                }`}
-                              >
-                                Brute Force
-                              </button>
-                            )}
-                            {solutions.better?.code && (
-                              <button
-                                onClick={() => setSolutionTab('better')}
-                                className={`px-3 py-1.5 rounded text-sm font-semibold transition-colors ${
-                                  solutionTab === 'better' ? 'bg-brand-orange text-white' : 'bg-dark-800 text-dark-400'
-                                }`}
-                              >
-                                Better
-                              </button>
-                            )}
-                            {solutions.optimal?.code && (
-                              <button
-                                onClick={() => setSolutionTab('optimal')}
-                                className={`px-3 py-1.5 rounded text-sm font-semibold transition-colors ${
-                                  solutionTab === 'optimal' ? 'bg-brand-orange text-white' : 'bg-dark-800 text-dark-400'
-                                }`}
-                              >
-                                Optimal
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Code Display */}
-                          {['brute', 'better', 'optimal'].map(type => {
-                            if (solutionTab !== type || !solutions[type]?.code) return null;
-                            const sol = solutions[type];
-                            return (
-                              <div key={type}>
-                                {sol.explanation && (
-                                  <div className="text-sm font-medium text-dark-300 leading-relaxed mb-4 pb-4 border-b border-dark-800">
-                                    {Array.isArray(sol.explanation) ? (
-                                      <ul className="space-y-2 mb-2">
-                                        {sol.explanation.map((step, i) => (
-                                          <li key={i} className="flex gap-2">
-                                            <span className="text-dark-500 font-bold">{i + 1}.</span>
-                                            {step}
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    ) : (
-                                      <div className="whitespace-pre-wrap">{sol.explanation}</div>
-                                    )}
-                                    {sol.complexity && (
-                                      <div className="mt-2 text-brand-orange font-bold text-xs uppercase tracking-wider bg-brand-orange/5 px-2 py-1 rounded w-fit">
-                                        {sol.complexity}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                                <SyntaxHighlighter
-                                  language="java"
-                                  style={vscDarkPlus}
-                                  customStyle={{
-                                    margin: 0,
-                                    borderRadius: '0.5rem',
-                                    fontSize: '0.75rem',
-                                    lineHeight: '1.5'
-                                  }}
-                                  showLineNumbers={false}
-                                >
-                                  {sol.code}
-                                </SyntaxHighlighter>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })()}
-
-                    {aiSections.commonMistakes && Array.isArray(aiSections.commonMistakes) && (
-                      <div className="bg-dark-950 rounded-lg p-4">
-                        <h3 className="text-sm font-bold text-red-400 mb-3 flex items-center gap-2">
-                          <AlertCircle className="w-4 h-4" />
-                          Common Mistakes
-                        </h3>
-                        <ul className="space-y-2">
-                          {aiSections.commonMistakes.map((mistake, idx) => (
-                            <li key={idx} className="text-sm font-medium text-dark-300 flex gap-2">
-                              <span className="text-red-400 mt-1.5 shrink-0">•</span>
-                              {mistake}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {aiSections.practiceRecommendations && Array.isArray(aiSections.practiceRecommendations) && (
-                      <div className="bg-dark-950 rounded-lg p-4">
-                        <h3 className="text-sm font-bold text-green-400 mb-3 flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4" />
-                          Practice Tips
-                        </h3>
-                        <ul className="space-y-2">
-                          {aiSections.practiceRecommendations.map((tip, idx) => (
-                            <li key={idx} className="text-sm font-medium text-dark-300 flex gap-2 border-l-2 border-green-500/20 pl-3">
-                              {tip}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-
-
-                    {/* Fallback Legacy/Solution-Centric Sections (if not handled by the new logic) */}
-                    {aiSections.understanding && !aiSections.keyInsights && (
-                      <div className="bg-dark-950 rounded-lg p-4">
-                        <h3 className="text-sm font-bold text-dark-300 mb-2">Problem Understanding</h3>
-                        <div className="text-sm font-medium text-dark-300 leading-relaxed whitespace-pre-wrap">
-                          {aiSections.understanding}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Key Takeaways */}
-                    {aiSections.takeaways && (
-                      <div className="bg-dark-950 rounded-lg p-4">
-                        <h3 className="text-sm font-bold text-brand-yellow mb-2 flex items-center gap-2">
-                          <Lightbulb className="w-4 h-4" />
-                          Key Takeaways
-                        </h3>
-                        <div className="text-sm font-medium text-dark-300 leading-relaxed whitespace-pre-wrap">{aiSections.takeaways}</div>
-                      </div>
-                    )}
-
-                    {/* Catch-all for any other strings in the object */}
-                    {Object.keys(aiSections).filter(key => 
-                      !['raw', 'isRaw', 'keyInsights', 'approach', 'commonMistakes', 'relatedProblems', 'practiceRecommendations', 
-                        'understanding', 'bruteForce', 'optimal', 'better', 'takeaways', 'solutions'].includes(key)
-                    ).map(key => (
-                      <div key={key} className="bg-dark-950 rounded-lg p-4">
-                        <h3 className="text-sm font-bold text-dark-400 mb-2 capitalize">{key.replace(/([A-Z])/g, ' $1')}</h3>
-                        <div className="text-sm font-medium text-dark-300 leading-relaxed whitespace-pre-wrap">
-                          {typeof aiSections[key] === 'object' ? JSON.stringify(aiSections[key], null, 2) : String(aiSections[key])}
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
             ) : (
-              <div className="flex items-center justify-center h-full text-center text-dark-500">
-                <div>
-                  {isViewOnly ? (
-                    <>
-                      <Cpu className="w-12 h-12 text-dark-600 mx-auto mb-3" />
-                      <p className="text-dark-400 mb-2">AI Study Guide unavailable in preview</p>
-                      <p className="text-sm">Add this problem to generate AI-powered notes</p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="mb-2">No AI study guide generated yet.</p>
-                      <p className="text-sm">Click "Generate" to create comprehensive notes.</p>
-                    </>
-                  )}
-                </div>
-              </div>
+              <StudyGuideView
+                notes={aiSections}
+                isGenerating={isGenerating}
+                onRegenerate={handleGenerateNotes}
+              />
             )}
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQuoteStore } from '../../stores/quoteStore';
-import { Quote, Sparkles } from 'lucide-react';
+import { Quote, RotateCw } from 'lucide-react';
 
 const MotivationalQuote = ({ category = null, className = "", variant = "card", animate = true, hideAuthor = false }) => {
   const { quotes, fetchQuotes, getRandomQuote } = useQuoteStore();
@@ -49,10 +49,10 @@ const MotivationalQuote = ({ category = null, className = "", variant = "card", 
   if (variant === "subtle") {
     return (
       <div className={`flex items-center gap-2 transition-all duration-500 ease-spring ${transitionClass} ${className}`}>
-        <Sparkles className="w-3.5 h-3.5 text-brand-amber shrink-0" />
-        <span className="text-xs text-dark-300 italic truncate">"{activeQuote.text}"</span>
+        <Quote className="w-3.5 h-3.5 text-foreground-subtle shrink-0" />
+        <span className="text-xs text-foreground-muted italic truncate">"{activeQuote.text}"</span>
         {!hideAuthor && (
-          <span className="text-[10px] text-dark-500 font-medium shrink-0">— {activeQuote.author}</span>
+          <span className="text-[10px] text-foreground-subtle font-medium shrink-0">— {activeQuote.author}</span>
         )}
       </div>
     );
@@ -93,10 +93,10 @@ const MotivationalQuote = ({ category = null, className = "", variant = "card", 
           )}
           <button
             onClick={rotateQuote}
-            title="Next inspirational thought"
-            className="p-1 rounded-md text-dark-500 hover:text-white hover:bg-white/[0.05] transition-colors"
+            title="Next quote"
+            className="p-1 rounded-md text-foreground-subtle hover:text-foreground hover:bg-surface-hover transition-colors"
           >
-            <Sparkles className="w-3 h-3 text-brand-amber" />
+            <RotateCw className="w-3 h-3" />
           </button>
         </div>
       </div>
@@ -115,7 +115,7 @@ const MotivationalQuote = ({ category = null, className = "", variant = "card", 
             <div className="w-6 h-6 rounded-lg bg-brand-orange/10 border border-brand-orange/20 flex items-center justify-center">
               <Quote className="w-3 h-3 text-brand-orange" />
             </div>
-            <span className="text-2xs font-semibold uppercase tracking-wider text-dark-400">Daily Directive</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">Engineering Principle</span>
           </div>
 
           {activeQuote.category && (

@@ -158,7 +158,7 @@ async function fetchText(rawUrl, {
   }
   await resolveAndCheck(url.hostname, { allowPrivate });
 
-  const requestHeaders = { 'User-Agent': 'TufTracker/2 (+server)', ...headers };
+  const requestHeaders = { 'User-Agent': 'BaseCase/2 (+server)', ...headers };
   let hops = 0;
   // eslint-disable-next-line no-constant-condition
   while (true) {

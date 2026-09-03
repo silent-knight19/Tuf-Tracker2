@@ -6,6 +6,7 @@ import ConsolePanel from './ConsolePanel';
 import InputPanel from './InputPanel';
 import EdgeCasesPanel from './EdgeCasesPanel';
 import Timer from './Timer';
+import Button from '../../ui/Button';
 
 const DEFAULT_JAVA_TEMPLATE = `import java.util.*;
 
@@ -80,17 +81,17 @@ function CodePanel({
   }, [functionSignature]);
   
   // Resizable panel state
-  const [editorHeight, setEditorHeight] = useState(60); // percentage
+  const [editorHeight, setEditorHeight] = useState(55); // percentage
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
+  const workAreaRef = useRef(null);
 
   const handlePanelMouseMove = useCallback((e) => {
-    if (!isDragging || !containerRef.current) return;
-    const containerRect = containerRef.current.getBoundingClientRect();
-    // Calculate new height as percentage relative to container
-    // We are resizing the TOP panel (editor), so we use (mouseY - top)
-    const relativeY = e.clientY - containerRect.top;
-    let newHeight = (relativeY / containerRect.height) * 100;
+    if (!isDragging || !workAreaRef.current) return;
+    const rect = workAreaRef.current.getBoundingClientRect();
+    if (!rect.height) return;
+    const relativeY = e.clientY - rect.top;
+    let newHeight = (relativeY / rect.height) * 100;
     
     // Clamp between 20% and 80%
     newHeight = Math.max(20, Math.min(80, newHeight));
@@ -105,14 +106,16 @@ function CodePanel({
 
   useEffect(() => {
     if (isDragging) {
-      document.addEventListener('mousemove', handlePanelMouseMove);
-      document.addEventListener('mouseup', handlePanelMouseUp);
+      window.addEventListener('mousemove', handlePanelMouseMove);
+      window.addEventListener('mouseup', handlePanelMouseUp);
       document.body.style.cursor = 'row-resize';
       document.body.style.userSelect = 'none';
     }
     return () => {
-      document.removeEventListener('mousemove', handlePanelMouseMove);
-      document.removeEventListener('mouseup', handlePanelMouseUp);
+      window.removeEventListener('mousemove', handlePanelMouseMove);
+      window.removeEventListener('mouseup', handlePanelMouseUp);
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = 'auto';
     };
   }, [isDragging, handlePanelMouseMove, handlePanelMouseUp]);
 
@@ -239,157 +242,158 @@ function CodePanel({
   ];
 
   return (
-    <div ref={containerRef} className="h-full flex flex-col bg-dark-950 border-l border-dark-800 overflow-hidden relative">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-dark-800 bg-dark-950/80 backdrop-blur-md shrink-0 z-10">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-dark-500 uppercase tracking-wider">Language</span>
-            <div className="px-2 py-1 bg-brand-orange/10 text-brand-orange rounded text-xs font-bold border border-brand-orange/20 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-brand-orange animate-pulse"></span>
-              Java
+    <div ref={containerRef} className="h-full flex flex-col bg-surface border-l border-border overflow-hidden relative">
+      {/* Header Toolbar */}
+      <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-surface shrink-0 z-10 select-none">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-semibold text-foreground-subtle uppercase tracking-wider">
+              Language
+            </span>
+            <div className="px-2 py-0.5 bg-primary/10 text-indigo-300 rounded text-xs font-semibold border border-primary/25 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+              Java 17
             </div>
           </div>
-          
-          <div className="w-px h-4 bg-dark-800 mx-2"></div>
-          
+
+          <div className="w-px h-3.5 bg-border mx-1" />
+
           {/* Timer */}
           <Timer autoStart={true} />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
+            type="button"
             onClick={handleReset}
-            className="p-2 text-dark-400 hover:text-white hover:bg-dark-800 rounded-lg transition-colors group"
+            className="p-1.5 text-foreground-subtle hover:text-foreground hover:bg-surface-hover rounded-lg transition-colors"
             title="Reset to default template"
           >
-            <RotateCcw className="w-4 h-4 group-hover:-rotate-90 transition-transform duration-500" />
-          </button>
-          
-          <button
-            onClick={handleFormat}
-            disabled={isFormatting}
-            className="p-2 text-dark-400 hover:text-white hover:bg-dark-800 rounded-lg transition-colors group disabled:opacity-50 disabled:cursor-wait"
-            title="Format Code"
-          >
-            {isFormatting ? (
-              <div className="w-4 h-4 border-2 border-dark-400 border-t-white rounded-full animate-spin" />
-            ) : (
-              <AlignLeft className="w-4 h-4" />
-            )}
+            <RotateCcw className="w-3.5 h-3.5" />
           </button>
 
           <button
-            onClick={handleRunCode}
-            disabled={isRunning || cooldown > 0}
-            className="px-4 py-1.5 bg-brand-orange hover:bg-orange-600 disabled:bg-dark-800 disabled:text-dark-500 text-white rounded-lg font-bold text-xs transition-all flex items-center gap-2 disabled:cursor-not-allowed shadow-lg shadow-brand-orange/20 disabled:shadow-none hover:scale-105 active:scale-95"
+            type="button"
+            onClick={handleFormat}
+            disabled={isFormatting}
+            className="p-1.5 text-foreground-subtle hover:text-foreground hover:bg-surface-hover rounded-lg transition-colors disabled:opacity-50"
+            title="Format code"
           >
-            {isRunning ? (
-              <>
-                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                Running...
-              </>
-            ) : cooldown > 0 ? (
-              <>
-                <div className="w-3 h-3 text-dark-500"><Clock className="w-full h-full" /></div>
-                Wait {cooldown}s
-              </>
+            {isFormatting ? (
+              <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             ) : (
-              <>
-                <Play className="w-3 h-3 fill-current" />
-                Run Code
-              </>
+              <AlignLeft className="w-3.5 h-3.5" />
             )}
           </button>
-          
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleRunCode}
+            disabled={isRunning || cooldown > 0}
+            isLoading={isRunning}
+            leftIcon={Play}
+            className="px-3 text-xs"
+          >
+            {cooldown > 0 ? `Wait ${cooldown}s` : 'Run Code (⌘↵)'}
+          </Button>
+
           {/* Analyze with AI Button */}
           {onAnalyzeCode && (
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={handleAnalyzeCode}
               disabled={isAnalyzing || !lastRunResult}
-              title={!lastRunResult ? "Run your code first to enable analysis" : "Analyze code with AI"}
-              className="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 disabled:bg-dark-800 disabled:text-dark-500 text-white rounded-lg font-bold text-xs transition-all flex items-center gap-2 disabled:cursor-not-allowed shadow-lg shadow-purple-600/20 disabled:shadow-none hover:scale-105 active:scale-95"
+              isLoading={isAnalyzing}
+              leftIcon={Brain}
+              title={!lastRunResult ? 'Run code first to enable AI analysis' : 'Analyze code with AI'}
+              className="px-2.5 text-xs text-indigo-300 hover:text-indigo-200 border-primary/25"
             >
-              {isAnalyzing ? (
-                <>
-                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Brain className="w-3 h-3" />
-                  Analyze with AI
-                </>
-              )}
-            </button>
+              Analyze
+            </Button>
           )}
         </div>
       </div>
 
-      {/* Code Editor - Resizable */}
-      <div 
-        className="min-h-0 overflow-hidden relative"
-        style={{ height: `${editorHeight}%` }}
-      >
-        <CodeEditor value={code} onChange={setCode} language="java" />
-      </div>
-
-      {/* Draggable Divider */}
-      <div 
-        className="h-3 bg-dark-950 border-y border-dark-800 cursor-row-resize flex items-center justify-center hover:bg-dark-900 transition-colors shrink-0 group z-10"
-        onMouseDown={() => setIsDragging(true)}
-      >
-        <div className="w-12 h-1 rounded-full bg-dark-800 group-hover:bg-brand-orange/50 transition-colors"></div>
-      </div>
-
-      {/* Bottom Panel with Tabs - Resizable */}
-      <div 
-        className="flex flex-col min-h-0 overflow-hidden bg-dark-900/30"
-        style={{ height: `${100 - editorHeight}%` }}
-      >
+       {/* Resizable Work Area (Editor + Divider + Output Console) */}
+       <div ref={workAreaRef} className="flex-1 min-h-0 flex flex-col relative overflow-hidden">
+         {/* Code Editor - Resizable */}
+         <div
+           className="min-h-0 overflow-hidden relative bg-canvas shrink-0"
+           style={{ height: `${editorHeight}%`, minHeight: '80px' }}
+         >
+           <CodeEditor value={code} onChange={setCode} language="java" />
+           {/* Glass shield during drag to prevent Monaco iframe/event swallowing */}
+           {isDragging && (
+             <div className="absolute inset-0 z-50 cursor-row-resize bg-transparent select-none" />
+           )}
+         </div>
+ 
+         {/* Draggable Divider */}
+         <div
+           className="h-2 bg-surface-raised border-y border-border cursor-row-resize flex items-center justify-center hover:bg-surface-hover active:bg-primary/20 transition-colors shrink-0 group z-20 select-none"
+           onMouseDown={(e) => {
+             e.preventDefault();
+             setIsDragging(true);
+           }}
+           onDoubleClick={() => setEditorHeight(55)}
+           title="Drag to resize, double-click to reset"
+         >
+           <div className="w-8 h-1 rounded-full bg-border-strong group-hover:bg-primary transition-colors" />
+         </div>
+ 
+         {/* Bottom Panel with Tabs - Resizable */}
+         <div
+           className="flex-1 flex flex-col min-h-0 overflow-hidden bg-surface relative"
+           style={{ minHeight: '80px' }}
+         >
+           {/* Glass shield during drag to prevent event swallowing */}
+           {isDragging && (
+             <div className="absolute inset-0 z-50 cursor-row-resize bg-transparent select-none" />
+           )}
         {/* Tab Headers */}
-        <div className="flex items-center justify-between border-b border-dark-800 bg-dark-950/50 backdrop-blur shrink-0 px-2 pt-2">
+        <div className="flex items-center justify-between border-b border-border bg-surface-subtle shrink-0 px-2 pt-1.5">
           <div className="flex items-center gap-1">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-t-lg transition-all border-t border-x ${
+                className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg transition-all border-t border-x ${
                   activeTab === tab.id
-                    ? 'border-dark-800 bg-dark-900 text-white border-b-transparent translate-y-px'
-                    : 'border-transparent text-dark-500 hover:text-dark-300 hover:bg-dark-800/50'
+                    ? 'border-border bg-surface text-foreground border-b-transparent translate-y-px shadow-sm'
+                    : 'border-transparent text-foreground-subtle hover:text-foreground hover:bg-surface-hover/50'
                 }`}
               >
                 {tab.label}
                 {tab.badge !== undefined && tab.badge > 0 && (
-                  <span className="ml-2 px-1.5 py-0.5 bg-brand-orange/20 text-brand-orange text-[10px] rounded-full">
+                  <span className="ml-1.5 px-1.5 py-0.2 bg-primary/15 text-indigo-300 text-[10px] rounded-full font-mono">
                     {tab.badge}
                   </span>
                 )}
               </button>
             ))}
           </div>
-          
+
           {/* Regenerate Edge Cases Button */}
           {onGenerateEdgeCases && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onGenerateEdgeCases}
               disabled={isGeneratingEdgeCases}
-              className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 disabled:bg-dark-700 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 disabled:cursor-not-allowed mr-2 mb-1"
+              isLoading={isGeneratingEdgeCases}
+              leftIcon={RotateCcw}
+              className="text-[11px] h-7 mr-2 mb-1"
             >
-              {isGeneratingEdgeCases ? (
-                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <RotateCcw className="w-3 h-3" />
-              )}
-              {edgeCases?.length > 0 ? 'Regenerate' : 'Generate'} Edge Cases
-            </button>
+              {edgeCases?.length > 0 ? 'Regenerate Cases' : 'Generate Cases'}
+            </Button>
           )}
         </div>
 
         {/* Tab Content */}
-        <div className="flex-1 min-h-0 overflow-hidden bg-dark-900 p-2">
-          <div className="h-full rounded-lg border border-dark-800 bg-dark-950/50 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden bg-surface p-2">
+          <div className="h-full rounded-lg border border-border bg-surface-raised/40 overflow-hidden">
             {activeTab === 'console' && (
               <ConsolePanel 
                 output={output} 
@@ -420,7 +424,7 @@ function CodePanel({
           </div>
         </div>
       </div>
-
+      </div>
 
     </div>
   );

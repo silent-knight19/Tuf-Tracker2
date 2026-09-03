@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Play, Wand2, Target, Activity, Clock, Terminal, Award } from 'lucide-react';
+import { Play, MessageSquareText, Target, Activity, Clock, Terminal, Award } from 'lucide-react';
 import GuidedDebriefModal from './GuidedDebriefModal';
 
 function RevisionSidebar({ revision, onStartReview, onGuidedReview }) {
@@ -31,7 +31,7 @@ function RevisionSidebar({ revision, onStartReview, onGuidedReview }) {
         <div className="absolute -inset-1 bg-gradient-to-r from-brand-orange/20 to-purple-500/20 rounded-3xl blur opacity-25 group-hover:opacity-100 transition duration-1000" />
         <div className="relative bg-dark-900 border border-dark-800 rounded-2xl p-6 space-y-6">
           <div className="flex items-center gap-3 border-b border-dark-800 pb-4">
-             <div className="text-[11px] font-black text-dark-500 uppercase tracking-[0.2em]">Execution Protocol</div>
+             <div className="text-[11px] font-semibold text-foreground-subtle uppercase tracking-wider">Review Actions</div>
           </div>
           
           <div className="space-y-4">
@@ -50,7 +50,7 @@ function RevisionSidebar({ revision, onStartReview, onGuidedReview }) {
               onClick={() => setIsDebriefOpen(true)}
               className="w-full py-4 rounded-xl bg-dark-950 border border-dark-800 text-dark-400 hover:text-purple-400 hover:border-purple-500/30 transition-all flex items-center justify-center gap-3 font-black text-[11px] uppercase tracking-widest leading-none group/debrief"
             >
-              <Wand2 className="w-5 h-5 text-purple-400 group-hover/debrief:animate-pulse" /> 
+              <MessageSquareText className="w-5 h-5 text-purple-400" /> 
               Guided Debrief
             </button>
 

@@ -8,7 +8,40 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Obsidian Surface Hierarchy (Linear / Raycast aesthetic)
+        // Semantic Obsidian Surface Tokens (v2 Design System)
+        canvas: '#08090d',
+        surface: {
+          DEFAULT: '#0e111a',
+          subtle: '#0b0d13',
+          raised: '#141824',
+          elevated: '#1b2030',
+          hover: '#222940',
+          active: '#28314c',
+        },
+        border: {
+          DEFAULT: 'rgba(255, 255, 255, 0.10)',
+          subtle: 'rgba(255, 255, 255, 0.06)',
+          strong: 'rgba(255, 255, 255, 0.20)',
+          focus: '#6366f1',
+        },
+        foreground: {
+          DEFAULT: '#f8fafc',
+          muted: '#94a3b8',
+          subtle: '#64748b',
+        },
+        primary: {
+          DEFAULT: '#6366f1',
+          hover: '#818cf8',
+          active: '#4f46e5',
+          subtle: 'rgba(99, 102, 241, 0.12)',
+          border: 'rgba(99, 102, 241, 0.28)',
+        },
+        accent: {
+          amber: '#f59e0b',
+          'amber-subtle': 'rgba(245, 158, 11, 0.12)',
+          'amber-border': 'rgba(245, 158, 11, 0.28)',
+        },
+        // Obsidian Surface Hierarchy (Legacy tokens retained for zero breakage)
         dark: {
           50: '#f8fafc',
           100: '#e2e8f0',

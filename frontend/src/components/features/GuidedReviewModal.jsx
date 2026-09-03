@@ -202,10 +202,10 @@ function GuidedReviewModal({ revision, onClose, onComplete }) {
                 <Check className="w-10 h-10 text-green-500" />
               </div>
               
-              <h2 className="text-3xl font-bold text-white">Ready to Complete!</h2>
-              <p className="text-dark-300 max-w-md mx-auto">
-                Great job reviewing <span className="text-white font-medium">{revision.problemTitle}</span>. 
-                Based on your confidence, we'll schedule the next review accordingly.
+              <h2 className="text-2xl font-bold text-white">Review Summary</h2>
+              <p className="text-dark-300 max-w-md mx-auto text-xs leading-relaxed">
+                Review completed for <span className="text-white font-medium">{revision.problemTitle}</span>. 
+                The next spaced repetition interval will be adjusted based on your reported retention.
               </p>
 
               <div className="bg-dark-800 rounded-lg p-6 max-w-sm mx-auto border border-dark-700">

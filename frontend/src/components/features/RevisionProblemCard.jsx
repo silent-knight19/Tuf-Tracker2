@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Calendar, ArrowRight, AlertCircle, CheckCircle2, RefreshCw, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, ArrowRight, AlertCircle, CheckCircle2, RefreshCw, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 
 function RevisionProblemCard({ revision }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Status icons
   const StatusIcon = {
-    fresh: Sparkles,
+    fresh: Clock,
     needs_revision: RefreshCw,
     mastered: CheckCircle2
-  }[revision.bucket] || Sparkles;
+  }[revision.bucket] || Clock;
 
   const statusColor = {
     fresh: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',

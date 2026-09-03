@@ -16,15 +16,15 @@ function RevisionContent({ revision, onLogTime }) {
         
         <div className="flex items-center justify-between mb-16 px-2">
           <div>
-            <h3 className="text-xl font-black text-white tracking-tight uppercase flex items-center gap-3">
-               <Activity className="w-5 h-5 text-brand-orange" />
-               Revision Evolution
+            <h3 className="text-xl font-bold text-foreground tracking-tight flex items-center gap-3">
+               <Activity className="w-5 h-5 text-primary" />
+               Revision Milestones
             </h3>
-            <p className="text-dark-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Spaced Repetition Protocol</p>
+            <p className="text-foreground-subtle text-[11px] font-medium mt-1">Spaced Repetition Schedule</p>
           </div>
-          <div className="flex items-center gap-3 px-4 py-2 bg-dark-950 border border-dark-800 rounded-xl">
-            <Clock className="w-4 h-4 text-blue-400" />
-            <span className="text-[10px] font-black text-dark-300 uppercase tracking-widest">Auto-Sync Enabled</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-border rounded-lg">
+            <Clock className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[11px] font-medium text-foreground-muted">Schedule Synced</span>
           </div>
         </div>
 
@@ -117,8 +117,8 @@ function RevisionContent({ revision, onLogTime }) {
         <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6">
            {[
              { title: 'Core Strategy', desc: 'Maintain pattern consistency across solves', icon: Target },
-             { title: 'Health Protocol', desc: 'Current revision score based on accuracy', icon: Activity },
-             { title: 'Session Drift', desc: 'Deviation from scheduled review windows', icon: Clock }
+             { title: 'Retention Score', desc: 'Recall accuracy across SM-2 intervals', icon: Activity },
+             { title: 'Schedule Adherence', desc: 'Consistency within designated review windows', icon: Clock }
            ].map((card, i) => (
              <div key={i} className="p-6 rounded-3xl bg-dark-950/40 border border-dark-800 flex items-start gap-4">
                 <div className="p-2 rounded-xl bg-dark-900 border border-dark-800">

@@ -28,28 +28,33 @@ class QuoteService {
    */
   async generateDailyQuotes() {
     try {
-      const prompt = `You are a world-class high-performance coach and philosopher.
-TASK: Generate 50 unique, powerful, and deeply moving motivational quotes for high-achievers.
+      const prompt = `You are an elite high-performance coach, philosopher of mastery, and mentor to world-class software engineers and computer scientists.
+TASK: Generate 50 unique, intellectually rigorous, and profoundly empowering quotes specifically tailored for software engineers, algorithmic masters, and technical builders.
 
-THEMES:
-- Relentless pursuit of excellence
-- Mental toughness and resilience
-- Emotional intelligence and mindfulness
-- Time mastery and discipline
-- Overcoming fear and self-doubt
-- The philosophy of consistency
-- Visionary thinking and legacy
+THEMATIC PILLARS (Strictly avoid empty clichés and shallow social-media platitudes):
+- Relentless consistency and the power of compounding daily problem solving
+- Cognitive stamina and calm focus during high-stakes technical evaluations
+- The art of debugging: treating bugs, failures, and edge cases as valuable signal
+- Deep work, architectural discipline, and mastering complex systems
+- Overcoming impostor syndrome through deliberate, verified practice
+- Embracing hard problems: the obstacle is the algorithm
 
 OUTPUT FORMAT:
-Return a JSON object with a "quotes" field containing an array of 50 objects. Each object must have:
-- "text": The quote content (concise, visceral, and punchy)
-- "author": A famous historical figure, modern visionary, or "TufTracker Intelligence"
-- "category": One of [Discipline, Vision, Resilience, Growth, Focus]
+Return a JSON object with a "quotes" field containing an array of 50 objects:
+{
+  "quotes": [
+    {
+      "text": "A punchy, profound insight on deliberate practice, engineering excellence, or relentless grit.",
+      "author": "Historical titan, legendary computer scientist (e.g., Turing, Knuth, Dijkstra, Hopper, Lovelace, Thompson, Torvalds), modern visionary, or 'BaseCase Intelligence'",
+      "category": "Discipline"
+    }
+  ]
+}
 
-RULES:
-- Return ONLY valid JSON.
-- Ensure all 50 quotes are distinct and non-cliché.
-- Quotes should feel timeless and premium.`;
+STRICT CONSTRAINTS:
+1. Return ONLY valid JSON.
+2. Ensure all 50 quotes are distinct, memorable, and substantive.
+3. "category" MUST strictly be one of: ["Discipline", "Vision", "Resilience", "Growth", "Focus"].`;
 
       const responseText = await aiService.callAI(prompt, true);
       const data = aiService.parseJSON(responseText);

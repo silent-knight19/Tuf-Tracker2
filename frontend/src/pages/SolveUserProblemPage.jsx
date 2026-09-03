@@ -7,6 +7,9 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import api from '../utils/api';
 import { auth } from '../config/firebase';
 import CodePanel from '../components/features/code/CodePanel';
+import WorkspaceLayout from '../components/workspace/WorkspaceLayout';
+import WorkspaceSolutionView from '../components/features/ai/WorkspaceSolutionView';
+import ProgressiveHints from '../components/features/ai/ProgressiveHints';
 // MotivationalQuote removed here and moved into CodePanel
 
 /**
@@ -423,80 +426,41 @@ function SolveUserProblemPage() {
   }
 
   return (
-    <div ref={containerRef} className="h-screen bg-dark-950 text-dark-100 flex overflow-hidden">
-      {/* Left Column - Problem Description */}
-      <div className="h-full flex flex-col border-r border-dark-800" style={{ width: `${leftPanelWidth}%` }}>
-        {/* Header */}
-        <div className="relative flex items-center justify-between px-4 py-3 border-b border-dark-800 bg-dark-900 shrink-0">
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => navigate('/')}
-              className="p-1.5 hover:bg-dark-800 rounded transition-colors text-dark-400 hover:text-white"
-              title="Exit Session"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div>
-              <h1 className="text-base font-bold text-white">
-                {displayProblemTitle}
-              </h1>
-              {!isBlindMode && (
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className={`px-2 py-0.5 rounded text-sm font-bold ${
-                    problem.difficulty === 'Easy' ? 'bg-green-500/10 text-green-400' :
-                    problem.difficulty === 'Medium' ? 'bg-yellow-500/10 text-yellow-400' :
-                    'bg-red-500/10 text-red-400'
-                  }`}>
-                    {problem.difficulty || 'Medium'}
-                  </span>
-                  {problem.platform && (
-                    <span className="text-xs text-dark-500">{problem.platform}</span>
-                  )}
-                </div>
-              )}
+    <WorkspaceLayout
+      title={displayProblemTitle}
+      difficulty={problem.difficulty}
+      platform={problem.platform}
+      platformUrl={isSafeHttpUrl(problem.platformUrl) ? problem.platformUrl : undefined}
+      status={problem.status}
+      leftContent={
+        <div className="h-full flex flex-col overflow-hidden">
+          {/* AI Assist Toolbar Banner */}
+          <div className="flex items-center justify-between p-3 rounded-xl bg-surface border border-border m-4 mb-0">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-primary" />
+              <span className="text-xs font-semibold text-foreground">AI Intuition & Copilot</span>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-4 relative z-20">
-            {!isBlindMode && isSafeHttpUrl(problem.platformUrl) && (
-              <a 
-                href={problem.platformUrl} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 hover:text-amber-400 rounded-lg text-sm font-bold transition-all border border-amber-500/20 hover:border-amber-500/50 flex items-center gap-2 shadow-lg shadow-amber-500/5"
-                title={`Open on ${problem.platform || 'Platform'}`}
-              >
-                <ExternalLink className="w-4 h-4" />
-                <span className="hidden sm:inline">{problem.platform || 'LeetCode'}</span>
-              </a>
-            )}
             {(!helpData || !helpData.solutions) ? (
-              // Show loading state if we are fetching, otherwise nothing (implicit auto-load)
               loadingHelp ? (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-dark-800/30 border border-dark-700/50 rounded-lg text-sm text-dark-400 animate-pulse">
-                  <div className="w-3.5 h-3.5 border-2 border-brand-orange/30 border-t-brand-orange rounded-full animate-spin" />
-                  Generating Solution...
+                <div className="flex items-center gap-2 text-xs text-foreground-subtle animate-pulse">
+                  <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  Generating Hints...
                 </div>
               ) : null
             ) : (
-              <button 
+              <button
+                type="button"
                 onClick={() => handleAIAssist(true)}
                 disabled={loadingHelp}
-                className="px-3 py-1.5 bg-dark-800 hover:bg-dark-700 text-dark-300 hover:text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 border border-dark-700"
+                className="text-xs font-medium text-primary hover:underline"
               >
-                {loadingHelp ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <RotateCw className="w-4 h-4" />
-                )}
-                Regenerate
+                Regenerate Guidance
               </button>
             )}
           </div>
-        </div>
 
-        {/* Content */}
-        <div ref={leftContentRef} className="flex-1 overflow-y-auto p-3 space-y-3 no-scrollbar scroll-smooth">
+          {/* Content */}
+          <div ref={leftContentRef} className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
           {loadingDescription ? (
             <div className="flex flex-col items-center justify-center py-12 text-dark-400">
               <div className="w-8 h-8 border-2 border-brand-orange/30 border-t-brand-orange rounded-full animate-spin mb-4" />
@@ -600,146 +564,36 @@ function SolveUserProblemPage() {
               {/* AI Assist Section */}
               {helpData && (
                 <div ref={aiAssistRef} className="space-y-6 pt-6 border-t border-dark-800">
-                  {/* Hints Section */}
+                  {/* Progressive Socratic Hints */}
                   {helpData.hints && helpData.hints.length > 0 && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                          <Lightbulb className="w-5 h-5 text-yellow-400" /> Hints
-                        </h2>
-                        <span className="text-sm text-dark-400">
-                          {currentHintIndex + 1} / {helpData.hints.length} Revealed
-                        </span>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        {helpData.hints.slice(0, currentHintIndex + 1).map((hint, index) => (
-                          <div key={index} className="bg-dark-900/50 border border-dark-700 rounded-lg p-3 text-dark-200 text-sm">
-                            <span className="font-bold text-brand-orange mr-2">Hint {index + 1}:</span>
-                            {hint}
-                          </div>
-                        ))}
-                      </div>
-
-                      {currentHintIndex < helpData.hints.length - 1 && (
-                        <button
-                          onClick={() => setCurrentHintIndex(prev => prev + 1)}
-                          className="text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
-                        >
-                          Show Next Hint <ChevronRight className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
+                    <ProgressiveHints hints={helpData.hints} />
                   )}
 
                   {/* Solutions Section */}
                   {helpData.solutions && (
-                    <div className="space-y-3">
+                    <div className="space-y-3 pt-4 border-t border-border">
                       <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                          <Cpu className="w-5 h-5 text-green-400" /> Solution
-                        </h2>
+                        <div className="flex items-center gap-2">
+                          <Cpu className="w-4 h-4 text-primary" />
+                          <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                            Verified Production Solution
+                          </h3>
+                        </div>
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); setShowSolution(!showSolution); }}
-                          className="flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 text-dark-200 transition-colors"
+                          className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg bg-surface-raised hover:bg-surface-hover text-foreground-muted hover:text-foreground border border-border transition-colors"
                         >
-                          {showSolution ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          {showSolution ? 'Hide Solution' : 'Show Solution'}
+                          {showSolution ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          {showSolution ? 'Hide Solution' : 'Reveal Solution'}
                         </button>
                       </div>
 
                       {showSolution && (
-                        <div className="bg-dark-900 border border-dark-800 rounded-lg overflow-hidden">
-                          {/* Solution Tabs */}
-                          <div className="flex border-b border-dark-800">
-                            {['optimal', 'better', 'brute'].map((tab) => (
-                              helpData.solutions[tab] && (
-                                <button
-                                  key={tab}
-                                  onClick={() => setActiveSolutionTab(tab)}
-                                  className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-                                    activeSolutionTab === tab
-                                      ? 'border-brand-orange text-white bg-dark-800/50'
-                                      : 'border-transparent text-dark-400 hover:text-dark-200 hover:bg-dark-800/30'
-                                  }`}
-                                >
-                                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                                </button>
-                              )
-                            ))}
-                          </div>
-
-                          {/* Solution Content */}
-                          <div className="p-4 space-y-4">
-                            {helpData.solutions[activeSolutionTab] ? (
-                              <>
-                                <div className="flex gap-4">
-                                  <div>
-                                    <h4 className="text-xs font-bold text-dark-400 uppercase tracking-wider mb-1">Time Complexity</h4>
-                                    <p className="text-emerald-400 font-mono text-sm bg-dark-950 inline-block px-2 py-1 rounded border border-dark-800">
-                                      {helpData.solutions[activeSolutionTab].timeComplexity || helpData.solutions[activeSolutionTab].complexity || 'N/A'}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <h4 className="text-xs font-bold text-dark-400 uppercase tracking-wider mb-1">Space Complexity</h4>
-                                    <p className="text-blue-400 font-mono text-sm bg-dark-950 inline-block px-2 py-1 rounded border border-dark-800">
-                                      {helpData.solutions[activeSolutionTab].spaceComplexity || 'N/A'}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {(helpData.solutions[activeSolutionTab].intuition || helpData.solutions[activeSolutionTab].explanation || helpData.solutions[activeSolutionTab].approach) && (
-                                  <div>
-                                    <h4 className="text-[10px] font-black text-dark-500 uppercase tracking-widest mb-2">Intuition & Pattern</h4>
-                                    <p className="text-dark-200 leading-relaxed text-xs bg-brand-orange/5 p-3 rounded-r border-l-2 border-brand-orange">
-                                      {helpData.solutions[activeSolutionTab].intuition || helpData.solutions[activeSolutionTab].explanation || helpData.solutions[activeSolutionTab].approach}
-                                    </p>
-                                  </div>
-                                )}
-
-                                {helpData.solutions[activeSolutionTab].approachSteps?.length > 0 && (
-                                  <div>
-                                    <h4 className="text-[10px] font-black text-dark-500 uppercase tracking-widest mb-3">Step-by-Step</h4>
-                                    <div className="space-y-3">
-                                      {helpData.solutions[activeSolutionTab].approachSteps.map((step, i) => (
-                                        <div key={i} className="flex gap-4 text-[13.5px] font-medium group">
-                                          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-dark-800 border border-dark-700 flex items-center justify-center text-[10px] font-bold text-brand-orange">
-                                            {i + 1}
-                                          </span>
-                                          <p className="text-dark-100 pt-0.5 leading-relaxed">
-                                            {step.replace(/^\w+\s+\d+:\s*/, '')}
-                                          </p>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-
-                                <div>
-                                  <h4 className="text-xs font-bold text-dark-400 uppercase tracking-wider mb-1">Code (Java)</h4>
-                                  <div className="rounded-lg overflow-hidden border border-dark-800">
-                                    <SyntaxHighlighter
-                                      language="java"
-                                      style={vscDarkPlus}
-                                      customStyle={{ margin: 0, padding: '1rem', fontSize: '0.75rem', background: '#0d1117' }}
-                                      showLineNumbers={true}
-                                      wrapLines={true}
-                                    >
-                                      {typeof helpData.solutions[activeSolutionTab].code === 'object' 
-                                        ? JSON.stringify(helpData.solutions[activeSolutionTab].code, null, 2) 
-                                        : helpData.solutions[activeSolutionTab].code || '// No code available'}
-                                    </SyntaxHighlighter>
-                                  </div>
-                                </div>
-                              </>
-                            ) : (
-                              <div className="text-center py-4">
-                                <p className="text-dark-400 italic text-sm">No specific {activeSolutionTab} approach available.</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                        <WorkspaceSolutionView
+                          solutions={helpData.solutions}
+                          initialTier={activeSolutionTab}
+                        />
                       )}
                     </div>
                   )}
@@ -754,16 +608,8 @@ function SolveUserProblemPage() {
         </div>
       </div>
 
-      {/* Draggable Vertical Divider */}
-      <div 
-        className="w-1.5 h-full bg-dark-800 cursor-col-resize flex items-center justify-center hover:bg-dark-700 transition-colors shrink-0 group"
-        onMouseDown={() => setIsDraggingPanel(true)}
-      >
-        <GripVertical className="w-3 h-3 text-dark-500 group-hover:text-dark-300" />
-      </div>
-
-      {/* Right Column - Code Editor */}
-      <div className="h-full relative" style={{ width: `${100 - leftPanelWidth}%` }}>
+      }
+      rightContent={
         <CodePanel
           problemId={id}
           onRunCode={handleRunCode}
@@ -778,8 +624,8 @@ function SolveUserProblemPage() {
           constraints={displayDescription?.constraints}
           optimalComplexity={helpData?.solutions?.optimal?.complexity}
         />
-      </div>
-    </div>
+      }
+    />
   );
 }
 

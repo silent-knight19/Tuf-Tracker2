@@ -108,19 +108,19 @@ const CompanyPracticePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* LeetCode-inspired Header */}
-      <div className="border-b border-gray-800">
+    <div className="min-h-screen bg-background">
+      {/* Professional Header */}
+      <div className="border-b border-border bg-surface/50">
         <div className="max-w-[1440px] mx-auto px-8 py-6">
           <div className="flex items-center gap-4">
-            <div className="p-2 bg-green-600/10 rounded-lg">
-              <Building className="w-6 h-6 text-green-500" />
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Building className="w-6 h-6 text-primary" />
             </div>
-            <h1 className="text-2xl font-semibold text-white">Company Prep</h1>
+            <h1 className="text-2xl font-semibold text-foreground">Company Preparation</h1>
           </div>
           
-          <p className="mt-3 text-sm text-gray-400 max-w-2xl">
-            Target specific companies with AI-crafted interview scenarios.
+          <p className="mt-3 text-xs text-foreground-muted max-w-2xl">
+            Target specific engineering organizations with realistic interview challenges and systems constraints.
           </p>
         </div>
       </div>
@@ -130,13 +130,13 @@ const CompanyPracticePage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
           {/* Custom Configuration Section */}
           <div className="lg:col-span-2">
-            <div className="bg-[#1a1a1a] border border-gray-800 rounded-lg overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-800">
+            <div className="bg-surface border border-border rounded-xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-border">
                 <div className="flex items-center gap-3">
-                  <Layout className="w-5 h-5 text-green-500" />
+                  <Layout className="w-5 h-5 text-primary" />
                   <div>
-                    <h3 className="text-base font-semibold text-white">Custom Target Builder</h3>
-                    <p className="text-xs text-gray-500 mt-0.5">Fine-tune your next AI-generated interview challenge.</p>
+                    <h3 className="text-sm font-semibold text-foreground">Custom Interview Generator</h3>
+                    <p className="text-xs text-foreground-muted mt-0.5">Configure tailored interview parameters for your target company.</p>
                   </div>
                 </div>
               </div>
@@ -238,43 +238,43 @@ const CompanyPracticePage = () => {
 
           {/* Pro Tips Sidebar */}
           <div className="space-y-6">
-            <div className="bg-[#1a1a1a] border border-gray-800 rounded-lg overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-800">
-                <h3 className="text-base font-semibold text-white">Career Pro Tips</h3>
+            <div className="bg-surface border border-border rounded-xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-border">
+                <h3 className="text-sm font-semibold text-foreground">Interview Insights</h3>
               </div>
               <div className="p-5 space-y-5">
                 <div className="flex gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-600/10 flex-shrink-0 flex items-center justify-center">
-                    <Globe className="w-5 h-5 text-blue-500" />
+                  <div className="w-9 h-9 rounded-lg bg-primary/10 flex-shrink-0 flex items-center justify-center">
+                    <Globe className="w-4 h-4 text-primary" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-semibold text-white mb-1">SYSTEM DESIGN BLEND</h4>
-                    <p className="text-xs text-gray-400 leading-relaxed">
-                      Companies like Google often blend algorithmic depth with practical system constraints.
+                    <h4 className="text-xs font-semibold text-foreground mb-1">Systems Constraints</h4>
+                    <p className="text-xs text-foreground-muted leading-relaxed">
+                      Leading tech companies blend deep algorithmic complexity with practical latency and memory budgets.
                     </p>
                   </div>
                 </div>
 
                 <div className="flex gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-orange-600/10 flex-shrink-0 flex items-center justify-center">
-                    <Rocket className="w-5 h-5 text-orange-500" />
+                  <div className="w-9 h-9 rounded-lg bg-accent-amber/10 flex-shrink-0 flex items-center justify-center">
+                    <Building className="w-4 h-4 text-accent-amber" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-semibold text-white mb-1">LEADERSHIP PRINCIPLES</h4>
-                    <p className="text-xs text-gray-400 leading-relaxed">
-                      Amazon interviews focus heavily on how you apply their principles to solve customer-facing edge cases.
+                    <h4 className="text-xs font-semibold text-foreground mb-1">Engineering Principles</h4>
+                    <p className="text-xs text-foreground-muted leading-relaxed">
+                      Evaluators focus heavily on how you articulate edge cases, invariants, and trade-offs before writing code.
                     </p>
                   </div>
                 </div>
 
                 <div className="flex gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-purple-600/10 flex-shrink-0 flex items-center justify-center">
-                    <Building className="w-5 h-5 text-purple-500" />
+                  <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex-shrink-0 flex items-center justify-center">
+                    <Building2 className="w-4 h-4 text-emerald-400" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-semibold text-white mb-1">REAL SCENARIOS</h4>
-                    <p className="text-xs text-gray-400 leading-relaxed">
-                      Our AI models the problem description specifically to the business domain of your target.
+                    <h4 className="text-xs font-semibold text-foreground mb-1">Domain Context</h4>
+                    <p className="text-xs text-foreground-muted leading-relaxed">
+                      Generated problems mirror the actual business architecture and data flow of your selected target.
                     </p>
                   </div>
                 </div>
@@ -285,9 +285,9 @@ const CompanyPracticePage = () => {
       </div>
 
       <div className="max-w-[1440px] mx-auto px-8">
-        {/* Popular Companies Grid (Stay below) */}
+        {/* Target Companies Grid */}
         <div className="lg:col-span-12 order-3">
-          <h3 className="text-xs font-bold text-dark-500 uppercase tracking-widest mb-6">Popular Targets</h3>
+          <h3 className="text-xs font-semibold text-foreground-subtle uppercase tracking-wider mb-5">Curated Company Tracks</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-12">
             {TOP_COMPANIES.map((company) => (
               <button

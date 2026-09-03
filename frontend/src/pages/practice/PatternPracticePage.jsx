@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Target, Zap, Terminal, Brain, Trophy, ChevronRight } from 'lucide-react';
+import { Target, Zap, Terminal, Brain, Layers, ChevronRight } from 'lucide-react';
 import { useProblemStore } from '../../stores/problemStore';
 import SearchableSelect from '../../components/ui/SearchableSelect';
 import MotivationalQuote from '../../components/ui/MotivationalQuote';
@@ -68,16 +68,16 @@ function PatternPracticePage() {
   };
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* LeetCode-inspired Header */}
-      <div className="border-b border-gray-800">
+    <div className="min-h-screen bg-background">
+      {/* Professional Header */}
+      <div className="border-b border-border bg-surface/50">
         <div className="max-w-[1440px] mx-auto px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-2 bg-blue-600/10 rounded-lg">
-                <Target className="w-6 h-6 text-blue-500" />
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Target className="w-6 h-6 text-primary" />
               </div>
-              <h1 className="text-2xl font-semibold text-white">Pattern Focus</h1>
+              <h1 className="text-2xl font-semibold text-foreground">Pattern Focus</h1>
             </div>
             
             <div className="flex items-center gap-8">
@@ -183,17 +183,17 @@ function PatternPracticePage() {
 
             {/* Features Grid */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-[#1a1a1a] border border-gray-800 rounded-lg px-4 py-3 flex items-center gap-2.5">
-                <Brain className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                <span className="text-xs font-medium text-gray-400">AI-Generated Problem</span>
+              <div className="bg-surface border border-border rounded-lg px-4 py-3 flex items-center gap-2.5">
+                <Brain className="w-4 h-4 text-primary flex-shrink-0" />
+                <span className="text-xs font-medium text-foreground-muted">AI-Generated Problem</span>
               </div>
-              <div className="bg-[#1a1a1a] border border-gray-800 rounded-lg px-4 py-3 flex items-center gap-2.5">
-                <Zap className="w-4 h-4 text-purple-500 flex-shrink-0" />
-                <span className="text-xs font-medium text-gray-400">Custom Edge Cases</span>
+              <div className="bg-surface border border-border rounded-lg px-4 py-3 flex items-center gap-2.5">
+                <Zap className="w-4 h-4 text-accent-amber flex-shrink-0" />
+                <span className="text-xs font-medium text-foreground-muted">Custom Edge Cases</span>
               </div>
-              <div className="bg-[#1a1a1a] border border-gray-800 rounded-lg px-4 py-3 flex items-center gap-2.5">
-                <Trophy className="w-4 h-4 text-yellow-500 flex-shrink-0" />
-                <span className="text-xs font-medium text-gray-400">Pattern Mastery</span>
+              <div className="bg-surface border border-border rounded-lg px-4 py-3 flex items-center gap-2.5">
+                <Layers className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <span className="text-xs font-medium text-foreground-muted">Pattern Invariants</span>
               </div>
             </div>
 

@@ -53,8 +53,8 @@ function RevisionHeader({ revision }) {
                     </span>
                   </div>
                 </div>
-                <div className="text-[10px] font-bold text-dark-500 uppercase tracking-[0.2em] mt-1.5">
-                  Collection / <span className="text-dark-300">Revision Protocol</span>
+                <div className="text-[10px] font-medium text-dark-500 uppercase tracking-wider mt-1.5">
+                  Collection / <span className="text-dark-300">Spaced Revision</span>
                 </div>
              </div>
           </div>

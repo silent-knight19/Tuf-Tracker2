@@ -1,13 +1,13 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAnalyticsStore } from '../../stores/analyticsStore';
 
-function ActivityHeatmap() {
+export default function ActivityHeatmap() {
   const { heatmap, fetchHeatmap } = useAnalyticsStore();
+  const [hoveredDay, setHoveredDay] = useState(null);
 
   useEffect(() => {
     fetchHeatmap();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchHeatmap]);
 
   // Generate last 365 days
   const days = useMemo(() => {
@@ -25,7 +25,7 @@ function ActivityHeatmap() {
   const activityMap = useMemo(() => {
     const map = {};
     if (Array.isArray(heatmap)) {
-      heatmap.forEach(item => {
+      heatmap.forEach((item) => {
         map[item.date] = item.count;
       });
     }
@@ -33,11 +33,11 @@ function ActivityHeatmap() {
   }, [heatmap]);
 
   const getColor = (count) => {
-    if (!count) return 'bg-white/[0.03]';
-    if (count === 1) return 'bg-brand-orange/30';
-    if (count <= 3) return 'bg-brand-orange/50';
-    if (count <= 5) return 'bg-brand-orange/70';
-    return 'bg-brand-orange';
+    if (!count) return 'bg-surface border border-border-subtle';
+    if (count === 1) return 'bg-primary/25 border border-primary/30';
+    if (count <= 3) return 'bg-primary/50 border border-primary/50';
+    if (count <= 5) return 'bg-primary/75 border border-primary/70';
+    return 'bg-primary border border-primary-hover shadow-sm shadow-primary/30';
   };
 
   const formatDate = (date) => {
@@ -46,16 +46,16 @@ function ActivityHeatmap() {
 
   return (
     <div className="w-full flex flex-col items-center">
-      <div className="inline-block p-6 bg-dark-950/40 border border-white/[0.03] rounded-[2rem] overflow-x-auto no-scrollbar max-w-full">
-        <div className="flex flex-col gap-3 min-w-[800px]">
+      <div className="w-full p-4 bg-surface-raised/40 border border-border rounded-xl overflow-x-auto custom-scrollbar shadow-inner-rim">
+        <div className="flex flex-col gap-2 min-w-[720px]">
           {/* Months Header */}
-          <div className="flex gap-[3.5px] text-[9px] font-black text-dark-600 uppercase tracking-widest h-4 ml-2">
+          <div className="flex gap-[3.5px] text-[10px] font-mono font-semibold text-foreground-subtle uppercase tracking-wider h-4 ml-2">
             {Array.from({ length: 53 }).map((_, weekIndex) => {
               const dayIndex = weekIndex * 7;
               if (dayIndex >= days.length) return null;
               const date = days[dayIndex];
               const isFirstWeekOfMonth = date.getDate() <= 7;
-              
+
               return (
                 <div key={weekIndex} className="w-3 shrink-0">
                   {isFirstWeekOfMonth && (
@@ -68,24 +68,26 @@ function ActivityHeatmap() {
             })}
           </div>
 
-          <div className="flex gap-[4px] p-2">
-            {/* Weeks */}
+          {/* 7-Row Grid */}
+          <div className="flex gap-[3.5px]">
             {Array.from({ length: 53 }).map((_, weekIndex) => (
-              <div key={weekIndex} className="flex flex-col gap-[4px]">
-                {/* Days in week */}
-                {Array.from({ length: 7 }).map((_, dayIndex) => {
-                  const dayOfYear = weekIndex * 7 + dayIndex;
-                  if (dayOfYear >= days.length) return null;
-                  
-                  const date = days[dayOfYear];
+              <div key={weekIndex} className="flex flex-col gap-[3.5px]">
+                {Array.from({ length: 7 }).map((_, dayOfWeek) => {
+                  const dayIndex = weekIndex * 7 + dayOfWeek;
+                  if (dayIndex >= days.length) return null;
+
+                  const date = days[dayIndex];
                   const dateStr = formatDate(date);
                   const count = activityMap[dateStr] || 0;
 
                   return (
                     <div
-                      key={dateStr}
-                      title={`${count} submissions on ${date.toLocaleDateString()}`}
-                      className={`w-3 h-3 rounded-[2px] ${getColor(count)} transition-all duration-300 hover:scale-125 hover:z-10 hover:shadow-[0_0_10px_rgba(249,115,22,0.3)] cursor-pointer`}
+                      key={dayOfWeek}
+                      onMouseEnter={() => setHoveredDay({ date: dateStr, count })}
+                      onMouseLeave={() => setHoveredDay(null)}
+                      className={`w-3 h-3 rounded-[3px] transition-all cursor-pointer hover:scale-125 ${getColor(
+                        count
+                      )}`}
                     />
                   );
                 })}
@@ -93,23 +95,25 @@ function ActivityHeatmap() {
             ))}
           </div>
 
-          {/* Legend Cluster */}
-          <div className="flex items-center justify-between mt-4 px-2">
-            <div className="flex items-center gap-4">
-               <div className="flex items-center gap-1.5 grayscale opacity-50">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/8/8a/Google_Gemini_logo.svg" alt="Gemini" className="h-2.5" />
-                  <span className="text-[8px] font-black text-dark-600 uppercase tracking-widest">Active Analysis</span>
-               </div>
+          {/* Footer with Legend & Hover readout */}
+          <div className="flex items-center justify-between pt-3 border-t border-border-subtle text-[11px] text-foreground-subtle">
+            <div>
+              {hoveredDay ? (
+                <span className="text-foreground font-medium">
+                  {hoveredDay.count} problems solved on {hoveredDay.date}
+                </span>
+              ) : (
+                <span>365-day solve velocity</span>
+              )}
             </div>
-            <div className="flex items-center gap-2 text-[9px] font-black text-dark-600 uppercase tracking-wider">
+
+            <div className="flex items-center gap-1.5 text-[10px] select-none">
               <span>Less</span>
-              <div className="flex gap-1.5 px-2 py-1 bg-dark-900/50 rounded-lg border border-white/[0.03]">
-                <div className="w-2.5 h-2.5 rounded-[1px] bg-white/[0.03]" />
-                <div className="w-2.5 h-2.5 rounded-[1px] bg-brand-orange/30" />
-                <div className="w-2.5 h-2.5 rounded-[1px] bg-brand-orange/50" />
-                <div className="w-2.5 h-2.5 rounded-[1px] bg-brand-orange/70" />
-                <div className="w-2.5 h-2.5 rounded-[1px] bg-brand-orange" />
-              </div>
+              <div className="w-2.5 h-2.5 rounded-[2px] bg-surface border border-border-subtle" />
+              <div className="w-2.5 h-2.5 rounded-[2px] bg-primary/25 border border-primary/30" />
+              <div className="w-2.5 h-2.5 rounded-[2px] bg-primary/50 border border-primary/50" />
+              <div className="w-2.5 h-2.5 rounded-[2px] bg-primary/75 border border-primary/70" />
+              <div className="w-2.5 h-2.5 rounded-[2px] bg-primary border border-primary-hover" />
               <span>More</span>
             </div>
           </div>
@@ -118,5 +122,3 @@ function ActivityHeatmap() {
     </div>
   );
 }
-
-export default ActivityHeatmap;

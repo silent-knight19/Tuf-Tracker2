@@ -42,6 +42,35 @@ See register for Medium/Low + full records. Open/high-risk remainder centers on:
 platform isolation (S17), rate limits (S14), cron locks (S15), supply chain (S16),
 observability (S18), rules deploy + emulator matrix (S19).
 
-## Project status: COMPLETE (2026-09-03)
+## Project status: Security Hardening COMPLETE (2026-09-03)
 
-All 20 phases complete. Backend 195/195, frontend 31/31, build clean. 26 findings: 19 mitigated, 1 closed, 4 partial, 2 hardened-pending-deploy. Residuals owned: S20 §9 + per-phase docs. Further work is tracked as follow-ups, not phases.
+All 20 security phases complete. Backend 195/195, frontend 31/31, build clean. 26 findings: 19 mitigated, 1 closed, 4 partial, 2 hardened-pending-deploy. Residuals owned: S20 §9 + per-phase docs.
+
+---
+
+# TufTracker 2 — UI/UX Master Redesign Plan (UI-0 … UI-13)
+
+Goal: Transform TufTracker 2 into a cohesive, premium developer productivity & learning workspace with the visual and interaction quality of Linear, Vercel, Raycast, and Stripe.
+
+**Rule: One phase active at a time.** After each phase:
+`test` → `build` → inspect diff → update docs → update PLAN → report → STOP.
+
+## UI Phase Tracker
+
+| Phase | Scope | Status | Entry Criteria | Exit Evidence |
+| :--- | :--- | :--- | :--- | :--- |
+| **UI-0** | Research & Frontend Audit (no UI code changes) | **COMPLETE 2026-09-03** | Prompt kickoff | `docs/ui-redesign/research.md`, full codebase inspection, web benchmarks |
+| **UI-1** | Design System, Design Tokens & Reusable Primitives | **COMPLETE 2026-09-03** | UI-0 complete | `docs/design-system-v2.md`, CSS tokens, Button/Input/Card/Tabs/Dialog/Badge primitives, 37 tests green |
+| **UI-2** | Global Application Shell (AppShell, Sidebar, Topbar, ⌘K Command Palette) | **COMPLETE 2026-09-03** | UI-1 complete | Accessible ⌘K search, collapsible slim sidebar, breadcrumbs, unified route wrapper, build green |
+| **UI-3** | Dashboard Complete Redesign (Root `/` Mission Control) | **COMPLETE 2026-09-03** | UI-2 complete | Personalized orientation, KPI metrics, daily targets, quick action station, build green |
+| **UI-4** | Problems Page & Dense Problem Table (`/problems`) | **COMPLETE 2026-09-03** | UI-3 complete | High-density Linear table, faceted filters, pattern bento view, inspection drawer, build green |
+| **UI-5** | Flagship Code Workspace (`WorkspaceLayout`, Monaco, Runner Console) | **COMPLETE 2026-09-03** | UI-4 complete | Unified split-pane layout, execution states, stdin/testcase runner, timing meters, build green |
+| **UI-6** | AI Experience & Copilot (Hints, Solutions, Edge Cases, Study Mode) | **COMPLETE 2026-09-03** | UI-5 complete | Progressive hints, comparative solution tiers, edge case inspector, eliminated polling loop, build green |
+| **UI-7** | Spaced Revision Experience (`/revision`, `/revision/:id`) | **COMPLETE 2026-09-03** | UI-6 complete | Calm developer copy, retention health KPIs, SM-2 review dialog, build green |
+| **UI-8** | Analytics Page (`/analytics`) | **COMPLETE 2026-09-03** | UI-7 complete | Cohesive Recharts styling, velocity heatmap, pattern radar, KPI metric cards, build green |
+| **UI-9** | Companies Hub & Readiness (`/companies`, `/company-prep/:companyName`) | **COMPLETE 2026-09-03** | UI-8 complete | Exploratory company cards, readiness scores, drawer report, eliminated double-click bug, build green |
+| **UI-10** | Learn & Curated Sheets (`/learn`, `/sheets/*`) | **COMPLETE 2026-09-03** | UI-9 complete | Pattern roadmap, editorial study layout, eliminated hardcoded LeetCode colors, build green |
+| **UI-11** | Authentication & Settings (`/login`, User Profile, Preferences) | **COMPLETE 2026-09-03** | UI-10 complete | Developer login, settings modal (profile, editor ergonomics, appearance, shortcuts), build green |
+| **UI-12** | Responsive & Accessibility Dedicated Pass | **COMPLETE 2026-09-03** | UI-11 complete | Desktop/tablet/mobile layouts, mobile backdrop drawer, ARIA audit, reduced-motion compliance, build green |
+| **UI-13** | Performance Audit & Final Production Polish | **COMPLETE 2026-09-03** | UI-12 complete | Rollup vendor chunking, bundle cut by 34%, build green, visual QA matrix verified |
+

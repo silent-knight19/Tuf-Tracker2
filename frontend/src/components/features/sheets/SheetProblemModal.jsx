@@ -1,4 +1,4 @@
-import { ExternalLink, Code2, Sparkles, X, CheckCircle2, Circle, BookOpen, Target, ArrowRight } from 'lucide-react';
+import { ExternalLink, Code2, Cpu, X, CheckCircle2, Circle, BookOpen, Target, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 function SheetProblemModal({ problem, onClose, isSolved, onToggleSolved }) {
@@ -175,7 +175,7 @@ function SheetProblemModal({ problem, onClose, isSolved, onToggleSolved }) {
             >
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-brand-orange/20 flex items-center justify-center group-hover:bg-brand-orange/30 transition-colors">
-                  <Sparkles className="w-6 h-6 text-brand-orange" />
+                  <Cpu className="w-6 h-6 text-brand-orange" />
                 </div>
                 <div className="flex-1">
                   <div className="font-bold text-white text-lg mb-1">Solve with AI</div>

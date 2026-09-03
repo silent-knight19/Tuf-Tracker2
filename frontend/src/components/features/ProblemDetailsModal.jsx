@@ -3,6 +3,7 @@ import { useProblemStore } from '../../stores/problemStore';
 import { useScrollLock } from '../../hooks/useScrollLock';
 import { Cpu, RotateCw, Lightbulb, X, ExternalLink } from 'lucide-react';
 import { isSafeHttpUrl } from '../ui/SafeMarkdown';
+import StudyGuideView from './ai/StudyGuideView';
 
 function ProblemDetailsModal({ problem, isOpen, onClose }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -285,141 +286,12 @@ function ProblemDetailsModal({ problem, isOpen, onClose }) {
 
             {/* Right Column: AI Study Guide */}
             <div className="space-y-6">
-              {/* AI Study Guide Header */}
-              <div className="card">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-dark-100 flex items-center gap-2">
-                    <Cpu className="w-5 h-5 text-brand-orange" />
-                    AI Study Guide
-                  </h3>
-                  <button
-                    onClick={handleGenerateNotes}
-                    disabled={isGenerating}
-                    className="btn btn-primary text-sm px-3 py-1.5 flex items-center gap-2"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        {aiSections ? <RotateCw className="w-4 h-4" /> : <Cpu className="w-4 h-4" />}
-                        {aiSections ? 'Regenerate' : 'Generate'}
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                {aiSections ? (
-                  <>
-                    {/* Problem Understanding */}
-                    {aiSections.understanding && (
-                      <div className="mb-4 pb-4 border-b border-dark-800">
-                        <h4 className="text-sm font-semibold text-dark-300 mb-2">Problem Understanding</h4>
-                        <div className="text-sm text-dark-400 whitespace-pre-wrap">{aiSections.understanding}</div>
-                      </div>
-                    )}
-
-                    {/* Solution Tabs */}
-                    <div>
-                      <div className="flex gap-2 mb-4">
-                        {aiSections.bruteForce.code && (
-                          <button
-                            onClick={() => setActiveTab('brute')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                              activeTab === 'brute'
-                                ? 'bg-brand-orange text-white'
-                                : 'bg-dark-800 text-dark-400 hover:bg-dark-700'
-                            }`}
-                          >
-                            Brute Force
-                          </button>
-                        )}
-                        {aiSections.better.code && (
-                          <button
-                            onClick={() => setActiveTab('better')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                              activeTab === 'better'
-                                ? 'bg-brand-orange text-white'
-                                : 'bg-dark-800 text-dark-400 hover:bg-dark-700'
-                            }`}
-                          >
-                            Better
-                          </button>
-                        )}
-                        {aiSections.optimal.code && (
-                          <button
-                            onClick={() => setActiveTab('optimal')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                              activeTab === 'optimal'
-                                ? 'bg-brand-orange text-white'
-                                : 'bg-dark-800 text-dark-400 hover:bg-dark-700'
-                            }`}
-                          >
-                            Optimal
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Code Display */}
-                      <div className="bg-dark-950 rounded-lg p-4 border border-dark-800">
-                        {activeTab === 'brute' && aiSections.bruteForce.code && (
-                          <div>
-                            {aiSections.bruteForce.explanation && (
-                              <div className="text-sm text-dark-400 mb-3 pb-3 border-b border-dark-800">
-                                {aiSections.bruteForce.explanation}
-                              </div>
-                            )}
-                            <pre className="text-xs text-dark-200 overflow-x-auto">
-                              <code className="language-java">{aiSections.bruteForce.code}</code>
-                            </pre>
-                          </div>
-                        )}
-                        {activeTab === 'better' && aiSections.better.code && (
-                          <div>
-                            {aiSections.better.explanation && (
-                              <div className="text-sm text-dark-400 mb-3 pb-3 border-b border-dark-800">
-                                {aiSections.better.explanation}
-                              </div>
-                            )}
-                            <pre className="text-xs text-dark-200 overflow-x-auto">
-                              <code className="language-java">{aiSections.better.code}</code>
-                            </pre>
-                          </div>
-                        )}
-                        {activeTab === 'optimal' && aiSections.optimal.code && (
-                          <div>
-                            {aiSections.optimal.explanation && (
-                              <div className="text-sm text-dark-400 mb-3 pb-3 border-b border-dark-800">
-                                {aiSections.optimal.explanation}
-                              </div>
-                            )}
-                            <pre className="text-xs text-dark-200 overflow-x-auto">
-                              <code className="language-java">{aiSections.optimal.code}</code>
-                            </pre>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Key Takeaways */}
-                      {aiSections.takeaways && (
-                        <div className="mt-4 p-4 bg-dark-900 rounded-lg border border-dark-800">
-                          <h4 className="text-sm font-semibold text-brand-yellow mb-2 flex items-center gap-2">
-                            <Lightbulb className="w-4 h-4" />
-                            Key Takeaways
-                          </h4>
-                          <div className="text-sm text-dark-300 whitespace-pre-wrap">{aiSections.takeaways}</div>
-                        </div>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center py-8 text-dark-500">
-                    <p className="mb-2">No AI study guide generated yet.</p>
-                    <p className="text-sm">Click "Generate" to create comprehensive notes with multiple solution approaches.</p>
-                  </div>
-                )}
+              <div className="card p-5 bg-surface border border-border">
+                <StudyGuideView
+                  notes={aiSections}
+                  isGenerating={isGenerating}
+                  onRegenerate={handleGenerateNotes}
+                />
               </div>
             </div>
           </div>

@@ -6,26 +6,52 @@ import { useRevisionStore } from '../stores/revisionStore';
 import SolvedProblemsStats from '../components/features/SolvedProblemsStats';
 import ProblemCard from '../components/features/ProblemCard';
 import AddProblemModal from '../components/features/AddProblemModal';
-import MotivationalQuote from '../components/ui/MotivationalQuote';
-import { CheckCircle2, Plus, ChevronDown, ChevronRight, Search, X } from 'lucide-react';
+import ProblemRow from '../components/problem/ProblemRow';
+import ProblemDetailDrawer from '../components/problem/ProblemDetailDrawer';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import Tabs from '../components/ui/Tabs';
+import Skeleton from '../components/ui/Skeleton';
+import Select from '../components/ui/Select';
+import {
+  Plus,
+  Search,
+  LayoutList,
+  LayoutGrid,
+  FilterX,
+  ChevronDown,
+  ChevronRight,
+} from 'lucide-react';
 
-function ProblemsPage() {
+export default function ProblemsPage() {
   const { companyName } = useParams();
-  const { problems, loading: problemsLoading, fetchProblems, addProblem, updateProblem } = useProblemStore();
-  const { companyProblems, fetchCompanyProblems, loading: companyLoading } = useCompanyStore();
-  const { fetchRevisions } = useRevisionStore();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [collapsedGroups, setCollapsedGroups] = useState({});
+  const {
+    problems,
+    loading: problemsLoading,
+    fetchProblems,
+    addProblem,
+    updateProblem,
+  } = useProblemStore();
+  const { companyProblems, fetchCompanyProblems, loading: companyLoading } =
+    useCompanyStore();
+  const { revisions, fetchRevisions, createRevision } = useRevisionStore();
 
-  // Local filter state - completely independent from store
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
+  const [collapsedGroups, setCollapsedGroups] = useState({});
+  const [selectedProblem, setSelectedProblem] = useState(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // Filters
   const [searchQuery, setSearchQuery] = useState('');
-  const [difficultyFilter, setDifficultyFilter] = useState('');
-  const [platformFilter, setPlatformFilter] = useState('');
+  const [difficultyFilter, setDifficultyFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [platformFilter, setPlatformFilter] = useState('All');
 
   const toggleGroup = (patternName) => {
-    setCollapsedGroups(prev => ({
+    setCollapsedGroups((prev) => ({
       ...prev,
-      [patternName]: !prev[patternName]
+      [patternName]: !prev[patternName],
     }));
   };
 
@@ -34,358 +60,416 @@ function ProblemsPage() {
     if (companyName) {
       fetchCompanyProblems(companyName);
     } else {
-      fetchProblems(); // Fetch all problems without filters
+      fetchProblems();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companyName]);
+  }, [companyName, fetchProblems, fetchCompanyProblems, fetchRevisions]);
 
   const loading = companyName ? companyLoading : problemsLoading;
 
-  // Clear all filters
   const clearAllFilters = () => {
     setSearchQuery('');
-    setDifficultyFilter('');
-    setPlatformFilter('');
+    setDifficultyFilter('All');
+    setStatusFilter('All');
+    setPlatformFilter('All');
   };
 
-  const hasActiveFilters = searchQuery || difficultyFilter || platformFilter;
+  const hasActiveFilters =
+    searchQuery ||
+    difficultyFilter !== 'All' ||
+    statusFilter !== 'All' ||
+    platformFilter !== 'All';
 
-  // Helper to get consistent timestamp
-  const getTime = (problem) => {
-    const dateField = problem.solvedAt || problem.updatedAt || problem.createdAt;
-    if (!dateField) return 0;
-    if (dateField._seconds) return dateField._seconds * 1000;
-    if (dateField.seconds) return dateField.seconds * 1000;
-    if (dateField.toDate) return dateField.toDate().getTime();
-    const date = new Date(dateField);
-    return isNaN(date.getTime()) ? 0 : date.getTime();
-  };
+  // Map revisions by problemId for fast lookup
+  const revisionMap = useMemo(() => {
+    const map = {};
+    (revisions || []).forEach((r) => {
+      if (r.problemId) map[r.problemId] = r;
+      if (r.problemTitle) map[r.problemTitle.toLowerCase()] = r;
+    });
+    return map;
+  }, [revisions]);
 
-  // Memoized filtered and grouped problems
-  const { filteredProblems, groupedProblems, totalProblems } = useMemo(() => {
-    const sourceProblems = companyName ? companyProblems : problems.filter(p => p.status !== 'ViewOnly');
+  // Filtered & Grouped Problems
+  const { filteredProblems, groupedProblems, totalCount } = useMemo(() => {
+    const sourceProblems = companyName
+      ? companyProblems
+      : problems.filter((p) => p.status !== 'ViewOnly');
     const total = sourceProblems.length;
+    const q = searchQuery.toLowerCase().trim();
 
-    // Apply filters
-    const searchLower = searchQuery.toLowerCase().trim();
-    
-    const filtered = sourceProblems.filter(problem => {
-      // Search filter - check title, topics, and PRIMARY pattern only (to match grouping logic)
-      if (searchLower) {
-        const titleMatch = problem.title?.toLowerCase().includes(searchLower);
-        const topicMatch = problem.topics?.some(t => t.toLowerCase().includes(searchLower));
-        // Only search the PRIMARY pattern (patterns[0]) to match how we group problems
-        const primaryPattern = problem.patterns && problem.patterns.length > 0 ? problem.patterns[0] : 'General';
-        const patternMatch = primaryPattern.toLowerCase().includes(searchLower);
-        if (!titleMatch && !topicMatch && !patternMatch) return false;
+    const filtered = sourceProblems.filter((problem) => {
+      // Search
+      if (q) {
+        const titleMatch = problem.title?.toLowerCase().includes(q);
+        const topicMatch = problem.topics?.some((t) => t.toLowerCase().includes(q));
+        const patternMatch = problem.patterns?.some((pat) => pat.toLowerCase().includes(q));
+        const companyMatch = problem.companies?.some((c) => c.toLowerCase().includes(q));
+        if (!titleMatch && !topicMatch && !patternMatch && !companyMatch) return false;
       }
 
-      // Difficulty filter
-      if (difficultyFilter && problem.difficulty !== difficultyFilter) return false;
+      // Difficulty
+      if (difficultyFilter !== 'All' && problem.difficulty !== difficultyFilter) {
+        return false;
+      }
 
-      // Platform filter
-      if (platformFilter && problem.platform !== platformFilter) return false;
+      // Status
+      const isSolved =
+        problem.status === 'Solved' ||
+        problem.status === 'Completed' ||
+        Boolean(problem.solvedAt);
+
+      if (statusFilter === 'Solved' && !isSolved) return false;
+      if (statusFilter === 'Unsolved' && isSolved) return false;
+
+      // Platform
+      if (platformFilter !== 'All' && problem.platform !== platformFilter) {
+        return false;
+      }
 
       return true;
     });
 
-    // Group by primary pattern (only for non-company view)
-    if (!companyName) {
-      const groups = {};
-      filtered.forEach(problem => {
-        const primaryPattern = problem.patterns && problem.patterns.length > 0 ? problem.patterns[0] : 'General';
-        
-        if (!groups[primaryPattern]) {
-          groups[primaryPattern] = {
-            name: primaryPattern,
-            problems: [],
-            latestTimestamp: 0
-          };
-        }
-        groups[primaryPattern].problems.push(problem);
-        const ts = getTime(problem);
-        if (ts > groups[primaryPattern].latestTimestamp) {
-          groups[primaryPattern].latestTimestamp = ts;
-        }
-      });
+    // Grouping for grid view
+    const groups = {};
+    filtered.forEach((p) => {
+      const pattern = p.patterns?.[0] || 'General Algorithms';
+      if (!groups[pattern]) {
+        groups[pattern] = { name: pattern, problems: [] };
+      }
+      groups[pattern].problems.push(p);
+    });
 
-      // Sort groups by latest activity
-      const sortedGroups = Object.values(groups).sort((a, b) => b.latestTimestamp - a.latestTimestamp);
-
-      // Sort problems within each group
-      sortedGroups.forEach(group => {
-        group.problems.sort((a, b) => getTime(b) - getTime(a));
-      });
-
-      return { filteredProblems: filtered, groupedProblems: sortedGroups, totalProblems: total };
-    }
-
-    return { filteredProblems: filtered, groupedProblems: null, totalProblems: total };
-  }, [companyName, companyProblems, problems, searchQuery, difficultyFilter, platformFilter]);
+    return {
+      filteredProblems: filtered,
+      groupedProblems: Object.values(groups),
+      totalCount: total,
+    };
+  }, [
+    companyName,
+    companyProblems,
+    problems,
+    searchQuery,
+    difficultyFilter,
+    statusFilter,
+    platformFilter,
+  ]);
 
   const handleAddProblem = async (problemData, initialStatus = 'Todo') => {
     try {
-      const title = typeof problemData === 'string' ? problemData : problemData.title;
-      const difficulty = problemData.difficulty || 'Medium';
-      const platform = problemData.platform || 'LeetCode';
-      const platformUrl = problemData.platformUrl || '';
-      const topics = problemData.topics || [];
-      const patterns = problemData.patterns || [];
-
       const newProblem = await addProblem({
-        title,
-        platform,
-        platformUrl,
-        difficulty,
-        topics,
-        patterns,
-        status: initialStatus
+        ...problemData,
+        status: initialStatus,
       });
       return newProblem;
     } catch (error) {
-      console.error("Failed to add problem", error);
+      console.error('Failed to add problem', error);
       return null;
     }
   };
 
-  if (loading && (companyName ? companyProblems.length === 0 : problems.length === 0)) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-orange"></div>
-      </div>
-    );
-  }
+  const handlePreviewProblem = (problem) => {
+    setSelectedProblem(problem);
+    setIsDrawerOpen(true);
+  };
+
+  const handleAddToRevision = async (problem) => {
+    if (!problem) return;
+    try {
+      await createRevision({
+        problemId: problem.id,
+        problemTitle: problem.title,
+        difficulty: problem.difficulty,
+        notes: '',
+        status: 'active',
+      });
+      fetchRevisions();
+    } catch (err) {
+      console.error('Failed to queue revision', err);
+    }
+  };
 
   return (
-    <div className="p-6 sm:p-8 max-w-7xl mx-auto space-y-5">
-      {/* 21st.dev Style Bento Stats Grid */}
-      <SolvedProblemsStats 
-        customProblems={companyName ? companyProblems : null} 
+    <div className="max-w-7xl mx-auto space-y-5 pb-12">
+      {/* 1. Statistics Banner */}
+      <SolvedProblemsStats
+        customProblems={companyName ? companyProblems : null}
         onShowAddModal={() => setIsModalOpen(true)}
       />
 
-      {/* Daily Directive Focus Banner */}
-      <MotivationalQuote category="Focus" variant="banner" />
-
-      {/* Search and Filters Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-dark-900/60 backdrop-blur-xl p-3 sm:p-3.5 rounded-2xl border border-white/[0.07] shadow-luxe">
-        {/* Search Input */}
-        <div className="relative flex-1 min-w-[240px]">
-          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
-            <Search className="w-4 h-4 text-dark-400" />
+      {/* 2. Faceted Filter & Control Toolbar */}
+      <div className="bg-surface-raised/80 border border-border rounded-xl p-3 shadow-inner-rim space-y-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* Search Input */}
+          <div className="flex-1 max-w-md">
+            <Input
+              id="problem-search-input"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onClear={() => setSearchQuery('')}
+              placeholder="Search problem title, pattern, topic, company..."
+              icon={Search}
+              shortcut="⌘K"
+              size="sm"
+            />
           </div>
-          <input
-            id="problem-search-input"
-            type="text"
-            value={searchQuery}
-            placeholder="Search problems by title, topic, or pattern..."
-            className="w-full bg-dark-950/80 border border-white/[0.08] rounded-xl pl-10 pr-10 py-2 text-xs sm:text-sm text-white placeholder-dark-400 focus:border-brand-orange/50 focus:ring-2 focus:ring-brand-orange/15 focus:outline-none transition-all shadow-inner"
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button 
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-white transition-colors"
-              onClick={() => setSearchQuery('')}
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-        
-        {/* Segmented Controls & Platform */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Segmented Difficulty Pills */}
-          <div className="flex items-center p-1 rounded-xl bg-dark-950/80 border border-white/[0.08]">
-            {[
-              { label: 'All', value: '', dot: null },
-              { label: 'Easy', value: 'Easy', dot: 'bg-emerald-400' },
-              { label: 'Medium', value: 'Medium', dot: 'bg-amber-400' },
-              { label: 'Hard', value: 'Hard', dot: 'bg-rose-400' }
-            ].map(diff => (
+
+          {/* Right Controls: View Switcher & Add Button */}
+          <div className="flex items-center gap-2.5">
+            {/* View Switcher */}
+            <div className="flex items-center bg-surface border border-border rounded-lg p-0.5">
               <button
-                key={diff.label}
-                onClick={() => setDifficultyFilter(diff.value)}
-                className={`px-2.5 py-1 rounded-lg text-2xs font-semibold transition-all flex items-center gap-1.5 ${
-                  difficultyFilter === diff.value 
-                    ? 'bg-white/[0.1] text-white shadow-sm' 
-                    : 'text-dark-400 hover:text-dark-200'
+                type="button"
+                onClick={() => setViewMode('table')}
+                className={`p-1.5 rounded-md text-xs transition-colors ${
+                  viewMode === 'table'
+                    ? 'bg-surface-raised text-foreground shadow-sm'
+                    : 'text-foreground-subtle hover:text-foreground'
                 }`}
+                title="Dense table view"
               >
-                {diff.dot && <span className={`w-1.5 h-1.5 rounded-full ${diff.dot}`} />}
-                <span>{diff.label}</span>
+                <LayoutList className="w-3.5 h-3.5" />
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={`p-1.5 rounded-md text-xs transition-colors ${
+                  viewMode === 'grid'
+                    ? 'bg-surface-raised text-foreground shadow-sm'
+                    : 'text-foreground-subtle hover:text-foreground'
+                }`}
+                title="Pattern bento grid"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setIsModalOpen(true)}
+              leftIcon={Plus}
+            >
+              Add Problem
+            </Button>
+          </div>
+        </div>
+
+        {/* Filter Pills Row */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1 border-t border-border-subtle">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Difficulty Tabs */}
+            <div className="flex items-center gap-1 text-xs">
+              <span className="text-foreground-subtle text-[11px] font-semibold mr-1">
+                Difficulty:
+              </span>
+              {['All', 'Easy', 'Medium', 'Hard'].map((diff) => (
+                <button
+                  key={diff}
+                  type="button"
+                  onClick={() => setDifficultyFilter(diff)}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                    difficultyFilter === diff
+                      ? 'bg-surface text-foreground border border-border font-semibold shadow-sm'
+                      : 'text-foreground-subtle hover:text-foreground'
+                  }`}
+                >
+                  {diff}
+                </button>
+              ))}
+            </div>
+
+            {/* Status Tabs */}
+            <div className="flex items-center gap-1 text-xs">
+              <span className="text-foreground-subtle text-[11px] font-semibold mr-1">
+                Status:
+              </span>
+              {['All', 'Solved', 'Unsolved'].map((stat) => (
+                <button
+                  key={stat}
+                  type="button"
+                  onClick={() => setStatusFilter(stat)}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                    statusFilter === stat
+                      ? 'bg-surface text-foreground border border-border font-semibold shadow-sm'
+                      : 'text-foreground-subtle hover:text-foreground'
+                  }`}
+                >
+                  {stat}
+                </button>
+              ))}
+            </div>
+
+            {/* Platform Select */}
+            <div className="flex items-center gap-1.5 text-xs">
+              <span className="text-foreground-subtle text-[11px] font-semibold">
+                Platform:
+              </span>
+              <select
+                value={platformFilter}
+                onChange={(e) => setPlatformFilter(e.target.value)}
+                className="bg-surface border border-border rounded-md px-2 py-1 text-[11px] text-foreground outline-none cursor-pointer"
+              >
+                <option value="All">All Platforms</option>
+                <option value="LeetCode">LeetCode</option>
+                <option value="GeeksforGeeks">GeeksforGeeks</option>
+                <option value="Codeforces">Codeforces</option>
+                <option value="TakeUForward">TakeUForward</option>
+              </select>
+            </div>
           </div>
 
-          {/* Platform Selector */}
-          <select 
-            value={platformFilter}
-            className="bg-dark-950/80 border border-white/[0.08] rounded-xl px-3 py-1.5 text-2xs font-semibold text-dark-200 focus:border-brand-orange/50 focus:outline-none cursor-pointer hover:bg-dark-900 transition-colors shadow-inner"
-            onChange={(e) => setPlatformFilter(e.target.value)}
-          >
-            <option value="">All Platforms</option>
-            <option value="LeetCode">LeetCode</option>
-            <option value="GeeksforGeeks">GeeksforGeeks</option>
-            <option value="CodeForces">CodeForces</option>
-          </select>
-
+          {/* Active Filter Clear */}
           {hasActiveFilters && (
-            <button 
-              className="px-2.5 py-1 text-2xs font-semibold text-brand-orange hover:text-white transition-colors flex items-center gap-1 rounded-lg hover:bg-brand-orange/10"
+            <button
+              type="button"
               onClick={clearAllFilters}
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
             >
-              <X className="w-3 h-3" />
-              Reset
+              <FilterX className="w-3 h-3" /> Clear Filters
             </button>
           )}
         </div>
       </div>
 
-      {/* Results Summary */}
-      {hasActiveFilters && (
-        <div className="text-xs text-dark-400 px-1">
-          Showing <span className="text-brand-orange font-semibold">{filteredProblems.length}</span> of <span className="font-semibold text-white">{totalProblems}</span> problems
+      {/* 3. Problem List Content */}
+      {loading && filteredProblems.length === 0 ? (
+        <div className="space-y-2">
+          <Skeleton variant="row" count={8} />
+        </div>
+      ) : filteredProblems.length === 0 ? (
+        <div className="py-16 text-center border border-dashed border-border rounded-2xl bg-surface-raised/30 p-8 space-y-3">
+          <div className="w-10 h-10 rounded-xl bg-surface border border-border flex items-center justify-center mx-auto text-foreground-subtle">
+            <Search className="w-5 h-5" />
+          </div>
+          <h3 className="text-sm font-semibold text-foreground">No problems found</h3>
+          <p className="text-xs text-foreground-subtle max-w-sm mx-auto">
+            {hasActiveFilters
+              ? 'No problems match your current search and filter criteria. Try clearing filters.'
+              : 'You have not added any problems to this bank yet.'}
+          </p>
+          {hasActiveFilters ? (
+            <Button size="sm" variant="secondary" onClick={clearAllFilters}>
+              Clear All Filters
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => setIsModalOpen(true)}
+              leftIcon={Plus}
+            >
+              Add First Problem
+            </Button>
+          )}
+        </div>
+      ) : viewMode === 'table' ? (
+        /* High-Density Linear-Style Table View */
+        <div className="rounded-xl border border-border bg-surface-raised/40 overflow-hidden shadow-inner-rim">
+          <div className="overflow-x-auto custom-scrollbar">
+            <table className="w-full border-collapse text-left text-xs">
+              <thead>
+                <tr className="border-b border-border bg-surface text-foreground-subtle uppercase text-[10px] font-semibold tracking-wider select-none">
+                  <th className="py-3 px-4 w-10 text-center">Status</th>
+                  <th className="py-3 px-4">Problem</th>
+                  <th className="py-3 px-4 w-28">Difficulty</th>
+                  <th className="py-3 px-4 min-w-[180px]">Pattern & Topics</th>
+                  <th className="py-3 px-4 w-24">Platform</th>
+                  <th className="py-3 px-4 w-28">Revision</th>
+                  <th className="py-3 px-4 w-32 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border-subtle">
+                {filteredProblems.map((problem) => (
+                  <ProblemRow
+                    key={problem.id}
+                    problem={problem}
+                    onPreview={handlePreviewProblem}
+                    revision={
+                      revisionMap[problem.id] ||
+                      revisionMap[problem.title?.toLowerCase()]
+                    }
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-4 py-2.5 border-t border-border-subtle bg-surface/60 flex items-center justify-between text-[11px] text-foreground-subtle">
+            <span>
+              Showing <strong className="text-foreground">{filteredProblems.length}</strong> of{' '}
+              {totalCount} problems
+            </span>
+            <span>Click any row to inspect details</span>
+          </div>
+        </div>
+      ) : (
+        /* Pattern Bento Grid View */
+        <div className="space-y-4">
+          {groupedProblems.map((group) => {
+            const isCollapsed = Boolean(collapsedGroups[group.name]);
+            return (
+              <div
+                key={group.name}
+                className="rounded-xl border border-border bg-surface-raised/40 overflow-hidden shadow-inner-rim"
+              >
+                {/* Accordion Group Header */}
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.name)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-surface hover:bg-surface-hover/60 transition-colors border-b border-border text-left select-none"
+                >
+                  <div className="flex items-center gap-2.5">
+                    {isCollapsed ? (
+                      <ChevronRight className="w-4 h-4 text-foreground-subtle" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-foreground-subtle" />
+                    )}
+                    <h3 className="text-xs font-bold text-foreground tracking-tight">
+                      {group.name}
+                    </h3>
+                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-surface-raised border border-border text-foreground-subtle">
+                      {group.problems.length}
+                    </span>
+                  </div>
+                </button>
+
+                {/* Grid Cards */}
+                {!isCollapsed && (
+                  <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {group.problems.map((problem) => (
+                      <ProblemCard
+                        key={problem.id}
+                        problem={problem}
+                        onUpdate={updateProblem}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Problem Cards Presentation */}
-      <div className="space-y-8">
-        {companyName ? (
-          // Company View List
-          <>
-            {totalProblems === 0 && !loading && (
-              <div className="card text-center py-12">
-                <p className="text-dark-400">No problems found for this company.</p>
-              </div>
-            )}
+      {/* 4. Slide-Over Detail Drawer */}
+      <ProblemDetailDrawer
+        problem={selectedProblem}
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        revision={
+          selectedProblem
+            ? revisionMap[selectedProblem.id] ||
+              revisionMap[selectedProblem.title?.toLowerCase()]
+            : null
+        }
+        onAddToRevision={handleAddToRevision}
+      />
 
-            {totalProblems > 0 && filteredProblems.length === 0 && !loading && (
-              <div className="card text-center py-12 bg-dark-900/40 border-dashed border-white/[0.1]">
-                <p className="text-dark-400 text-sm">No problems match your current filters.</p>
-                <button 
-                  className="text-brand-orange text-xs font-semibold mt-2 hover:underline inline-block" 
-                  onClick={clearAllFilters}
-                >
-                  Clear All Filters
-                </button>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredProblems.map((problem, index) => {
-                const trackedProblem = problems.find(p => p.title === problem.title);
-                const isRealTracked = trackedProblem && trackedProblem.status !== 'ViewOnly';
-
-                const mergedProblem = {
-                  ...problem,
-                  ...trackedProblem,
-                  isTracked: isRealTracked,
-                  onAdd: async () => {
-                    if (trackedProblem) {
-                      await updateProblem(trackedProblem.id, { status: 'Todo' });
-                    } else {
-                      handleAddProblem(problem, 'Todo');
-                    }
-                  }
-                };
-
-                return (
-                  <div key={index}>
-                    <ProblemCard 
-                      problem={mergedProblem} 
-                      onClick={() => {
-                        if (trackedProblem) {
-                          window.open(`/problem/${trackedProblem.id}`, '_blank');
-                        } else {
-                          const localId = Date.now().toString();
-                          localStorage.setItem(`view_problem_${localId}`, JSON.stringify(problem));
-                          window.open(`/problem/view?localId=${localId}`, '_blank');
-                        }
-                      }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        ) : (
-          // Standard User Problems Grouped by Patterns in a Grid
-          <>
-            {totalProblems === 0 && !loading && (
-              <div className="card text-center py-16 space-y-4">
-                <p className="text-dark-300 font-medium">No problems tracked yet.</p>
-                <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
-                  Add Your First Problem
-                </button>
-              </div>
-            )}
-
-            {totalProblems > 0 && filteredProblems.length === 0 && !loading && (
-              <div className="card text-center py-12 bg-dark-900/40 border-dashed border-white/[0.1]">
-                <p className="text-dark-400 text-sm">No problems match your search.</p>
-                <button 
-                  className="text-brand-orange text-xs font-semibold mt-2 hover:underline inline-block" 
-                  onClick={clearAllFilters}
-                >
-                  Clear All Filters
-                </button>
-              </div>
-            )}
-
-            {groupedProblems && groupedProblems.map((group, index) => {
-              const isCollapsed = collapsedGroups[group.name] === undefined ? index !== 0 : collapsedGroups[group.name];
-              
-              return (
-                <div key={group.name} className="space-y-4">
-                  {/* Refined Section Header */}
-                  <div 
-                    className="flex items-center justify-between py-1 group/header cursor-pointer select-none"
-                    onClick={() => toggleGroup(group.name)}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-5 h-5 rounded-md flex items-center justify-center bg-white/[0.04] text-dark-400 group-hover/header:text-brand-orange group-hover/header:bg-white/[0.08] transition-colors">
-                        {isCollapsed ? (
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        ) : (
-                          <ChevronDown className="w-3.5 h-3.5 text-brand-orange" />
-                        )}
-                      </div>
-                      <h2 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                        {group.name}
-                      </h2>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xs font-semibold text-dark-400 bg-white/[0.03] border border-white/[0.06] px-2.5 py-0.5 rounded-full">
-                        {group.problems.length} {group.problems.length === 1 ? 'problem' : 'problems'}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {/* Adaptive Responsive Cards Grid */}
-                  {!isCollapsed && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in slide-in-from-top-1 duration-200">
-                      {group.problems.map((problem) => (
-                        <div key={`${group.name}-${problem.id}`}>
-                          <ProblemCard problem={problem} />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </>
-        )}
-      </div>
-
-      {/* Add Problem Modal */}
-      <AddProblemModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      {/* 5. Add Problem Modal */}
+      <AddProblemModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onAdd={handleAddProblem}
       />
     </div>
   );
 }
-
-export default ProblemsPage;

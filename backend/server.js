@@ -107,8 +107,8 @@ initCronJobs();
 
 // Start server
 app.listen(PORT, HOST, () => {
-  console.log(`🚀 TufTracker Backend running on ${HOST}:${PORT}`);
-  console.log(`📊 Environment: ${env.nodeEnv}`);
+  console.log(`[BaseCase:Server] Backend running on ${HOST}:${PORT}`);
+  console.log(`[BaseCase:Server] Environment: ${env.nodeEnv}`);
 });
 
 module.exports = app;

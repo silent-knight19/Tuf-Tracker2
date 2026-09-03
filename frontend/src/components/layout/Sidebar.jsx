@@ -1,38 +1,42 @@
+import PropTypes from 'prop-types';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
-import { 
-  LayoutDashboard, 
-  BarChart2, 
-  RotateCw, 
-  LogOut, 
-  BookOpen, 
-  Target, 
-  Code, 
-  Building2, 
-  Cpu, 
-  Layers, 
+import {
+  LayoutDashboard,
+  Code,
+  RotateCw,
+  BarChart2,
+  BookOpen,
+  Layers,
+  Building2,
+  Cpu,
+  Target,
+  LogOut,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
   FileText,
-  Flame,
-  ChevronRight
 } from 'lucide-react';
+import Tooltip from '../ui/Tooltip';
 
-function Sidebar({ open }) {
+export default function Sidebar({ open, setOpen, onOpenSettings }) {
   const location = useLocation();
   const { signOut, user } = useAuthStore();
 
   const mainNavigation = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+    { name: 'Problem Bank', path: '/problems', icon: Code },
     { name: 'Curated Sheets', path: '/sheets', icon: Layers },
-    { name: 'Analytics', path: '/analytics', icon: BarChart2 },
     { name: 'Spaced Revision', path: '/revision', icon: RotateCw },
+    { name: 'Performance Analytics', path: '/analytics', icon: BarChart2 },
     { name: 'Learn & Patterns', path: '/learn', icon: BookOpen },
   ];
 
   const practiceNavigation = [
     { name: 'Pattern Focus', path: '/practice/patterns', icon: Target, desc: 'Algorithmic paradigms' },
-    { name: 'Company Hub', path: '/practice/companies', icon: Building2, desc: 'Target company sheets' },
-    { name: 'Mock Interview', path: '/practice/interview', icon: Cpu, desc: 'AI interactive debrief' },
-    { name: 'Problem Bank', path: '/practice/solve', icon: Code, desc: 'Custom collection' },
+    { name: 'Company Hub', path: '/practice/companies', icon: Building2, desc: 'Target company sets' },
+    { name: 'Mock Interview', path: '/practice/interview', icon: Cpu, desc: 'AI live debrief' },
+    { name: 'Problem Collection', path: '/practice/solve', icon: Code, desc: 'Custom practice' },
   ];
 
   const isActive = (path) => {
@@ -40,152 +44,237 @@ function Sidebar({ open }) {
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
+  const handleNavClick = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setOpen(false);
+    }
+  };
+
   return (
-    <aside
-      className={`bg-dark-950/90 backdrop-blur-2xl border-r border-white/[0.07] flex flex-col transition-all duration-300 ease-spring z-50 select-none ${
-        open ? 'w-64' : 'w-0'
-      } overflow-hidden`}
-    >
-      {/* Brand Header */}
-      <div className="h-16 border-b border-white/[0.06] flex items-center px-5 relative shrink-0">
-        <Link to="/" className="flex items-center gap-3 group">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-orange to-brand-amber flex items-center justify-center text-white shadow-md shadow-brand-orange/25 group-hover:shadow-brand-orange/40 transition-shadow">
-            <Flame className="w-4.5 h-4.5 fill-white text-white" />
-          </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm font-extrabold text-white tracking-tight">Tuf<span className="text-brand-orange">Tracker</span></span>
-              <span className="text-[10px] font-semibold text-brand-amber bg-brand-orange/10 px-1.5 py-0.2 rounded-md border border-brand-orange/20">PRO</span>
+    <>
+      {/* Mobile backdrop overlay */}
+      {open && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden"
+          onClick={() => setOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`bg-surface border-r border-border flex flex-col transition-all duration-250 ease-spring z-40 select-none shrink-0 ${
+          open
+            ? 'fixed inset-y-0 left-0 w-60 md:static shadow-2xl md:shadow-none'
+            : 'w-0 md:w-16 overflow-hidden md:overflow-visible border-r-0 md:border-r'
+        }`}
+      >
+        {/* Brand Header */}
+        <div className="h-14 border-b border-border flex items-center justify-between px-3.5 relative shrink-0">
+          <Link to="/" onClick={handleNavClick} className="flex items-center gap-2.5 min-w-0 group">
+            <div className="w-[38px] h-[38px] rounded-lg overflow-hidden shrink-0 border border-primary/30 shadow-sm shadow-primary/20 bg-surface flex items-center justify-center">
+              <img src="/basecase-icon.png" alt="BaseCase" className="w-full h-full object-cover" />
             </div>
-            <span className="text-[10px] text-dark-400 font-medium tracking-tight">DSA Mastery Platform</span>
-          </div>
-        </Link>
+            {open && (
+              <div className="flex items-center min-w-0">
+                <span className="text-sm font-bold text-foreground tracking-tight truncate">
+                  Base<span className="text-primary">Case</span>
+                </span>
+              </div>
+            )}
+          </Link>
+
+        {/* Collapse Button */}
+        <button
+          onClick={() => setOpen(!open)}
+          className="p-1 rounded-md text-foreground-subtle hover:text-foreground hover:bg-surface-hover transition-colors shrink-0"
+          title={open ? 'Collapse sidebar (⌘B)' : 'Expand sidebar (⌘B)'}
+        >
+          {open ? <ChevronLeft className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+        </button>
       </div>
 
-      {/* Navigation Links */}
-      <nav className="flex-1 px-3.5 pt-5 space-y-6 overflow-y-auto no-scrollbar">
+      {/* Navigation Sections */}
+      <nav className="flex-1 px-2.5 py-4 space-y-6 overflow-y-auto no-scrollbar">
         {/* Core Navigation */}
-        <div className="space-y-1">
-          <div className="px-2.5 pb-1.5">
-            <span className="text-[10px] font-semibold text-dark-400 uppercase tracking-wider">Framework</span>
-          </div>
+        <div className="space-y-0.5">
+          {open && (
+            <div className="px-2 pb-1.5 text-[10px] font-semibold text-foreground-subtle uppercase tracking-wider">
+              Workspace
+            </div>
+          )}
           {mainNavigation.map((item) => {
             const active = isActive(item.path);
-            return (
+            const Icon = item.icon;
+
+            const linkContent = (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`group flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
-                  active 
-                    ? 'bg-white/[0.06] text-white border-l-2 border-brand-orange rounded-l-none pl-2.5 shadow-sm' 
-                    : 'text-dark-300 hover:text-white hover:bg-white/[0.04]'
-                }`}
+                className={`group flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  active
+                    ? 'bg-surface-raised text-foreground border border-border shadow-inner-rim'
+                    : 'text-foreground-muted hover:text-foreground hover:bg-surface-hover/60'
+                } ${!open ? 'justify-center px-0' : ''}`}
               >
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
-                  active 
-                    ? 'bg-brand-orange/15 text-brand-orange border border-brand-orange/25 shadow-[0_0_10px_rgba(249,115,22,0.15)]' 
-                    : 'bg-white/[0.03] text-dark-400 group-hover:text-dark-200 group-hover:bg-white/[0.06]'
-                }`}>
-                  <item.icon className="w-4 h-4" />
+                <div
+                  className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors ${
+                    active
+                      ? 'text-primary bg-primary/10'
+                      : 'text-foreground-subtle group-hover:text-foreground'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
                 </div>
-                <span className="truncate">{item.name}</span>
+                {open && <span className="truncate">{item.name}</span>}
               </Link>
+            );
+
+            return open ? (
+              linkContent
+            ) : (
+              <Tooltip key={item.path} content={item.name} side="right">
+                {linkContent}
+              </Tooltip>
             );
           })}
         </div>
 
-        {/* Practice Labs */}
-        <div className="space-y-1">
-          <div className="px-2.5 pb-1.5 flex items-center justify-between">
-            <span className="text-[10px] font-semibold text-dark-400 uppercase tracking-wider">Training Labs</span>
-          </div>
+        {/* Training Labs */}
+        <div className="space-y-0.5">
+          {open && (
+            <div className="px-2 pb-1.5 text-[10px] font-semibold text-foreground-subtle uppercase tracking-wider">
+              Practice Labs
+            </div>
+          )}
           {practiceNavigation.map((item) => {
             const active = isActive(item.path);
-            return (
+            const Icon = item.icon;
+
+            const linkContent = (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`group flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
-                  active 
-                    ? 'bg-white/[0.06] text-white border-l-2 border-brand-orange rounded-l-none pl-2.5 shadow-sm' 
-                    : 'text-dark-300 hover:text-white hover:bg-white/[0.04]'
-                }`}
+                className={`group flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  active
+                    ? 'bg-surface-raised text-foreground border border-border shadow-inner-rim'
+                    : 'text-foreground-muted hover:text-foreground hover:bg-surface-hover/60'
+                } ${!open ? 'justify-center px-0' : ''}`}
               >
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
-                  active 
-                    ? 'bg-brand-orange/15 text-brand-orange border border-brand-orange/25 shadow-[0_0_10px_rgba(249,115,22,0.15)]' 
-                    : 'bg-white/[0.03] text-dark-400 group-hover:text-dark-200 group-hover:bg-white/[0.06]'
-                }`}>
-                  <item.icon className="w-4 h-4" />
+                <div
+                  className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors ${
+                    active
+                      ? 'text-primary bg-primary/10'
+                      : 'text-foreground-subtle group-hover:text-foreground'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <span className="truncate block leading-tight">{item.name}</span>
-                  <span className="text-[10px] text-dark-400 font-normal block truncate mt-0.5">{item.desc}</span>
-                </div>
+                {open && (
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate leading-none">{item.name}</div>
+                    <div className="text-[10px] text-foreground-subtle font-normal truncate mt-0.5">
+                      {item.desc}
+                    </div>
+                  </div>
+                )}
               </Link>
+            );
+
+            return open ? (
+              linkContent
+            ) : (
+              <Tooltip key={item.path} content={`${item.name} — ${item.desc}`} side="right">
+                {linkContent}
+              </Tooltip>
             );
           })}
         </div>
 
-        {/* Curated SDE Sheets */}
-        <div className="space-y-1">
-          <div className="px-2.5 pb-1.5">
-            <span className="text-[10px] font-semibold text-dark-400 uppercase tracking-wider">Featured Sheet</span>
+        {/* Featured Course Sheet */}
+        {open && (
+          <div className="space-y-0.5">
+            <div className="px-2 pb-1.5 text-[10px] font-semibold text-foreground-subtle uppercase tracking-wider">
+              Curated Roadmap
+            </div>
+            <Link
+              to="/sheets/strivers"
+              className={`group flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                isActive('/sheets/strivers')
+                  ? 'bg-surface-raised text-foreground border border-border shadow-inner-rim'
+                  : 'text-foreground-muted hover:text-foreground hover:bg-surface-hover/60'
+              }`}
+            >
+              <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 text-accent-amber bg-accent-amber/10">
+                <FileText className="w-3.5 h-3.5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="truncate leading-none">Strivers A2Z DSA</div>
+                <div className="text-[10px] text-accent-amber font-normal truncate mt-0.5">
+                  455 Core Roadmap
+                </div>
+              </div>
+            </Link>
           </div>
-          <Link
-            to="/sheets/strivers"
-            className={`group flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
-              isActive('/sheets/strivers')
-                ? 'bg-white/[0.06] text-white border-l-2 border-brand-orange rounded-l-none pl-2.5 shadow-sm'
-                : 'text-dark-300 hover:text-white hover:bg-white/[0.04]'
-            }`}
-          >
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
-              isActive('/sheets/strivers') 
-                ? 'bg-brand-orange/15 text-brand-orange border border-brand-orange/25 shadow-[0_0_10px_rgba(249,115,22,0.15)]' 
-                : 'bg-white/[0.03] text-dark-400 group-hover:text-dark-200'
-            }`}>
-              <FileText className="w-4 h-4" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="truncate block leading-tight">Strivers A2Z</span>
-              <span className="text-[10px] text-brand-amber font-normal block truncate mt-0.5">454 Core Questions</span>
-            </div>
-          </Link>
-        </div>
+        )}
       </nav>
 
-      {/* User Profile & Session Footer */}
-      <div className="p-3 border-t border-white/[0.06] bg-dark-900/60 shrink-0">
-        <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/[0.04] transition-colors">
-          {/* Avatar with Status */}
+      {/* User Session Footer */}
+      <div className="p-2 border-t border-border bg-surface-subtle/70 shrink-0">
+        <div
+          className={`flex items-center gap-2 p-1.5 rounded-lg hover:bg-surface-hover transition-colors ${
+            !open ? 'justify-center' : ''
+          }`}
+        >
+          {/* Avatar with status indicator */}
           <div className="relative shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-orange to-brand-amber flex items-center justify-center text-white font-bold text-xs shadow-sm">
+            <div className="w-7 h-7 rounded-lg bg-surface-raised border border-border-strong flex items-center justify-center text-foreground font-bold text-xs shadow-sm">
               {user?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
             </div>
-            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-dark-950 rounded-full" />
+            <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-500 border border-surface rounded-full shadow-[0_0_4px_rgba(16,185,129,0.8)]" />
           </div>
 
-          {/* User Info */}
-          <div className="flex-1 min-w-0">
-            <div className="text-xs font-semibold text-white truncate">
-              {user?.displayName || 'Engineer'}
+          {open && (
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-semibold text-foreground truncate leading-tight">
+                {user?.displayName || 'Engineer'}
+              </div>
+              <div className="text-[10px] text-foreground-subtle truncate leading-none mt-0.5">
+                {user?.email || 'Active session'}
+              </div>
             </div>
-            <div className="text-[10px] text-dark-400 truncate leading-none mt-0.5">{user?.email || 'Logged in'}</div>
-          </div>
+          )}
 
-          {/* Eject / Sign Out Button */}
-          <button
-            onClick={signOut}
-            title="Sign out"
-            className="p-1.5 rounded-lg text-dark-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
+          {open && (
+            <div className="flex items-center gap-0.5">
+              {onOpenSettings && (
+                <button
+                  type="button"
+                  onClick={onOpenSettings}
+                  title="Workspace Settings"
+                  className="p-1.5 rounded-md text-foreground-subtle hover:text-foreground hover:bg-surface-hover transition-colors"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={signOut}
+                title="Sign out"
+                className="p-1.5 rounded-md text-foreground-subtle hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }
 
-export default Sidebar;
+Sidebar.propTypes = {
+  open: PropTypes.bool.isRequired,
+  setOpen: PropTypes.func.isRequired,
+  onOpenSettings: PropTypes.func,
+};

@@ -1,4 +1,4 @@
-import { Plus, X, ArrowRight, ShieldCheck, Sparkles, RefreshCw, Zap, Layers, Award } from 'lucide-react';
+import { Plus, X, ArrowRight, ShieldCheck, RefreshCw, Zap, Layers, Award } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useProblemStore } from '../../stores/problemStore';
 import { useRevisionStore } from '../../stores/revisionStore';
@@ -65,8 +65,8 @@ function SolvedProblemsStats({ customProblems, onShowAddModal }) {
         <div>
           <div className="flex items-center justify-between mb-4">
             <span className="text-2xs font-semibold uppercase tracking-wider text-dark-400">Problem Velocity</span>
-            <span className="inline-flex items-center gap-1 text-2xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-              <Sparkles className="w-2.5 h-2.5" /> Live Sync
+            <span className="inline-flex items-center gap-1.5 text-2xs font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Active Sync
             </span>
           </div>
 

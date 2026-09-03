@@ -7,6 +7,8 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import api from '../utils/api';
 import { auth } from '../config/firebase';
 import CodePanel from '../components/features/code/CodePanel';
+import WorkspaceSolutionView from '../components/features/ai/WorkspaceSolutionView';
+import ProgressiveHints from '../components/features/ai/ProgressiveHints';
 
 
 function AIInterviewPage() {
@@ -52,32 +54,28 @@ function AIInterviewPage() {
       return false;
     };
 
-    // Check immediately — if data is already there, no need to poll
+    // Check immediately — if data is already there, no need to wait
     if (checkStorage()) return;
 
-    // Data wasn't found yet, start polling and show loading screen
-    setLoadingProblem(true);
-    const intervalId = setInterval(() => {
-      if (checkStorage()) {
-        clearInterval(intervalId);
-        setLoadingProblem(false);
+    // Listen for storage events (fired instantly when data is written in another tab/window)
+    const handleStorageChange = (e) => {
+      if (e.key === `ai_problem_${localId}`) {
+        checkStorage();
       }
-    }, 500);
-
-    // Timeout after 60 seconds — stop polling and clear loading screen
-    const timeoutId = setTimeout(() => {
-      clearInterval(intervalId);
-      setLoadingProblem(false);
-      console.error('Timed out waiting for problem data. LocalId:', localId);
-    }, 60000);
-
-    // Cleanup: clear timers if component unmounts or effect re-runs
-    return () => {
-      clearInterval(intervalId);
-      clearTimeout(timeoutId);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.search]); // Intentionally exclude 'problem' — the safety effect above handles it
+    window.addEventListener('storage', handleStorageChange);
+
+    // Fallback: check once more after a brief grace period (1.5s) then stop loading
+    const timerId = setTimeout(() => {
+      checkStorage();
+      setLoadingProblem(false);
+    }, 1500);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearTimeout(timerId);
+    };
+  }, [location.search]);
 
   // AI Assist State
   const [helpData, setHelpData] = useState(null);
@@ -643,167 +641,39 @@ function AIInterviewPage() {
           {/* AI Assist Section */}
           {helpData && (
             <div className="space-y-6 pt-6 border-t border-dark-800">
-              {/* Hints Section */}
+              {/* Progressive Socratic Hints */}
               {helpData.hints && helpData.hints.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                      <Lightbulb className="w-5 h-5 text-yellow-400" /> Hints
-                    </h2>
-                    <span className="text-sm text-dark-400">
-                      {currentHintIndex + 1} / {helpData.hints.length} Revealed
-                    </span>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    {helpData.hints.slice(0, currentHintIndex + 1).map((hint, index) => (
-                      <div key={index} className="bg-dark-900/50 border border-dark-700 rounded-lg p-3 text-dark-200 text-sm">
-                        <span className="font-bold text-brand-orange mr-2">Hint {index + 1}:</span>
-                        {hint}
-                      </div>
-                    ))}
-                  </div>
-
-                  {currentHintIndex < helpData.hints.length - 1 && (
-                    <button
-                      onClick={() => setCurrentHintIndex(prev => prev + 1)}
-                      className="text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
-                    >
-                      Show Next Hint <ChevronRight className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
+                <ProgressiveHints hints={helpData.hints} />
               )}
 
-              {/* Solutions Section */}
+              {/* Verified Solutions */}
               {helpData.solutions && (
-                <div className="space-y-3">
+                <div className="space-y-4 pt-4 border-t border-border">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                      <Cpu className="w-5 h-5 text-green-400" /> Solution
-                    </h2>
+                    <div className="flex items-center gap-2">
+                      <Cpu className="w-4 h-4 text-primary" />
+                      <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                        Verified Production Solution
+                      </h3>
+                    </div>
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowSolution(!showSolution);
                       }}
-                      className="flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 text-dark-200 transition-colors"
+                      className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg bg-surface-raised hover:bg-surface-hover text-foreground-muted hover:text-foreground border border-border transition-colors"
                     >
-                      {showSolution ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      {showSolution ? 'Hide Solution' : 'Show Solution'}
+                      {showSolution ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      {showSolution ? 'Hide Solution' : 'Reveal Solution'}
                     </button>
                   </div>
 
                   {showSolution && (
-                    <div className="bg-dark-900 border border-dark-800 rounded-lg overflow-hidden">
-                      {/* Solution Tabs */}
-                      <div className="flex border-b border-dark-800">
-                        {['optimal', 'better', 'brute'].map((tab) => (
-                          helpData.solutions[tab] && (
-                            <button
-                              key={tab}
-                              onClick={() => setActiveSolutionTab(tab)}
-                              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-                                activeSolutionTab === tab
-                                  ? 'border-brand-orange text-white bg-dark-800/50'
-                                  : 'border-transparent text-dark-400 hover:text-dark-200 hover:bg-dark-800/30'
-                              }`}
-                            >
-                              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                            </button>
-                          )
-                        ))}
-                      </div>
-
-                      {/* Solution Content */}
-                      <div className="p-4 space-y-4">
-                        {helpData.solutions[activeSolutionTab] ? (
-                          <>
-                            {/* Complexity Section */}
-                            <div className="flex gap-4">
-                              <div>
-                                <h4 className="text-xs font-bold text-dark-400 uppercase tracking-wider mb-1">Time Complexity</h4>
-                                <p className="text-emerald-400 font-mono text-sm bg-dark-950 inline-block px-2 py-1 rounded border border-dark-800">
-                                  {helpData.solutions[activeSolutionTab].timeComplexity || helpData.solutions[activeSolutionTab].complexity || 'N/A'}
-                                </p>
-                              </div>
-                              <div>
-                                <h4 className="text-xs font-bold text-dark-400 uppercase tracking-wider mb-1">Space Complexity</h4>
-                                <p className="text-blue-400 font-mono text-sm bg-dark-950 inline-block px-2 py-1 rounded border border-dark-800">
-                                  {helpData.solutions[activeSolutionTab].spaceComplexity || 'N/A'}
-                                </p>
-                              </div>
-                            </div>
-
-                             {/* Intuition & Logic */}
-                             {(helpData.solutions[activeSolutionTab].intuition || helpData.solutions[activeSolutionTab].explanation || helpData.solutions[activeSolutionTab].approach) && (
-                               <div>
-                                <h4 className="text-[10px] font-black text-dark-500 uppercase tracking-widest mb-2">Intuition & Pattern</h4>
-                                <p className="text-dark-200 leading-relaxed text-xs bg-brand-orange/5 p-3 rounded-r border-l-2 border-brand-orange">
-                                  {helpData.solutions[activeSolutionTab].intuition || helpData.solutions[activeSolutionTab].explanation || helpData.solutions[activeSolutionTab].approach}
-                                </p>
-                               </div>
-                             )}
- 
-                             {/* Approach Steps */}
-                             {helpData.solutions[activeSolutionTab].approachSteps?.length > 0 && (
-                               <div>
-                                <h4 className="text-[10px] font-black text-dark-500 uppercase tracking-widest mb-3">Wait... How it works? (Step-by-Step)</h4>
-                                <div className="space-y-3">
-                                  {helpData.solutions[activeSolutionTab].approachSteps.map((step, i) => (
-                                    <div key={i} className="flex gap-4 text-[13.5px] font-medium group">
-                                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-dark-800 border border-dark-700 flex items-center justify-center text-[10px] font-bold text-brand-orange group-hover:border-brand-orange/50 transition-colors shadow-sm">
-                                        {i + 1}
-                                      </span>
-                                      <p className="text-dark-100 pt-0.5 leading-relaxed">
-                                        {step.replace(/^\w+\s+\d+:\s*/, '')}
-                                      </p>
-                                    </div>
-                                  ))}
-                                </div>
-                               </div>
-                             )}
-
-                            {/* Code with Syntax Highlighting */}
-                            <div>
-                              <h4 className="text-xs font-bold text-dark-400 uppercase tracking-wider mb-1">Code (Java)</h4>
-                              <div className="rounded-lg overflow-hidden border border-dark-800">
-                                <SyntaxHighlighter
-                                  language="java"
-                                  style={vscDarkPlus}
-                                  customStyle={{ margin: 0, padding: '1rem', fontSize: '0.75rem', background: '#0d1117' }}
-                                  showLineNumbers={true}
-                                  wrapLines={true}
-                                >
-                                  {typeof helpData.solutions[activeSolutionTab].code === 'object' 
-                                    ? JSON.stringify(helpData.solutions[activeSolutionTab].code, null, 2) 
-                                    : helpData.solutions[activeSolutionTab].code || '// No code available'}
-                                </SyntaxHighlighter>
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <div className="text-center py-4">
-                            <p className="text-dark-400 italic text-sm mb-3">No specific {activeSolutionTab} approach available.</p>
-                            {activeSolutionTab === 'optimal' && (
-                              <button
-                                onClick={() => handleAIAssist(true)}
-                                disabled={loadingHelp}
-                                className="px-4 py-2 bg-brand-orange hover:bg-brand-orange/80 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
-                              >
-                                {loadingHelp ? (
-                                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                ) : (
-                                  <Terminal className="w-4 h-4" />
-                                )}
-                                Regenerate Solution
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <WorkspaceSolutionView
+                      solutions={helpData.solutions}
+                      initialTier={activeSolutionTab}
+                    />
                   )}
                 </div>
               )}

@@ -4,19 +4,56 @@
 
 @layer base {
   :root {
-    --bg-canvas: #07080d;
-    --bg-surface: #0c0e15;
-    --bg-card: #121522;
-    --bg-card-hover: #171b2b;
-    --border-subtle: rgba(255, 255, 255, 0.07);
+    /* Semantic Obsidian Tokens (v2) */
+    --background: #08090d;
+    --background-subtle: #0b0d13;
+    --surface: #0e111a;
+    --surface-raised: #141824;
+    --surface-elevated: #1b2030;
+    --surface-hover: #222940;
+    --surface-active: #28314c;
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border: rgba(255, 255, 255, 0.10);
+    --border-strong: rgba(255, 255, 255, 0.20);
+    --border-focus: #6366f1;
+    --foreground: #f8fafc;
+    --foreground-muted: #94a3b8;
+    --foreground-subtle: #64748b;
+    --primary: #6366f1;
+    --primary-hover: #818cf8;
+    --primary-active: #4f46e5;
+    --primary-subtle: rgba(99, 102, 241, 0.12);
+    --primary-border: rgba(99, 102, 241, 0.28);
+    --accent-amber: #f59e0b;
+
+    /* Legacy Tokens (Preserved for compatibility) */
+    --bg-canvas: #08090d;
+    --bg-surface: #0e111a;
+    --bg-card: #141824;
+    --bg-card-hover: #222940;
     --border-highlight: rgba(255, 255, 255, 0.14);
     --accent-orange: #f97316;
-    --accent-amber: #fb923c;
+  }
+
+  /* Accessibility: Respect Reduced Motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 
   * {
     @apply border-dark-700/50;
     box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
   }
 
   html {

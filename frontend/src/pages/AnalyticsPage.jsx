@@ -1,299 +1,417 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useAnalyticsStore } from '../stores/analyticsStore';
 import ActivityHeatmap from '../components/features/ActivityHeatmap';
-import { CheckCircle2, Zap, Target, TrendingUp, ArrowUpRight, Activity, Calendar, Award } from 'lucide-react';
-import { 
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, 
-  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+import Card from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
+import Skeleton from '../components/ui/Skeleton';
+import {
+  CheckCircle2,
+  Flame,
+  Target,
+  Award,
+  Calendar,
+  Activity,
+  Layers,
+  BarChart2,
+} from 'lucide-react';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
 } from 'recharts';
 
-function AnalyticsPage() {
-  const { 
-    overview, topics, patterns, difficulty, platforms,
+export default function AnalyticsPage() {
+  const {
+    overview,
+    topics,
+    patterns,
+    difficulty,
+    platforms,
     fetchDashboard,
-    loading 
+    loading,
   } = useAnalyticsStore();
 
   useEffect(() => {
     fetchDashboard(30);
   }, [fetchDashboard]);
 
+  const platformData = useMemo(() => {
+    return (
+      platforms?.map((p) => ({
+        name: p.platform || 'Other',
+        value: p.count || 0,
+      })) || []
+    );
+  }, [platforms]);
+
+  const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#38bdf8'];
+
+  // Radar chart data for patterns
+  const radarData = useMemo(() => {
+    const combinedMap = {};
+    [...(topics || []), ...(patterns || [])].forEach((item) => {
+      const key = item.topic || item.pattern;
+      if (key) {
+        combinedMap[key] = (combinedMap[key] || 0) + item.count;
+      }
+    });
+
+    const maxCount = Math.max(...Object.values(combinedMap), 1);
+
+    return Object.entries(combinedMap)
+      .map(([subject, count]) => ({ subject, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6)
+      .map((t) => ({
+        subject: t.subject,
+        A: t.count,
+        fullMark: maxCount,
+      }));
+  }, [topics, patterns]);
+
+  // Custom unified dark tooltip for Recharts
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      return (
+        <div className="bg-surface-elevated border border-border-strong px-3 py-2 rounded-lg shadow-xl text-xs select-none">
+          <p className="font-semibold text-foreground">{data.name || data.payload?.subject}</p>
+          <p className="text-primary font-mono mt-0.5">
+            {data.value} problems
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   if (loading && !overview) {
     return (
-      <div className="flex items-center justify-center h-full bg-dark-950">
-        <div className="relative">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-orange shadow-[0_0_20px_rgba(249,115,22,0.3)]"></div>
-        </div>
+      <div className="max-w-7xl mx-auto space-y-6 pb-12">
+        <Skeleton variant="card" count={4} />
       </div>
     );
   }
 
-  const platformData = platforms?.map(p => ({
-    name: p.platform,
-    value: p.count
-  })) || [];
-
-  const COLORS = ['#f97316', '#10b981', '#3b82f6', '#f43f5e', '#8b5cf6'];
-
-  // Combine topics and patterns for radar chart
-  const combinedMap = {};
-  [...topics, ...patterns].forEach(item => {
-    const key = item.topic || item.pattern;
-    combinedMap[key] = (combinedMap[key] || 0) + item.count;
-  });
-
-  const radarData = Object.entries(combinedMap)
-    .map(([subject, count]) => ({ subject, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 6)
-    .map(t => ({
-      subject: t.subject,
-      A: t.count,
-      fullMark: Math.max(...Object.values(combinedMap), 1)
-    }));
-
-  const maxHeatmapCount = Math.max(...(useAnalyticsStore.getState().heatmap.map(d => d.count)), 0);
+  const totalDiff = (difficulty?.easy || 0) + (difficulty?.medium || 0) + (difficulty?.hard || 0) || 1;
+  const easyPct = Math.round(((difficulty?.easy || 0) / totalDiff) * 100);
+  const medPct = Math.round(((difficulty?.medium || 0) / totalDiff) * 100);
+  const hardPct = Math.round(((difficulty?.hard || 0) / totalDiff) * 100);
 
   return (
-    <div className="p-6 sm:p-8 h-full overflow-y-auto custom-scrollbar bg-dark-950 selection:bg-brand-orange/30">
-      <div className="max-w-7xl mx-auto space-y-8">
-        
-        {/* Page Title */}
-        <div className="flex items-center justify-between pb-4 border-b border-white/[0.06]">
+    <div className="max-w-7xl mx-auto space-y-6 pb-12">
+      {/* 1. Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
+              Performance Analytics
+            </h1>
+            <span className="text-[11px] font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+              Live Telemetry
+            </span>
+          </div>
+          <p className="text-xs text-foreground-muted mt-1 leading-relaxed">
+            Real-time diagnostics on problem-solving velocity, retention intervals, and algorithmic strengths.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface border border-border text-xs text-foreground-subtle shrink-0">
+          <Calendar className="w-3.5 h-3.5 text-primary" />
+          <span>Last 30 Days</span>
+        </div>
+      </div>
+
+      {/* 2. Executive KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Solved */}
+        <Card className="flex flex-col justify-between">
+          <div className="flex items-center justify-between text-xs text-foreground-subtle mb-3">
+            <span className="font-semibold uppercase tracking-wider text-[10px]">
+              Total Verified
+            </span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Performance Analytics</h1>
-            <p className="text-xs text-dark-400 font-medium mt-1">Real-time metrics on problem solving velocity and consistency</p>
+            <div className="text-3xl font-extrabold text-foreground font-mono tabular-nums tracking-tight">
+              {overview?.totalProblems || 0}
+            </div>
+            <div className="mt-3 pt-3 border-t border-border-subtle text-[11px] text-foreground-subtle">
+              <span>Algorithmic problems verified</span>
+            </div>
           </div>
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.07] text-xs text-dark-300">
-            <Calendar className="w-3.5 h-3.5 text-brand-orange" />
-            <span>Last 30 Days</span>
+        </Card>
+
+        {/* Current Streak */}
+        <Card className="flex flex-col justify-between">
+          <div className="flex items-center justify-between text-xs text-foreground-subtle mb-3">
+            <span className="font-semibold uppercase tracking-wider text-[10px]">
+              Current Streak
+            </span>
+            <Flame className="w-4 h-4 text-accent-amber" />
           </div>
+          <div>
+            <div className="text-3xl font-extrabold text-accent-amber font-mono tabular-nums tracking-tight">
+              {overview?.currentStreak || 0} <span className="text-sm font-normal text-foreground-muted">Days</span>
+            </div>
+            <div className="mt-3 pt-3 border-t border-border-subtle text-[11px] text-foreground-subtle">
+              <span>Consecutive practice days</span>
+            </div>
+          </div>
+        </Card>
+
+        {/* Patterns Mastered */}
+        <Card className="flex flex-col justify-between">
+          <div className="flex items-center justify-between text-xs text-foreground-subtle mb-3">
+            <span className="font-semibold uppercase tracking-wider text-[10px]">
+              Patterns Logged
+            </span>
+            <Award className="w-4 h-4 text-indigo-400" />
+          </div>
+          <div>
+            <div className="text-3xl font-extrabold text-foreground font-mono tabular-nums tracking-tight">
+              {overview?.patternsMastered || 0}
+            </div>
+            <div className="mt-3 pt-3 border-t border-border-subtle text-[11px] text-foreground-subtle">
+              <span>Core algorithmic paradigms</span>
+            </div>
+          </div>
+        </Card>
+
+        {/* Active Study Days */}
+        <Card className="flex flex-col justify-between">
+          <div className="flex items-center justify-between text-xs text-foreground-subtle mb-3">
+            <span className="font-semibold uppercase tracking-wider text-[10px]">
+              Active Days
+            </span>
+            <Activity className="w-4 h-4 text-sky-400" />
+          </div>
+          <div>
+            <div className="text-3xl font-extrabold text-sky-400 font-mono tabular-nums tracking-tight">
+              {overview?.totalActiveDays || 0}
+            </div>
+            <div className="mt-3 pt-3 border-t border-border-subtle text-[11px] text-foreground-subtle">
+              <span>Days with problem activity</span>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* 3. Heatmap & Platform Mix Bento (8 cols + 4 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Solve Velocity Heatmap */}
+        <div className="lg:col-span-8">
+          <Card className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">
+                  Annual Solve Velocity
+                </h3>
+              </div>
+              <span className="text-[11px] font-mono text-foreground-subtle">
+                365-day cadence
+              </span>
+            </div>
+
+            <ActivityHeatmap />
+          </Card>
         </div>
 
-        {/* Top Metric Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-          {[
-            { label: 'Current Streak', value: `${overview?.currentStreak || 0} Days`, sub: 'Active practice', icon: Zap, color: 'text-brand-orange', bg: 'bg-brand-orange/10 border-brand-orange/20' },
-            { label: 'Total Solved', value: overview?.totalProblems || 0, sub: 'Problems verified', icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-            { label: 'Patterns Logged', value: overview?.patternsMastered || 0, sub: 'Algorithmic concepts', icon: Award, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
-            { label: 'Active Study Days', value: overview?.totalActiveDays || 0, sub: 'Days of consistency', icon: Activity, color: 'text-purple-400', bg: 'bg-purple-500/10 border-purple-500/20' }
-          ].map((stat, i) => (
-            <div key={i} className="glass-panel rounded-2xl p-5 hover:border-white/[0.16] transition-all duration-200">
-              <div className="flex items-start justify-between mb-4">
-                <div className={`p-2.5 rounded-xl border ${stat.bg} ${stat.color}`}>
-                  <stat.icon className="w-5 h-5" />
-                </div>
-              </div>
-              <div>
-                <div className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{stat.value}</div>
-                <div className="text-xs font-semibold text-dark-300 mt-1">{stat.label}</div>
-                <div className="text-2xs text-dark-400 mt-0.5">{stat.sub}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Middle Section: Heatmap & Platform Mix */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Activity Heatmap (8 cols) */}
-          <div className="lg:col-span-8 glass-panel rounded-2xl p-6 relative overflow-hidden">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-brand-orange/10 border border-brand-orange/20 flex items-center justify-center text-brand-orange">
-                  <Activity className="w-4 h-4" />
-                </div>
-                <div>
-                  <h2 className="text-base font-bold text-white tracking-tight">Solve Velocity Heatmap</h2>
-                  <p className="text-2xs text-dark-400 font-normal">Daily submission distribution over time</p>
-                </div>
+        {/* Platform Distribution Donut */}
+        <div className="lg:col-span-4">
+          <Card className="flex flex-col justify-between h-full space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-accent-amber" />
+                <h3 className="text-sm font-semibold text-foreground">
+                  Platform Distribution
+                </h3>
               </div>
             </div>
 
-            <div className="w-full flex items-center justify-center py-4 overflow-x-auto no-scrollbar">
-              <ActivityHeatmap />
-            </div>
-            
-            {/* Heatmap Metrics Bar */}
-            <div className="mt-6 pt-5 border-t border-white/[0.06] grid grid-cols-3 gap-4">
-              <div>
-                <span className="text-2xs text-dark-400 font-medium">Daily Peak</span>
-                <div className="text-base sm:text-lg font-bold text-white mt-0.5">{maxHeatmapCount} solves</div>
+            {platformData.length > 0 ? (
+              <div className="h-44 w-full relative">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={platformData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={70}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {platformData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                          stroke="rgba(0,0,0,0.5)"
+                          strokeWidth={2}
+                        />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
-              <div>
-                <span className="text-2xs text-dark-400 font-medium">Total Solves</span>
-                <div className="text-base sm:text-lg font-bold text-white mt-0.5">{overview?.totalProblems || 0}</div>
+            ) : (
+              <div className="py-12 text-center text-xs text-foreground-subtle">
+                No platform data logged yet.
               </div>
-              <div>
-                <span className="text-2xs text-dark-400 font-medium">Annual Consistency</span>
-                <div className="text-base sm:text-lg font-bold text-white mt-0.5">
-                  {overview?.totalActiveDays ? ((overview.totalActiveDays / 365) * 100).toFixed(1) : 0}%
-                </div>
-              </div>
-            </div>
-          </div>
+            )}
 
-          {/* Platform Distribution (4 cols) */}
-          <div className="lg:col-span-4 glass-panel rounded-2xl p-6 flex flex-col items-center">
-            <div className="w-full flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-                <Target className="w-4 h-4" />
-              </div>
-              <div>
-                <h2 className="text-base font-bold text-white tracking-tight">Platform Mix</h2>
-                <p className="text-2xs text-dark-400 font-normal">Problem source distribution</p>
-              </div>
-            </div>
-            
-            <div className="w-full h-52 relative">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={platformData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={4}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {platformData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={COLORS[index % COLORS.length]} 
-                        className="hover:opacity-80 transition-opacity cursor-pointer"
-                      />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip 
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="bg-dark-900/95 backdrop-blur-xl border border-white/[0.1] rounded-xl p-2.5 shadow-xl text-xs">
-                            <span className="font-semibold text-white">{payload[0].name}: </span>
-                            <span className="text-brand-orange font-bold">{payload[0].value}</span>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2 border-t border-border-subtle text-xs">
+              {platformData.map((entry, index) => (
+                <div key={entry.name} className="flex items-center gap-1.5 text-[11px]">
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
                   />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Platform Legend */}
-            <div className="w-full flex flex-wrap justify-center gap-2 pt-2 border-t border-white/[0.06] mt-2">
-              {platformData.map((p, i) => (
-                <div key={i} className="flex items-center gap-2 px-2.5 py-1 bg-white/[0.03] border border-white/[0.06] rounded-lg text-xs">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                  <span className="text-dark-300 font-medium">{p.name} ({p.value})</span>
+                  <span className="text-foreground-muted">{entry.name}</span>
+                  <span className="font-mono font-semibold text-foreground">
+                    ({entry.value})
+                  </span>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
+        </div>
+      </div>
+
+      {/* 4. Pattern Radar & Difficulty Breakdown (6 cols + 6 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Pattern Radar */}
+        <div className="lg:col-span-6">
+          <Card className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">
+                  Algorithmic Pattern Strengths
+                </h3>
+              </div>
+              <span className="text-[11px] text-foreground-subtle">Top 6 paradigms</span>
+            </div>
+
+            {radarData.length > 0 ? (
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
+                    <PolarGrid stroke="rgba(255, 255, 255, 0.08)" />
+                    <PolarAngleAxis
+                      dataKey="subject"
+                      stroke="#94a3b8"
+                      tick={{ fill: '#94a3b8', fontSize: 11 }}
+                    />
+                    <PolarRadiusAxis
+                      angle={30}
+                      stroke="rgba(255, 255, 255, 0.08)"
+                      tick={{ fill: '#64748b', fontSize: 9 }}
+                    />
+                    <Radar
+                      name="Problems Solved"
+                      dataKey="A"
+                      stroke="#6366f1"
+                      fill="#6366f1"
+                      fillOpacity={0.25}
+                    />
+                    <RechartsTooltip content={<CustomTooltip />} />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="py-16 text-center text-xs text-foreground-subtle">
+                Solve problems across various patterns to generate radar telemetry.
+              </div>
+            )}
+          </Card>
         </div>
 
-        {/* Bottom Section: Skills Radar & Difficulty Breakdown */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Skill Proficiency Radar (6 cols) */}
-          <div className="lg:col-span-6 glass-panel rounded-2xl p-6 h-[440px] flex flex-col">
-            <div className="mb-4">
-              <h2 className="text-base font-bold text-white tracking-tight">Skill Spectrum Radar</h2>
-              <p className="text-2xs text-dark-400 font-normal">Top algorithmic patterns and paradigms</p>
+        {/* Difficulty Breakdown */}
+        <div className="lg:col-span-6">
+          <Card className="space-y-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BarChart2 className="w-4 h-4 text-emerald-400" />
+                <h3 className="text-sm font-semibold text-foreground">
+                  Difficulty Distribution
+                </h3>
+              </div>
+              <span className="text-[11px] font-mono text-foreground-subtle">
+                {totalDiff} Problems
+              </span>
             </div>
 
-            <div className="flex-1 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
-                  <PolarGrid stroke="rgba(255,255,255,0.08)" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: '600' }} />
-                  <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={false} axisLine={false} />
-                  <Radar
-                    name="Mastery"
-                    dataKey="A"
-                    stroke="#f97316"
-                    strokeWidth={2}
-                    fill="#f97316"
-                    fillOpacity={0.25}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Difficulty Tiers Breakdown (6 cols) */}
-          <div className="lg:col-span-6 glass-panel rounded-2xl p-6 h-[440px] flex flex-col">
-            <div className="mb-4">
-              <h2 className="text-base font-bold text-white tracking-tight">Difficulty Balance</h2>
-              <p className="text-2xs text-dark-400 font-normal">Solved problems categorized by complexity</p>
-            </div>
-            
-            <div className="relative flex-1 w-full flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={[
-                      { name: 'Easy', value: difficulty?.Easy || 0, fill: '#10b981' },
-                      { name: 'Medium', value: difficulty?.Medium || 0, fill: '#f59e0b' },
-                      { name: 'Hard', value: difficulty?.Hard || 0, fill: '#f43f5e' }
-                    ]}
-                    dataKey="value" 
-                    cx="50%" 
-                    cy="50%" 
-                    innerRadius={70} 
-                    outerRadius={95}
-                    paddingAngle={4}
-                    stroke="none"
-                  >
-                    <Cell fill="#10b981" />
-                    <Cell fill="#f59e0b" />
-                    <Cell fill="#f43f5e" />
-                  </Pie>
-                  <RechartsTooltip 
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="bg-dark-900/95 backdrop-blur-xl border border-white/[0.1] rounded-xl p-2.5 shadow-xl text-xs">
-                            <span className="font-semibold text-white">{payload[0].name}: </span>
-                            <span className="font-bold text-brand-orange">{payload[0].value}</span>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <div className="text-3xl font-extrabold text-white tracking-tight">
-                  {(difficulty?.Easy || 0) + (difficulty?.Medium || 0) + (difficulty?.Hard || 0)}
+            <div className="space-y-4 pt-2">
+              {/* Easy */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5 font-semibold text-emerald-400">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    <span>Easy</span>
+                  </div>
+                  <span className="font-mono text-foreground">
+                    {difficulty?.easy || 0} ({easyPct}%)
+                  </span>
                 </div>
-                <div className="text-2xs font-semibold uppercase tracking-wider text-dark-400">Total Solves</div>
+                <div className="h-2 w-full bg-surface rounded-full overflow-hidden border border-border-subtle">
+                  <div
+                    className="h-full bg-emerald-400 rounded-full transition-all duration-500"
+                    style={{ width: `${easyPct}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Medium */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5 font-semibold text-amber-400">
+                    <span className="w-2 h-2 rounded-full bg-amber-400" />
+                    <span>Medium</span>
+                  </div>
+                  <span className="font-mono text-foreground">
+                    {difficulty?.medium || 0} ({medPct}%)
+                  </span>
+                </div>
+                <div className="h-2 w-full bg-surface rounded-full overflow-hidden border border-border-subtle">
+                  <div
+                    className="h-full bg-amber-400 rounded-full transition-all duration-500"
+                    style={{ width: `${medPct}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Hard */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5 font-semibold text-rose-400">
+                    <span className="w-2 h-2 rounded-full bg-rose-400" />
+                    <span>Hard</span>
+                  </div>
+                  <span className="font-mono text-foreground">
+                    {difficulty?.hard || 0} ({hardPct}%)
+                  </span>
+                </div>
+                <div className="h-2 w-full bg-surface rounded-full overflow-hidden border border-border-subtle">
+                  <div
+                    className="h-full bg-rose-400 rounded-full transition-all duration-500"
+                    style={{ width: `${hardPct}%` }}
+                  />
+                </div>
               </div>
             </div>
-
-            {/* Difficulty Legend */}
-            <div className="flex justify-center gap-6 pt-4 border-t border-white/[0.06] w-full">
-              {[
-                { label: 'Easy', color: 'bg-emerald-400', value: difficulty?.Easy || 0 },
-                { label: 'Medium', color: 'bg-amber-400', value: difficulty?.Medium || 0 },
-                { label: 'Hard', color: 'bg-rose-400', value: difficulty?.Hard || 0 }
-              ].map((tier, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full ${tier.color}`} />
-                  <span className="text-xs text-dark-300 font-medium">{tier.label}:</span>
-                  <span className="text-xs font-bold text-white">{tier.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          </Card>
         </div>
-
       </div>
     </div>
   );
 }
-
-export default AnalyticsPage;

@@ -70,53 +70,53 @@ function LearnPage() {
 
   if (!learningNotes) {
     return (
-      <div className="min-h-full bg-[#0a0a0a] overflow-y-auto custom-scrollbar selection:bg-orange-500/30">
-        <div className="max-w-[1400px] mx-auto px-8 py-12">
-          {/* LeetCode-Style Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-semibold text-white mb-2">Learn</h1>
-            <p className="text-sm text-[#8c8c8c]">Master DSA patterns and topics with AI-powered insights</p>
+      <div className="min-h-full bg-canvas overflow-y-auto custom-scrollbar">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          {/* Header */}
+          <div className="mb-6 pb-4 border-b border-border">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Algorithmic Study Guide</h1>
+            <p className="text-xs text-foreground-muted mt-1">Master DSA patterns and core paradigms with structured AI deep-dives</p>
           </div>
 
           {/* Filter Bar */}
-          <div className="bg-[#1a1a1a] border border-[#262626] rounded-lg p-6 mb-8">
+          <div className="bg-surface border border-border rounded-xl p-5 mb-8 shadow-inner-rim">
             <div className="flex flex-col lg:flex-row gap-4 items-end">
-              <div className="flex-1 space-y-2">
-                <label className="text-xs font-medium text-[#8c8c8c] uppercase tracking-wider">Data Structure / Algorithm</label>
+              <div className="flex-1 space-y-1.5">
+                <label className="text-xs font-semibold text-foreground-subtle uppercase tracking-wider">Data Structure / Algorithm</label>
                 <SearchableSelect
                   options={DSA_TOPICS}
                   value={learnTopic}
                   onChange={setLearnTopic}
                   placeholder="Select a topic..."
-                  className="!bg-[#0a0a0a] !border-[#262626] !text-white"
+                  className="!bg-surface-raised !border-border !text-foreground"
                 />
               </div>
-              <div className="flex-1 space-y-2">
-                <label className="text-xs font-medium text-[#8c8c8c] uppercase tracking-wider">Pattern</label>
+              <div className="flex-1 space-y-1.5">
+                <label className="text-xs font-semibold text-foreground-subtle uppercase tracking-wider">Pattern Paradigm</label>
                 <SearchableSelect
                   options={DSA_PATTERNS}
                   value={learnPattern}
                   onChange={setLearnPattern}
                   placeholder="Select a pattern..."
-                  className="!bg-[#0a0a0a] !border-[#262626] !text-white"
+                  className="!bg-surface-raised !border-border !text-foreground"
                 />
               </div>
               <button
                 onClick={handleGenerateLearningNotes}
                 disabled={loading || (!learnPattern && !learnTopic) || cooldown > 0}
-                className="px-8 py-3 bg-[#ffa116] hover:bg-[#ffb547] disabled:bg-[#262626] disabled:text-[#8c8c8c] text-black font-medium rounded-lg transition-all flex items-center justify-center gap-2 text-sm min-w-[160px]"
+                className="px-6 py-2.5 bg-primary hover:bg-primary-hover disabled:bg-surface-elevated disabled:text-foreground-subtle text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2 text-xs min-w-[140px] shadow-sm"
               >
                 {loading ? (
-                  <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : cooldown > 0 ? (
                   <>
-                    <Clock className="w-4 h-4" />
+                    <Clock className="w-3.5 h-3.5" />
                     <span>Wait {cooldown}s</span>
                   </>
                 ) : (
                   <>
-                    <Zap className="w-4 h-4" />
-                    <span>Generate</span>
+                    <Zap className="w-3.5 h-3.5" />
+                    <span>Generate Notes</span>
                   </>
                 )}
               </button>
@@ -222,39 +222,32 @@ function LearnPage() {
     );
   }
 
-  // Display Learning Notes - Premium LeetCode-Inspired UI
+  // Display Learning Notes - Editorial Developer UI
   return (
-    <div className="p-0 h-full overflow-y-auto custom-scrollbar bg-[#0a0a0a] selection:bg-orange-500/30">
-      {/* Subtle gradient background effect */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#ffa116]/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00b8a3]/5 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative w-full px-8 lg:px-16 py-10 space-y-8 max-w-[1600px] mx-auto">
+    <div className="p-0 h-full overflow-y-auto custom-scrollbar bg-canvas">
+      <div className="relative w-full px-6 lg:px-12 py-8 space-y-6 max-w-7xl mx-auto">
         
-        {/* Premium Header */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1a1a1a] to-[#0f0f0f] border border-[#262626] p-8">
-          <div className="absolute inset-0 bg-gradient-to-r from-[#ffa116]/5 via-transparent to-[#00b8a3]/5" />
+        {/* Editorial Header */}
+        <div className="relative overflow-hidden rounded-2xl bg-surface border border-border p-6 shadow-inner-rim">
           <div className="relative flex items-center justify-between">
-            <div className="space-y-3">
+            <div className="space-y-1.5">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#ffa116] to-[#ff8c00] flex items-center justify-center shadow-lg shadow-[#ffa116]/20">
-                  <Brain className="w-6 h-6 text-black" />
+                <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shadow-sm">
+                  <Brain className="w-5 h-5" />
                 </div>
                 <div>
-                  <h1 className="text-3xl lg:text-4xl font-bold text-white">{learningNotes.title}</h1>
-                  <p className="text-base text-[#8c8c8c] mt-1">Complete Mastery Guide</p>
+                  <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">{learningNotes.title}</h1>
+                  <p className="text-xs text-foreground-muted mt-0.5">Comprehensive Paradigm Architecture Guide</p>
                 </div>
               </div>
             </div>
             
             <button 
               onClick={handleReset}
-              className="px-5 py-3 bg-[#262626]/50 backdrop-blur-sm border border-[#404040] rounded-xl text-[#8c8c8c] hover:text-white hover:bg-[#404040] hover:border-[#525252] transition-all flex items-center gap-2 text-base group"
+              className="px-3.5 py-1.5 bg-surface-raised border border-border rounded-lg text-foreground-subtle hover:text-foreground hover:bg-surface-hover transition-all flex items-center gap-1.5 text-xs group"
             >
-              <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
-              <span className="hidden sm:inline">Close</span>
+              <X className="w-4 h-4 group-hover:rotate-90 transition-transform duration-200" />
+              <span>Back to Roadmaps</span>
             </button>
           </div>
         </div>
@@ -574,11 +567,9 @@ function LearnPage() {
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                   {learningNotes.masteryChecklist.map((item, i) => (
-                    <div key={i} className="flex items-start gap-3 p-4 rounded-xl bg-[#1a1a1a] border border-[#262626]">
-                      <div className="w-6 h-6 rounded border-2 border-[#ffa116] flex items-center justify-center shrink-0 mt-0.5">
-                        <span className="text-xs text-[#ffa116]">✓</span>
-                      </div>
-                      <span className="text-[#c4c4c4] leading-relaxed">{typeof item === 'string' ? item : item.content || JSON.stringify(item)}</span>
+                    <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl bg-surface border border-border">
+                      <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                      <span className="text-xs text-foreground-muted leading-relaxed">{typeof item === 'string' ? item : item.content || JSON.stringify(item)}</span>
                     </div>
                   ))}
                 </div>

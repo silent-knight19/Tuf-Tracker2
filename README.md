@@ -1,15 +1,15 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/DSA-Progress%20Tracker-FF6B35?style=for-the-badge&logo=leetcode&logoColor=white" alt="TufTracker Badge"/>
+  <img src="./frontend/public/basecase-logo.png" alt="BaseCase Logo" width="216" style="border-radius: 16px;"/>
 </p>
 
-<h1 align="center">🔥 TufTracker v2.0</h1>
+<h1 align="center">BaseCase</h1>
 
 <p align="center">
-  <strong>Your AI-Powered DSA Mastery Platform</strong>
+  <strong>The Algorithmic Engineering Platform & Deliberate Practice Workspace</strong>
 </p>
 
 <p align="center">
-  A comprehensive full-stack platform designed to transform how you prepare for technical interviews. TufTracker combines intelligent problem analysis, spaced repetition learning, company-specific preparation, and real-time code execution to accelerate your DSA journey.
+  A high-performance full-stack platform designed to transform how engineers master algorithmic problem solving. BaseCase combines deterministic problem synthesis, automated spaced repetition, company-specific tracks, and real-time code execution in an elite developer workspace.
 </p>
 
 <p align="center">

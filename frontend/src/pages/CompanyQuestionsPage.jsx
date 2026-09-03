@@ -11,8 +11,7 @@ import {
   ArrowLeft,
   Building2,
   ExternalLink,
-  Code2,
-  Sparkles
+  Code2
 } from 'lucide-react';
 import { googleInterviewCategories, getGoogleInterviewStats, getGoogleProblemById } from '../data/googleQuestions';
 import { amazonInterviewCategories, getAmazonInterviewStats, getAmazonProblemById } from '../data/amazonQuestions';

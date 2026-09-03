@@ -392,7 +392,7 @@ router.post('/:id/generate-notes', verifyToken, validate({ params: S.problems.by
     }
 
     const aiService = require('../services/ai.service');
-    const cacheKey = `notes_v4_${cacheService.normalizeKey(problem.title)}`;
+    const cacheKey = `notes_v5_${cacheService.normalizeKey(problem.title)}`;
     
     // Check if force refresh is requested
     const forceRefresh = req.body.forceRefresh === true;
@@ -436,7 +436,7 @@ router.post('/generate-notes-preview', verifyToken, validate(S.problems.generate
     }
 
     const aiService = require('../services/ai.service');
-    const cacheKey = `notes_v4_${cacheService.normalizeKey(title)}`;
+    const cacheKey = `notes_v5_${cacheService.normalizeKey(title)}`;
 
     // Check if force refresh is requested
     const forceRefresh = req.body.forceRefresh === true;
