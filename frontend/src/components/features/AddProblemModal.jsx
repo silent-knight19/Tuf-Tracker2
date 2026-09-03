@@ -9,30 +9,43 @@ function AddProblemModal({ isOpen, onClose }) {
   const [url, setUrl] = useState('');
   const [notes, setNotes] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
+  const [error, setError] = useState(null);
   const { addProblem } = useProblemStore();
 
   useScrollLock(isOpen);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!title.trim()) {
+      setError('Problem title is required');
+      return;
+    }
+    setError(null);
     setAnalyzing(true);
 
     try {
-      await addProblem({
-        title,
-        platform,
-        platformUrl: url,
-        notes
-      });
+      const payload = {
+        title: title.trim(),
+        platform: platform || 'LeetCode',
+      };
+      if (url && url.trim()) payload.platformUrl = url.trim();
+      if (notes && notes.trim()) payload.notes = notes.trim();
+
+      await addProblem(payload);
 
       // Reset form
       setTitle('');
       setPlatform('LeetCode');
       setUrl('');
       setNotes('');
+      setError(null);
       onClose();
-    } catch (error) {
-      console.error('Error adding problem:', error);
+    } catch (err) {
+      console.error('Error adding problem:', err);
+      const detailMsg = err.response?.data?.details?.[0]?.message 
+        ? `${err.response.data.details[0].path || 'Field'}: ${err.response.data.details[0].message}`
+        : err.response?.data?.error || err.message || 'Failed to add problem';
+      setError(detailMsg);
     } finally {
       setAnalyzing(false);
     }
@@ -53,6 +66,13 @@ function AddProblemModal({ isOpen, onClose }) {
             <X className="w-6 h-6" />
           </button>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/25 text-rose-400 text-xs flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">

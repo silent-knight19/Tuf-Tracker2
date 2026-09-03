@@ -72,29 +72,29 @@ const problems = {
       title: req(title()),
       platform: optional(string({ min: 1, max: 60 })),
       platformUrl: optional(urlString()),
-      notes: optional(string({ min: 1, max: 50000 })),
-      approach: optional(string({ min: 1, max: 50000 })),
-      code: optional(string({ min: 1, max: 100000 })),
+      notes: optional(string({ min: 0, max: 50000 })),
+      approach: optional(string({ min: 0, max: 50000 })),
+      code: optional(string({ min: 0, max: 100000 })),
       // IGNORED (compat: ProblemsPage/AddProblemModal send these; the
       // server-side analyzer is authoritative and handlers must not persist them).
       difficulty: optional(difficulty()),
       topics: optional(topicList()),
       patterns: optional(topicList()),
-      status: optional(string({ min: 1, max: 30 })),
+      status: optional(string({ min: 0, max: 30 })),
     }, { strict: true }),
   },
   byId: { params: idParams() },
   update: {
     params: idParams(),
     body: object({
-      notes: optional(string({ min: 1, max: 50000 })),
-      approach: optional(string({ min: 1, max: 50000 })),
-      code: optional(string({ min: 1, max: 100000 })),
+      notes: optional(string({ min: 0, max: 50000 })),
+      approach: optional(string({ min: 0, max: 50000 })),
+      code: optional(string({ min: 0, max: 100000 })),
       difficulty: optional(difficulty()),
       topics: optional(topicList()),
       patterns: optional(topicList()),
-      aiNotes: optional(string({ min: 1, max: 50000 })),
-      status: optional(string({ min: 1, max: 30 })), // IGNORED (compat: ProblemsPage sends it)
+      aiNotes: optional(string({ min: 0, max: 50000 })),
+      status: optional(string({ min: 0, max: 30 })), // IGNORED (compat: ProblemsPage sends it)
     }, { strict: true, minKeys: 1 }),
   },
   analyze: {
@@ -160,8 +160,8 @@ const revisions = {
     params: idParams(),
     body: object({
       confidence: req(number({ min: 1, max: 5, int: true, coerce: true })),
-      notes: optional(string({ min: 1, max: 20000 })),
-      coreIdea: optional(string({ min: 1, max: 10000 })),
+      notes: optional(string({ min: 0, max: 20000 })),
+      coreIdea: optional(string({ min: 0, max: 10000 })),
       algorithmSteps: optional(arrayOf(string({ min: 1, max: 2000 }), { max: 100 })),
       edgeCases: optional(arrayOf(
         union([string({ min: 1, max: 2000 }), echoItem()]), { max: 100 }
@@ -181,12 +181,12 @@ const revisions = {
   patch: {
     params: idParams(),
     body: object({
-      coreIdea: optional(string({ min: 1, max: 10000 })),
+      coreIdea: optional(string({ min: 0, max: 10000 })),
       algorithmSteps: optional(arrayOf(string({ min: 1, max: 2000 }), { max: 100 })),
       edgeCases: optional(arrayOf(
         union([string({ min: 1, max: 2000 }), echoItem()]), { max: 100 }
       )),
-      notes: optional(string({ min: 1, max: 20000 })),
+      notes: optional(string({ min: 0, max: 20000 })),
       // Debrief fields the UI already sends but the server used to drop;
       // now validated AND persisted (S4 fix).
       confidenceScore: optional(number({ min: 0, max: 5, coerce: true })),
