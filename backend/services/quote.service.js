@@ -1,5 +1,5 @@
 const { db } = require('../config/firebase.config');
-const { geminiEdgeCaseModel, rateLimiter } = require('../config/ai.config');
+const aiService = require('./ai.service');
 
 class QuoteService {
   constructor() {
@@ -7,12 +7,10 @@ class QuoteService {
   }
 
   /**
-   * Generates 50 new motivational quotes using Gemini
+   * Generates 50 new motivational quotes using AI
    */
   async generateDailyQuotes() {
     try {
-      await rateLimiter.checkAndWait();
-
       const prompt = `You are a world-class high-performance coach and philosopher.
 TASK: Generate 50 unique, powerful, and deeply moving motivational quotes for high-achievers.
 
@@ -36,15 +34,10 @@ RULES:
 - Ensure all 50 quotes are distinct and non-cliché.
 - Quotes should feel timeless and premium.`;
 
-      const result = await geminiEdgeCaseModel.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-      
-      // Remove possible markdown JSON blocks
-      const cleanJson = text.replace(/```json|```/g, '').trim();
-      const data = JSON.parse(cleanJson);
+      const responseText = await aiService.callAI(prompt, true);
+      const data = aiService.parseJSON(responseText);
 
-      if (!data.quotes || !Array.isArray(data.quotes)) {
+      if (!data || !data.quotes || !Array.isArray(data.quotes)) {
         throw new Error('Invalid AI response structure');
       }
 

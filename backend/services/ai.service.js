@@ -15,7 +15,7 @@ const { openRouterClient, MODEL, generationConfig, rateLimiter } = require('../c
 class AIService {
 
   // ═══════════════════════════════════════════════════════════════
-  // CORE: OpenRouter API Call
+  // CORE: Groq AI API Call
   // This is the main method that sends prompts to the AI model.
   // Every other method in this file uses callAI() under the hood.
   // ═══════════════════════════════════════════════════════════════
@@ -24,13 +24,19 @@ class AIService {
       // Wait if we've hit rate limits (prevents too many requests)
       await rateLimiter.wait();
       
-      // Log the first 60 characters of the prompt so we know what's happening
-      console.log(`🤖 OpenRouter: ${prompt.slice(0, 60)}...`);
+      // Log the prompt preview
+      console.log(`🤖 Groq (${MODEL}): ${prompt.slice(0, 60)}...`);
       
+      let messageContent = prompt;
+      // Groq requires the word 'json' in messages when response_format is json_object
+      if (jsonMode && !prompt.toLowerCase().includes('json')) {
+        messageContent = `${prompt}\n\nPlease provide your response strictly in valid JSON format.`;
+      }
+
       // Build the request options for the OpenAI-compatible API
       const options = {
         model: MODEL,
-        messages: [{ role: 'user', content: prompt }],
+        messages: [{ role: 'user', content: messageContent }],
         temperature: generationConfig.temperature,
         top_p: generationConfig.top_p,
         max_tokens: generationConfig.max_tokens,
@@ -41,48 +47,48 @@ class AIService {
         options.response_format = { type: 'json_object' };
       }
       
-      // Create a timeout so we don't wait forever (60s for OpenRouter)
+      // Create a timeout so we don't wait forever (45s)
       const timeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout after 60s')), 60000)
+        setTimeout(() => reject(new Error('Timeout after 45s')), 45000)
       );
       
       // Race the actual API call against the timeout
-      // Whichever finishes first wins
       const response = await Promise.race([
         openRouterClient.chat.completions.create(options),
         timeout
       ]);
       
       console.log('✅ Response received');
-      // Return just the text content from the AI's response
       return response.choices[0].message.content;
       
     } catch (error) {
       // If we hit a rate limit (429) or timeout, retry automatically
       if (retries > 0 && (error.status === 429 || error.message?.includes('Timeout'))) {
-        console.warn(`⚠️ ${error.message}. Retrying...`);
-        await new Promise(r => setTimeout(r, 2000)); // Wait 2 seconds before retrying
+        console.warn(`⚠️ ${error.message}. Retrying in 2s...`);
+        await new Promise(r => setTimeout(r, 2000));
         return this.callAI(prompt, jsonMode, retries - 1);
       }
       
-      console.error('❌ OpenRouter Error:', error.message);
+      console.error('❌ Groq Error:', error.message);
       throw error;
     }
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // JSON Parser
+  // JSON Parser - Handles markdown fences & reasoning tags (<think>)
   // ═══════════════════════════════════════════════════════════════
   parseJSON(text) {
+    if (!text || typeof text !== 'string') return null;
     try {
-      let clean = text.trim();
-      if (clean.startsWith('```')) {
-        clean = clean.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+      let clean = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+      if (clean.includes('```')) {
+        clean = clean.replace(/```json\n?/gi, '').replace(/```\n?/g, '');
       }
       return JSON.parse(clean.trim());
     } catch (e) {
-      // Try to extract JSON from text
-      const jsonMatch = text.match(/[\[{][\s\S]*[\]}]/);
+      // Try to extract JSON structure from text
+      const clean = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+      const jsonMatch = clean.match(/[\[{][\s\S]*[\]}]/);
       if (jsonMatch) {
         try { return JSON.parse(jsonMatch[0]); } catch {}
       }
