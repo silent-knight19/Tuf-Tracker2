@@ -141,10 +141,21 @@ function validateEnv(env) {
       else if (port < 1024) out.warnings.push('PORT is privileged (<1024); prefer a high port behind the platform router.');
     }
   }
-  // Container-safe default for prod; loopback default for dev/test so a
-  // development server (with the weak sandbox) is not exposed to the LAN.
+  // Container-safe default for prod or cloud environments (Render, Railway, Docker);
+  // loopback default for local dev/test so a development server is not exposed to the LAN.
   // Override explicitly with HOST when LAN access is really needed.
-  let host = prod ? '0.0.0.0' : '127.0.0.1';
+  const isCloudOrContainer = Boolean(
+    prod || 
+    env.RENDER || 
+    env.RENDER === 'true' || 
+    env.IS_PULL_REQUEST || 
+    env.DOCKER || 
+    env.CONTAINER || 
+    env.RAILWAY_ENVIRONMENT || 
+    env.FLY_APP_NAME || 
+    env.HEROKU
+  );
+  let host = isCloudOrContainer ? '0.0.0.0' : '127.0.0.1';
   if (!isBlank(env.HOST)) {
     const h = String(env.HOST).trim();
     const isIp = net.isIP(h) !== 0;
@@ -154,7 +165,7 @@ function validateEnv(env) {
   } else if (!prod && !isBlank(env.PORT)) {
     // no-op: explicit port with loopback default is fine
   }
-  if (!prod && host === '0.0.0.0') {
+  if (!prod && !isCloudOrContainer && host === '0.0.0.0') {
     out.warnings.push('HOST is 0.0.0.0 in a non-production environment; the dev server is reachable from the network.');
   }
 

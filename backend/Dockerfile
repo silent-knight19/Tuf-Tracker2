@@ -5,6 +5,8 @@ FROM node:22-slim
 
 # Set environment variables to prevent interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
+ENV HOST=0.0.0.0
+ENV PORT=3001
 
 # Install OpenJDK for Java compilation
 # Using openjdk-17 specifically for better compatibility
