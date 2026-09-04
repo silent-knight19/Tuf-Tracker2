@@ -1421,378 +1421,349 @@ Return JSON:
   // ═══════════════════════════════════════════════════════════════
   // Generate Learning Notes (Comprehensive Study Material)
   // ═══════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════
+  // Generate Learning Notes (Archetype-Driven Study Guides)
+  // ═══════════════════════════════════════════════════════════════
   async generateLearningNotes(pattern, topic) {
-    // Determine if this is a pattern or a topic (Data Structure/Algorithm)
-    const isPattern = !!pattern;
     const subject = pattern || topic;
 
-    // ═══════════════════════════════════════════════════════════════
-    // PROMPT FOR PATTERNS (Algorithmic techniques like Two Pointers, Sliding Window)
-    // ═══════════════════════════════════════════════════════════════
-    const patternPrompt = `You are an EXCEPTIONAL computer science educator with 20+ years of experience teaching at top universities (MIT, Stanford, CMU) and training engineers at FAANG companies. Your students consistently praise you for making complex concepts crystal clear.
+    // Classify into specialized archetypes:
+    // 1. "data_structure" (Storage, memory layout, invariants, Java collections internals)
+    // 2. "algorithm" (Procedural execution, loop invariants, state traces, recurrence proofs)
+    // 3. "pattern" (Trigger signals, window/pointer dynamics, universal template, solved problem ladder)
+    const dsPatterns = new Set(['union find', 'trie', 'monotonic stack', 'two heaps']);
+    const normPattern = String(pattern || '').toLowerCase().trim();
+    const normTopic = String(topic || '').toLowerCase().trim();
 
-YOUR MISSION: Create the ULTIMATE learning resource for "${subject}" that will take a complete beginner with ZERO prior knowledge and transform them into someone who can confidently solve any ${subject} problem in a coding interview.
+    let archetype = 'pattern';
+    if (pattern && dsPatterns.has(normPattern) && !topic) {
+      archetype = 'data_structure';
+    } else if (pattern) {
+      archetype = 'pattern';
+    } else {
+      const dataStructures = new Set([
+        'array', 'string', 'hash table', 'linkedlist', 'stack', 'queue',
+        'heap (priority queue)', 'tree', 'matrix', 'binary search tree', 'trie',
+        'segment tree', 'ordered set', 'monotonic stack', 'union find', 'graph'
+      ]);
+      archetype = dataStructures.has(normTopic) ? 'data_structure' : 'algorithm';
+    }
 
-TEACHING PHILOSOPHY:
-- Explain like you're talking to a smart friend who has never seen this before
-- Use analogies and real-world examples to make abstract concepts concrete  
-- Build understanding step-by-step, never assuming prior knowledge
-- After reading this, even a first-year CS student should fully understand ${subject}
-- Be GENEROUS with explanations - clarity trumps brevity
+    // --- PROMPT 1: DATA STRUCTURE ---
+    const dsPrompt = `You are a Principal Systems Architect and Distinguished CS Educator.
+TASK: Create an authoritative, master-class technical study guide for the Data Structure: "${subject}".
+You MUST serve both a BEGINNER (seeking crystal-clear physical intuition) and an EXPERIENCED ENGINEER (preparing for L6+/Staff FAANG interviews).
 
-Return a JSON object with this structure. EVERY field must be EXCEPTIONALLY detailed:
-
+Return a JSON object with this EXACT schema:
 {
-  "title": "Mastering ${subject}",
+  "type": "data_structure",
+  "title": "Mastering ${subject}: Architecture, Internals & Operations",
+  "category": "Linear Data Structure",
+  "overview": "A compelling 4-5 sentence summary introducing the data structure, why it exists, and its primary utility.",
   
-  "overview": "Write a COMPREHENSIVE 8-10 sentence overview that a complete beginner can understand. Structure it as: (1) Start with a simple real-world analogy that captures the essence of ${subject} - something anyone can relate to. (2) Define what ${subject} actually is in plain English. (3) Explain the CORE INSIGHT - the 'aha!' moment that makes this technique click. (4) Describe WHAT PROBLEM this solves and WHY we need it. (5) Explain how it improves upon the naive/brute-force approach - with specific complexity improvements. (6) Mention which types of coding problems use this and how often it appears in interviews. (7) End with what mastery looks like - what will someone be able to do after learning this? Make this overview engaging, encouraging, and accessible. A complete beginner should finish reading this and think 'I understand why this matters and I'm excited to learn it!'",
-  
-  "whenToUse": [
-    "PRIMARY INVARIANT SIGNAL 1 (High Confidence - When to apply ${subject}): Describe the primary signal that indicates ${subject} is optimal. Be specific. Example format: 'When you encounter [EXACT PROBLEM PATTERN] combined with [SPECIFIC CONSTRAINT], consider ${subject}. Rationale: [DETAILED EXPLANATION]. Canonical Problem: [CITE A REAL LEETCODE PROBLEM]. Mathematical/Logical Guarantee: [EXPLAIN THE INVARIANT].' Provide 4-5 lines minimum.",
-    
-    "PRIMARY INVARIANT SIGNAL 2 (High Confidence): Second most reliable trigger pattern. Follow the same rigorous format focusing on a different input structure. Include another canonical problem reference.",
-    
-    "PRIMARY INVARIANT SIGNAL 3 (Constraint Driven): Signal focused on input scale and asymptotic limits. When problem constraints force you toward ${subject}. Explain how to deduce that ${subject} is necessary from the Big-O budget.",
-    
-    "Signal 4 (Standard Interview Pattern): A standard interview scenario where ${subject} is the expected solution. Name 2-3 canonical problems fitting this profile.",
-    
-    "Signal 5 (Complexity Reduction): Signal focusing on the time complexity advantage over naive iteration. Include before and after asymptotic analysis.",
-    
-    "Signal 6 (Data Structure Synergy): Scenario involving specific properties of arrays, strings, linked lists, or trees that enable ${subject}.",
-    
-    "Signal 7 (Space Optimization): Scenario where strict O(1) auxiliary memory is required or problem constraints forbid hash map allocation.",
-    
-    "Signal 8 (Hybrid Composition): When ${subject} combines with a secondary technique such as binary search, two pointers, or sorting.",
-    
-    "Signal 9 (Problem Formulation Signals): Key phrases in problem statements that typically signal ${subject}. List 5-7 keyword phrases and explain why each indicates this pattern.",
-    
-    "Signal 10 (Anti-Patterns): Scenarios that superficially resemble ${subject} but where this pattern is inappropriate or suboptimal. Explain why."
-  ],
-  
-  "complexity": {
-    "time": "Write the time complexity with a thorough, beginner-friendly derivation. Format: 'O(?) - [Explanation]. Derivation: [Step-by-step counting of iterations, operations, and state transitions.]'",
-    
-    "space": "Write the auxiliary space complexity with a clear breakdown of data structures and call-stack allocations.",
-    
-    "bestCase": "Describe when ${subject} performs with minimal operations. Detail the exact best-case input structure and resulting complexity.",
-    
-    "worstCase": "Describe the worst-case scenario. What causes maximum operations, and how should edge conditions be handled?"
+  "beginnerTrack": {
+    "eli5Definition": "Crystal clear 2-3 sentence definition without overwhelming academic jargon.",
+    "realWorldAnalogy": "A memorable real-world analogy explaining how this data structure behaves in everyday physical terms.",
+    "whyItExists": "Explain why simpler primitives (e.g. fixed arrays) failed and what specific problem necessitated this data structure.",
+    "memoryLayoutAscii": "Detailed ASCII art illustrating the physical layout in RAM: show heap nodes, pointers, contiguous memory blocks, or array indices.",
+    "coreMentalModel": "The key mental model for visualizing state transitions, traversals, and updates."
   },
-  
-  "coreApproach": {
-    "intuition": "Write a 6-8 sentence explanation illuminating the core intuition. State: 'The core invariant that makes ${subject} work is...' Then explain: (1) The fundamental mathematical truth. (2) Why this guarantees correctness. (3) How to identify this in problems. (4) A physical mental model. (5) What distinguishes an optimal solution from a naive attempt.",
-    
-    "steps": [
-      "STEP 1 - SPECIFICATION & INVARIANTS: Identify key parameters, determine the invariant to maintain, and establish the problem bounds.",
-      
-      "STEP 2 - INITIALIZATION: Define the initial pointers, accumulators, or states. Document why each variable starts at its designated position.",
-      
-      "STEP 3 - MAIN LOOP CONDITION: Define the continuation condition and explain what invariant holds at the start of each iteration.",
-      
-      "STEP 4 - BRANCHING DECISION LOGIC: Detail the evaluation criteria inside the loop and how state transitions shrink the problem domain.",
-      
-      "STEP 5 - STATE CONVERGENCE: Explain how pointers or states advance to guarantee convergence without infinite looping.",
-      
-      "STEP 6 - RESULT CAPTURE: How the valid result is verified, stored, and returned.",
-      
-      "STEP 7 - SENTINEL / TERMINATION HANDLING: Explicit logic for impossible configurations and sentinel return values."
+
+  "coreOperations": [
+    {
+      "name": "Insertion / Push / Enqueue / Put",
+      "timeComplexity": { "best": "O(1)", "average": "O(1)", "worst": "O(N)" },
+      "spaceComplexity": "O(1)",
+      "stepByStepExplanation": "Step-by-step plain English narrative of the algorithm for this operation.",
+      "code": "// Clean, self-contained, commented Java 17 method\\npublic void insert(int val) { ... }",
+      "edgeCases": ["Empty structure", "Single element", "Boundary/Capacity"]
+    },
+    {
+      "name": "Deletion / Pop / Dequeue / Remove",
+      "timeComplexity": { "best": "O(1)", "average": "O(1)", "worst": "O(N)" },
+      "spaceComplexity": "O(1)",
+      "stepByStepExplanation": "Step-by-step plain English narrative of how deletion occurs safely.",
+      "code": "// Clean, self-contained, commented Java 17 method\\npublic int delete() { ... }",
+      "edgeCases": ["Underflow / Empty", "Removing sole item", "Removing head vs tail"]
+    },
+    {
+      "name": "Search / Peek / Lookup",
+      "timeComplexity": { "best": "O(1)", "average": "O(N)", "worst": "O(N)" },
+      "spaceComplexity": "O(1)",
+      "stepByStepExplanation": "Step-by-step narrative of lookup traversal.",
+      "code": "// Clean, self-contained, commented Java 17 method\\npublic boolean contains(int val) { ... }",
+      "edgeCases": ["Value not found", "Null pointer guards"]
+    }
+  ],
+
+  "advancedTrack": {
+    "javaCollectionsInternals": "Deep-dive into Java's standard library implementation (e.g. ArrayList 1.5x amortized growth with Arrays.copyOf, HashMap bucket array with TreeNode treeification at threshold 8, ArrayDeque circular bitmasking vs legacy synchronized Stack).",
+    "hardwareAndMemoryMechanics": "Cache locality (L1/L2 spatial locality), pointer dereferencing overhead, 64-bit object header memory costs, and garbage collection pressure.",
+    "tradeoffMatrix": [
+      {
+        "comparedAgainst": "Array",
+        "advantage": "Where this data structure wins",
+        "disadvantage": "Where the alternative wins",
+        "whenToPickWhich": "Concrete decision rule for technical interviews"
+      },
+      {
+        "comparedAgainst": "Alternative Structure",
+        "advantage": "Comparison detail",
+        "disadvantage": "Tradeoff detail",
+        "whenToPickWhich": "Decision rule"
+      }
     ],
-    
-    "edgeCases": [
-      "EDGE CASE: Empty / Null Input - How code validates inputs before processing to prevent NullPointerException or IndexOutOfBoundsException.",
-      
-      "EDGE CASE: Single Element - Verifying correctness for arrays or strings of length 1.",
-      
-      "EDGE CASE: All Identical Elements - Verifying behavior when duplicates or identical values are present.",
-      
-      "EDGE CASE: Already Ordered / Saturated Input - Ensuring no redundant iterations occur when the input is pre-satisfied.",
-      
-      "EDGE CASE: Sentinel Return - Graceful handling when no valid subset, index, or value meets criteria.",
-      
-      "EDGE CASE: Numeric Overflow - Using long accumulators or defensive comparisons to avoid 32-bit integer overflow."
-    ],
-    
-    "pseudocode": "function solve${subject.replace(/[^a-zA-Z]/g, '')}(input):\\n    // Step 1: Validate input bounds\\n    if input is null or input.length == 0:\\n        return DEFAULT_SENTINEL\\n    \\n    // Step 2: Initialize invariants\\n    // Maintain loop invariant across iterations\\n    \\n    // Step 3: Iterate and converge\\n    while condition:\\n        // State updates\\n    \\n    return result"
+    "subtleInvariants": [
+      "Key invariant 1 that must hold at all times",
+      "Key invariant 2 that must hold at all times"
+    ]
   },
-  
-  "exampleProblems": [
-    {
-      "name": "[Canonical Problem Title - Easy Level]",
-      "difficulty": "Easy",
-      "companies": ["Google", "Amazon", "Microsoft"],
-      "description": "Comprehensive specification including task, input/output types, and examples.",
-      "intuition": "Step-by-step rationale for why ${subject} solves this problem optimally.",
-      "code": "// Self-contained, commented Java implementation"
-    },
-    {
-      "name": "[Canonical Problem Title - Medium Level]",
-      "difficulty": "Medium",
-      "companies": ["Meta", "Apple", "Bloomberg"],
-      "description": "Comprehensive specification for a medium-level problem demonstrating ${subject}.",
-      "intuition": "Detailed explanation of how ${subject} manages the expanded problem space.",
-      "code": "// Self-contained, commented Java implementation"
-    },
-    {
-      "name": "[Canonical Problem Title - Hard Level]",
-      "difficulty": "Hard",
-      "companies": ["Apple", "Uber", "Airbnb"],
-      "description": "Comprehensive specification for an advanced problem combining ${subject} with subtle invariants.",
-      "intuition": "Analysis of the critical insight that simplifies this problem.",
-      "code": "// Self-contained, commented Java implementation"
-    }
-  ],
-  
-  "commonMistakes": [
-    "COMMON PITFALL 1 - [Boundary Condition]: Detail an off-by-one or pointer termination error beginners frequently make and how to prevent it.",
-    
-    "COMMON PITFALL 2 - [State Invariant Violation]: Describe a logical defect where state updates violate the required algorithm invariant.",
-    
-    "COMMON PITFALL 3 - [Asymptotic Degradation]: Describe an anti-pattern that unintentionally degrades time complexity to O(N^2) or causes memory limits to be exceeded.",
-    
-    "COMMON PITFALL 4 - [Edge Case Oversight]: Identify a commonly neglected edge condition (such as negative numbers, zero, or max values) and the fix.",
-    
-    "COMMON PITFALL 5 - [Premature Optimization]: Explain a conceptual misconception where the approach is applied incorrectly to an incompatible problem structure."
-  ],
-  
-  "proTips": [
-    "STRATEGIC TIP 1 - Rapid Pattern Recognition: How to identify within seconds whether ${subject} applies from problem constraints and requirements.",
-    
-    "STRATEGIC TIP 2 - Technical Interview Communication: How to clearly articulate the invariant and trade-offs to an interviewer before writing code.",
-    
-    "STRATEGIC TIP 3 - Systematic Debugging: A methodical 3-step verification checklist when an implementation fails a test case.",
-    
-    "STRATEGIC TIP 4 - Space-Time Optimizations: Advanced techniques for minimizing cache misses, object allocations, and constant factors.",
-    
-    "STRATEGIC TIP 5 - Curriculum Progression: Recommended sequence of 5-7 problems to solve in order to achieve complete mastery."
-  ]
-}
 
-CRITICAL REQUIREMENTS:
-1. Write for a COMPLETE BEGINNER - assume they've never seen ${subject} before
-2. Use REAL LeetCode problem names in examples (Two Sum, 3Sum, Container With Most Water, etc.)
-3. Code must be COMPLETE, COMPILABLE Java that actually works
-4. Every explanation should answer "WHY?" not just "WHAT"
-5. Include concrete examples with actual numbers whenever possible
-6. Be EXTREMELY DETAILED - length is not a concern, quality is
-7. After reading this, someone should be able to solve ${subject} problems in interviews
-8. **CRITICAL - NO MARKDOWN**: Do NOT use any markdown formatting like **bold**, *italics*, \`code\`, or ### headers in the text. Write in PLAIN TEXT only. The text will be displayed as-is without any markdown rendering.`;
-
-    // ═══════════════════════════════════════════════════════════════
-    // PROMPT FOR TOPICS (Data Structures/Algorithms like LinkedList, Trees, Heaps)
-    // This returns a COMPLETELY DIFFERENT JSON structure than patterns
-    // ═══════════════════════════════════════════════════════════════
-    // ═══════════════════════════════════════════════════════════════
-    // PROMPT FOR TOPICS (Data Structures/Algorithms like LinkedList, Trees, Heaps)
-    // This returns a dedicated topic structure with technical anatomy and operations
-    // ═══════════════════════════════════════════════════════════════
-    const topicPrompt = `You are a Friendly Computer Science Tutor explaining concepts to a student who has JUST started coding. Your goal is to make "${subject}" easy to understand with THE SIMPLEST POSSIBLE Java code.
-
-PEDAGOGICAL STRATEGY (Beginner -> Expert Curve):
-1. START SIMPLE (Beginner): Use "ELI5" (Explain Like I'm 5) analogies.
-2. BUILD FOUNDATION (Intermediate): Explain "How" and "Why".
-3. DEEP DIVE (Advanced): Logic walkthroughs.
-4. MASTER (Expert): Complexity & Industry.
-
-Return a JSON object with this EXACT structure. Content must be ELABORATE but the CODE MUST BE DEAD SIMPLE:
-
-{
-  "type": "topic",
-  "title": "Mastering ${subject} in Java",
-  
-  "conceptFoundation": {
-    "definition": "BEGINNER LEVEL: Write a clear, friendly 3-4 sentence definition. Avoid jargon initially.",
-    
-    "realWorldAnalogy": "BEGINNER LEVEL: Provide a vivid, elaborate real-world analogy. Don't just say 'Stack = Plates'. Explain the analogy details.",
-    
-    "whyItExists": "INTERMEDIATE LEVEL: Explain the 'Why'. What problem does this solve that an Array couldn't?",
-    
-    "visualDescription": "INTERMEDIATE LEVEL: Describe how it looks in memory. Paint a mental picture. ASCII art recommended."
-  },
-  
-  "technicalAnatomy": {
-    "components": [
-      "NODE CLASS: Describe the Node structure simply.",
-      "HEAD/ROOT: The entry point.",
-      "SIZE/CAPACITY: Tracking data."
+  "interviewPlaybook": {
+    "triggerSignals": [
+      "Signal 1: Exact phrasing or constraint that indicates this data structure is optimal",
+      "Signal 2: Constraint-driven Big-O budget trigger"
     ],
-    
-    "properties": [
-      "Property 1",
-      "Property 2",
-      "Property 3"
+    "pitfallsAndAntiPatterns": [
+      {
+        "pitfall": "Common subtle bug (e.g. forgetting dummy head node, off-by-one in circular buffer, iterator concurrent modification)",
+        "consequence": "NullPointerException / Infinite loop / O(N^2) degradation",
+        "fix": "Concrete code fix or defense pattern"
+      }
     ],
-    
-    "javaClassBlueprint": "Write a VERY BASIC Java class for ${subject}. \nCRITICAL CODING RULES:\n1. Use 'int' for data if possible (easiest to understand).\n2. NO 'this.' keyword: Use distinct parameter names (e.g. 'val' instead of 'data') to avoid 'this.data = data'.\n3. NO 'throw new Exception': Use System.out.println('Error') and return -1 or null.\n4. NO complex Generics unless absolutely necessary.\n5. Write like a beginner: straightforward, line-by-line code."
-  },
-  
-  "operations": [
-    {
-      "name": "Insertion",
-      "explanation": "STEP-BY-STEP WALKTHROUGH: Walk through the logic like a story. 'First we make a box...'",
-      "edgeCases": [
-        "Empty structure",
-        "Boundaries",
-        "Duplicates"
-      ],
-      "code": "// ═══════════════════════════════════════════════════════════════\\n// BASIC INSERTION\\n// ═══════════════════════════════════════════════════════════════\\n\\n// ABSOLUTE BEGINNER CODE\\n// NO 'this.' -> use different names\\n// NO 'throw' -> use System.out.println\\n// Use simple if/else",
-      "timeComplexity": { "best": "O(?)", "average": "O(?)", "worst": "O(?)" },
-      "spaceComplexity": "O(?)"
-    },
-    {
-      "name": "Deletion",
-      "explanation": "STEP-BY-STEP WALKTHROUGH: Explain deletion logic carefully.",
-      "edgeCases": [
-        "Empty structure",
-        "Deleting only item",
-        "Deleting from middle"
-      ],
-      "code": "// ═══════════════════════════════════════════════════════════════\\n// BASIC DELETION\\n// ═══════════════════════════════════════════════════════════════\\n\\n// ABSOLUTE BEGINNER CODE\\n// NO 'this.' keyword\\n// NO Exceptions\\n// Print errors explicitly",
-      "timeComplexity": { "best": "O(?)", "average": "O(?)", "worst": "O(?)" },
-      "spaceComplexity": "O(?)"
-    },
-    {
-      "name": "Search",
-      "explanation": "How do we find things? Walk through the process.",
-      "edgeCases": [
-        "Not found",
-        "Empty structure"
-      ],
-      "code": "// ═══════════════════════════════════════════════════════════════\\n// BASIC SEARCH\\n// ═══════════════════════════════════════════════════════════════\\n\\n// Simple traversal loop",
-      "timeComplexity": { "best": "O(?)", "average": "O(?)", "worst": "O(?)" },
-      "spaceComplexity": "O(?)"
-    },
-    {
-      "name": "Traversal",
-      "explanation": "How do we visit every item?",
-      "edgeCases": [],
-      "code": "// ═══════════════════════════════════════════════════════════════\\n// TRAVERSAL\\n// ═══════════════════════════════════════════════════════════════\\n\\n// Simple printing loop",
-      "timeComplexity": { "best": "O(n)", "average": "O(n)", "worst": "O(n)" },
-      "spaceComplexity": "O(?)"
-    }
-  ],
-  
-  "complexityTable": {
-    "headers": ["Operation", "Best Case", "Average Case", "Worst Case", "Space"],
-    "rows": [
-      ["Access", "O(?)", "O(?)", "O(?)", "O(1)"],
-      ["Search", "O(?)", "O(?)", "O(?)", "O(1)"],
-      ["Insert", "O(?)", "O(?)", "O(?)", "O(1)"],
-      ["Delete", "O(?)", "O(?)", "O(?)", "O(1)"]
+    "canonicalProblems": [
+      {
+        "name": "Canonical Problem Title (e.g., LRU Cache / Reverse Linked List)",
+        "difficulty": "Easy",
+        "leetcodeNumber": 206,
+        "whyThisProblem": "Why this problem specifically tests mastery of this data structure.",
+        "keyStrategy": "One-paragraph strategy summary."
+      },
+      {
+        "name": "Standard Medium Problem",
+        "difficulty": "Medium",
+        "leetcodeNumber": 146,
+        "whyThisProblem": "Tests combined operations and fast lookup.",
+        "keyStrategy": "Strategy summary."
+      }
     ],
-    "explanation": "EXPERT LEVEL: Analyze the trade-offs."
-  },
-  
-  "comparisonWithAlternatives": [
-    {
-      "structure": "Array",
-      "comparison": "Compare ${subject} vs Array.",
-      "useArrayWhen": "Scenario for Array",
-      "use${subject.replace(/[^a-zA-Z]/g, '')}When": "Scenario for ${subject}"
-    },
-    {
-      "structure": "Alternative DS",
-      "comparison": "Compare vs another similar DS.",
-      "useAlternativeWhen": "Scenario for alternative",
-      "use${subject.replace(/[^a-zA-Z]/g, '')}When": "Scenario for ${subject}"
-    }
-  ],
-  
-  "industryApplications": [
-    {
-      "application": "Real World Use Case 1",
-      "explanation": "EXPERT LEVEL: Explain exactly how ${subject} is used.",
-      "companies": ["Company A", "Company B"]
-    },
-    {
-      "application": "Real World Use Case 2",
-      "explanation": "Explanation",
-      "companies": ["Company C"]
-    },
-    {
-      "application": "Real World Use Case 3",
-      "explanation": "Explanation",
-      "companies": ["Company D"]
-    }
-  ],
-  
-  "interviewProblems": [
-    {
-      "name": "Basic Problem (Easy)",
-      "difficulty": "Easy",
-      "leetcodeNumber": 1,
-      "whyThisProblem": "Tests basic understanding"
-    },
-    {
-      "name": "Logic Problem (Medium)",
-      "difficulty": "Medium",
-      "leetcodeNumber": 2,
-      "whyThisProblem": "Tests core logic/edge cases"
-    },
-    {
-      "name": "Complex Problem (Hard)",
-      "difficulty": "Hard",
-      "leetcodeNumber": 3,
-      "whyThisProblem": "Tests mastery and optimization"
-    }
-  ],
-  
-  "commonMistakes": [
-    {
-      "mistake": "Mistake 1",
-      "why": "Reason",
-      "consequence": "Result",
-      "fix": "Solution"
-    },
-    {
-      "mistake": "Mistake 2",
-      "why": "Reason",
-      "consequence": "Result",
-      "fix": "Solution"
-    },
-    {
-      "mistake": "Mistake 3",
-      "why": "Reason",
-      "consequence": "Result",
-      "fix": "Solution"
-    }
-  ],
-  
-  "proTips": [
-    {
-      "tip": "Tip 1",
-      "content": "Advice"
-    },
-    {
-      "tip": "Tip 2",
-      "content": "Advice"
-    },
-    {
-      "tip": "Tip 3",
-      "content": "Advice"
-    }
-  ],
-  
-  "masteryChecklist": [
-    "Can you implement from scratch?",
-    "Can you explain complexity?",
-    "Can you compare with alternatives?",
-    "Can you solve 3 problems?",
-    "Can you explain real-world usage?"
-  ]
+    "masteryChecklist": [
+      "Can implement from scratch without standard library in 10 minutes",
+      "Can state time and space complexity of all operations including amortized bounds",
+      "Can explain memory layout, cache behavior, and Java Collection internals"
+    ]
+  }
 }
 
 CRITICAL RULES:
-1. "type" MUST be "topic".
-2. CODE MUST BE "ABSOLUTE BEGINNER" STYLE.
-   - NO 'this.variable' (Use distinct parameter names)
-   - NO 'throw new Exception' (Use System.out.println)
-   - Use 'int' where possible.
-3. Content must range from BEGINNER to EXPERT.
-4. Be ELABORATE and STORY-LIKE in explanations.
-5. NO MARKDOWN formatting in text fields.`;
+1. Write in PLAIN TEXT within JSON strings (NO raw markdown syntax like **bold**, ### headers, etc. within prose).
+2. Code must be COMPLETE, COMPILABLE Java 17 that actually works.
+3. Every field must be deeply detailed and educational.`;
+
+    // --- PROMPT 2: ALGORITHM ---
+    const algoPrompt = `You are a Principal Algorithms Engineer and World-Class Competitive Programmer.
+TASK: Create an authoritative, master-class technical study guide for the Algorithm: "${subject}".
+You MUST serve both a BEGINNER (seeking step-by-step intuitive execution) and an EXPERIENCED ENGINEER (seeking invariants, formal proofs, and production templates).
+
+Return a JSON object with this EXACT schema:
+{
+  "type": "algorithm",
+  "title": "Mastering ${subject}: Mathematical Invariants & Production Templates",
+  "paradigm": "Divide & Conquer",
+  "overview": "A compelling 4-5 sentence summary of the algorithm, its historical significance, and core computational advantage.",
+  
+  "beginnerTrack": {
+    "coreIntuition": "Plain-English explanation of the 'Aha!' moment of why this algorithm works so efficiently.",
+    "realWorldAnalogy": "A physical world metaphor illustrating the algorithmic mechanism.",
+    "visualTrace": {
+      "sampleInput": "e.g. nums = [1, 3, 5, 7, 9, 11], target = 7",
+      "steps": [
+        { "phase": "Step 1", "state": "Current indices/pointers/states", "action": "Comparison or transition made", "remaining": "Remaining active search space" },
+        { "phase": "Step 2", "state": "Updated indices", "action": "Subproblem reduction", "remaining": "Reduced search space" },
+        { "phase": "Step 3", "state": "Convergence state", "action": "Target identified or base case reached", "remaining": "Terminated" }
+      ]
+    }
+  },
+
+  "productionTemplate": {
+    "code": "// Complete, battle-tested Java 17 production boilerplate with defensive guard rails\\npublic int solve(...) { ... }",
+    "lineByLineNotes": [
+      "Critical line note explaining why mid calculation avoids integer overflow.",
+      "Critical loop invariant note explaining boundary termination."
+    ]
+  },
+
+  "advancedTrack": {
+    "mathematicalInvariant": "The formal inductive invariant: what condition remains strictly true before and after every single iteration or recursion frame.",
+    "complexityDerivation": {
+      "timeBest": "O(...) with derivation",
+      "timeAverage": "O(...) with derivation",
+      "timeWorst": "O(...) with derivation",
+      "space": "O(...) auxiliary stack or heap explanation",
+      "recurrenceRelation": "Recurrence relation (e.g. T(N) = 2T(N/2) + O(N)) and proof via Master Theorem."
+    },
+    "variationsAndExtensions": [
+      {
+        "variationName": "e.g. Lower Bound vs Upper Bound / Monotonic Search on Answer Space",
+        "coreDifference": "How pointer movement or predicates adapt.",
+        "snippet": "// Java snippet demonstrating the variation"
+      }
+    ]
+  },
+
+  "interviewPlaybook": {
+    "triggerSignals": [
+      "Signal 1: Specific input properties (monotonic, sorted, directed acyclic) that trigger this algorithm",
+      "Signal 2: Objective phrasing ('minimize the maximum', 'shortest path with non-negative weights')"
+    ],
+    "pitfallsAndTraps": [
+      {
+        "pitfall": "Common subtle bug (e.g. integer overflow, off-by-one pointer convergence, infinite recursion on cycles)",
+        "consequence": "Wrong answer / TLE / StackOverflowError",
+        "fix": "Concrete defense pattern"
+      }
+    ],
+    "canonicalProblems": [
+      {
+        "name": "Canonical Problem Title (e.g. Search in Rotated Sorted Array)",
+        "difficulty": "Easy",
+        "leetcodeNumber": 704,
+        "whyThisProblem": "Baseline verification of canonical template.",
+        "keyStrategy": "Standard invariant verification."
+      },
+      {
+        "name": "Advanced Variation Problem",
+        "difficulty": "Medium",
+        "leetcodeNumber": 33,
+        "whyThisProblem": "Why this problem specifically tests mastery of this algorithm.",
+        "keyStrategy": "One-paragraph strategy summary."
+      }
+    ],
+    "masteryChecklist": [
+      "Can write the bug-free template from memory in 60 seconds without off-by-one errors",
+      "Can prove the loop invariant and termination condition to an interviewer",
+      "Can recognize when to adapt the algorithm to non-trivial variations"
+    ]
+  }
+}
+
+CRITICAL RULES:
+1. Write in PLAIN TEXT within JSON strings (NO raw markdown syntax like **bold**, ### headers, etc. within prose).
+2. Code must be COMPLETE, COMPILABLE Java 17 that actually works.
+3. Every field must be deeply detailed and educational.`;
+
+    // --- PROMPT 3: PATTERN ---
+    const patternPrompt = `You are a Principal Algorithms Educator and Tech Interview Coach.
+TASK: Create an authoritative, master-class technical study guide for the Algorithmic Pattern: "${subject}"${topic ? ` applied to "${topic}"` : ''}.
+You MUST serve both a BEGINNER (seeking pattern recognition and mechanical rules) and an EXPERIENCED ENGINEER (seeking invariant subtleties and hard interview variants).
+
+Return a JSON object with this EXACT schema:
+{
+  "type": "pattern",
+  "title": "Mastering ${subject}: Pattern Mechanics, Templates & Problems",
+  "paradigm": "Two Pointers / Sliding Window",
+  "overview": "A compelling 4-5 sentence overview of how this pattern eliminates redundant work to achieve optimal Big-O performance.",
+  
+  "beginnerTrack": {
+    "coreIntuition": "Plain-English explanation of why this pattern exists and the 'Aha!' moment.",
+    "realWorldAnalogy": "A physical world metaphor illustrating the mechanism (e.g. caterpillar crawling or two runners).",
+    "whyBruteForceFails": "Show why naive iteration is O(N^2) or O(2^N) due to redundant work, and how this pattern cuts it to O(N) by preserving intermediate state.",
+    "visualDiagramAscii": "Detailed ASCII diagram visualizing pointers, window bounds, and state transitions."
+  },
+
+  "universalTemplate": {
+    "code": "// Java 17 battle-tested template\\npublic int solvePattern(int[] nums, int k) { ... }",
+    "templateHooks": [
+      "EXPAND: Where and how to advance the right pointer / include new elements in state.",
+      "CONDITION CHECK: The exact boolean predicate determining when the window/state is invalid.",
+      "SHRINK: Where and how to advance the left pointer / eject stale elements from state.",
+      "UPDATE ANSWER: Where to capture optimal window length or count."
+    ]
+  },
+
+  "advancedTrack": {
+    "decisionFlowchart": [
+      {
+        "scenario": "Fixed Size Window vs Dynamic Shrinking Window",
+        "indicator": "When problem specifies exact length K vs 'at most K' or 'at least K'",
+        "action": "Fixed: advance both pointers once size K is reached. Dynamic: while loop to shrink left."
+      },
+      {
+        "scenario": "Auxiliary Frequency Array vs HashMap",
+        "indicator": "Alphabet is lowercase ASCII (size 26/128) vs arbitrary integers/objects",
+        "action": "Use int[128] or int[26] for zero-allocation O(1) performance."
+      }
+    ],
+    "subtleInvariants": [
+      "Invariant 1: At the end of the inner while loop, the window [left, right] is guaranteed to be valid.",
+      "Invariant 2: Pointers only advance forward monotonically, bounding operations to 2N iterations."
+    ],
+    "antiPatterns": [
+      "Anti-Pattern 1: E.g., Sliding window fails when negative numbers exist because shrinking left does not guarantee monotonic sum changes; must use Prefix Sum + HashMap instead."
+    ]
+  },
+
+  "interviewPlaybook": {
+    "triggerSignals": [
+      "Phrase: 'contiguous subarray or substring' with a constraint",
+      "Phrase: 'longest / shortest / at most K / exact K'",
+      "Constraint: N <= 10^5 indicates an O(N) or O(N log N) solution is required"
+    ],
+    "pitfallsAndTraps": [
+      {
+        "pitfall": "Window length calculation off-by-one (e.g. using right - left instead of right - left + 1).",
+        "fix": "Always use right - left + 1 for 0-indexed inclusive bounds."
+      },
+      {
+        "pitfall": "Failing to clean up map keys when frequency drops to zero in frequency maps.",
+        "fix": "Explicitly map.remove(key) when count == 0 so map.size() reflects distinct elements accurately."
+      }
+    ],
+    "solvedProblems": [
+      {
+        "name": "Warmup Problem (Easy)",
+        "difficulty": "Easy",
+        "leetcodeNumber": 121,
+        "description": "Problem statement and specification.",
+        "intuition": "How the pattern applies here directly.",
+        "code": "// Clean, self-contained, commented Java solution"
+      },
+      {
+        "name": "Standard Interview Problem (Medium)",
+        "difficulty": "Medium",
+        "leetcodeNumber": 3,
+        "description": "Problem statement and specification.",
+        "intuition": "How the pattern manages dynamic constraints.",
+        "code": "// Clean, self-contained, commented Java solution"
+      },
+      {
+        "name": "Advanced FAANG Curveball (Hard)",
+        "difficulty": "Hard",
+        "leetcodeNumber": 76,
+        "description": "Problem statement and specification.",
+        "intuition": "Combining pattern invariants with state tracking.",
+        "code": "// Clean, self-contained, commented Java solution"
+      }
+    ],
+    "masteryChecklist": [
+      "Can write the 4-phase template (Expand, Check, Shrink, Update) cleanly under interview conditions",
+      "Know when the pattern breaks (e.g. negative numbers) and what alternative to pivot to",
+      "Can solve canonical Easy, Medium, and Hard variations within 25 minutes"
+    ]
+  }
+}
+
+CRITICAL RULES:
+1. Write in PLAIN TEXT within JSON strings (NO raw markdown syntax like **bold**, ### headers, etc. within prose).
+2. Code must be COMPLETE, COMPILABLE Java 17 that actually works.
+3. Every field must be deeply detailed and educational.`;
 
     // Choose the appropriate prompt
-    const prompt = isPattern ? patternPrompt : topicPrompt;
+    const prompt = archetype === 'data_structure'
+      ? dsPrompt
+      : archetype === 'algorithm'
+        ? algoPrompt
+        : patternPrompt;
 
     try {
       const text = await this.callAI(prompt, true);
@@ -1801,25 +1772,23 @@ CRITICAL RULES:
       if (!notes) {
         throw new Error('Failed to parse learning notes');
       }
-      
+
       // Helper function to strip markdown formatting from text
-      const stripMarkdown = (text) => {
-        if (typeof text !== 'string') return text;
-        return text
-          .replace(/\*\*([^*]+)\*\*/g, '$1')  // Remove **bold**
-          .replace(/\*([^*]+)\*/g, '$1')       // Remove *italic*
-          .replace(/__([^_]+)__/g, '$1')       // Remove __bold__
-          .replace(/_([^_]+)_/g, '$1')         // Remove _italic_
-          .replace(/`([^`]+)`/g, '$1')         // Remove `code`
-          .replace(/#{1,6}\s+/g, '')           // Remove ### headers
-          .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'); // Remove [links](url)
+      const stripMarkdown = (str) => {
+        if (typeof str !== 'string') return str;
+        return str
+          .replace(/\*\*([^*]+)\*\*/g, '$1')
+          .replace(/\*([^*]+)\*/g, '$1')
+          .replace(/__([^_]+)__/g, '$1')
+          .replace(/_([^_]+)_/g, '$1')
+          .replace(/`([^`]+)`/g, '$1')
+          .replace(/#{1,6}\s+/g, '')
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
       };
-      
-      // Apply to string arrays
-      const stripArray = (arr) => Array.isArray(arr) ? arr.map(item => {
+
+      const stripArr = (arr) => Array.isArray(arr) ? arr.map(item => {
         if (typeof item === 'string') return stripMarkdown(item);
         if (typeof item === 'object' && item !== null) {
-          // Recursively strip markdown from object values
           const cleaned = {};
           for (const key in item) {
             cleaned[key] = typeof item[key] === 'string' ? stripMarkdown(item[key]) : item[key];
@@ -1828,147 +1797,221 @@ CRITICAL RULES:
         }
         return item;
       }) : [];
-      
-      // ═══════════════════════════════════════════════════════════════
-      // RETURN STRUCTURE FOR TOPICS (Data Structures/Algorithms)
-      // ═══════════════════════════════════════════════════════════════
-      if (!isPattern) {
-        // Clean conceptFoundation
-        const cleanConceptFoundation = notes.conceptFoundation ? {
-          definition: stripMarkdown(notes.conceptFoundation.definition),
-          realWorldAnalogy: stripMarkdown(notes.conceptFoundation.realWorldAnalogy),
-          whyItExists: stripMarkdown(notes.conceptFoundation.whyItExists),
-          visualDescription: stripMarkdown(notes.conceptFoundation.visualDescription)
-        } : null;
-        
-        // Clean technicalAnatomy
-        const cleanTechnicalAnatomy = notes.technicalAnatomy ? {
-          components: stripArray(notes.technicalAnatomy.components),
-          properties: stripArray(notes.technicalAnatomy.properties),
-          javaClassBlueprint: notes.technicalAnatomy.javaClassBlueprint // Keep code as-is
-        } : null;
-        
-        // Clean operations array
-        const cleanOperations = Array.isArray(notes.operations) 
-          ? notes.operations.map(op => ({
-              name: stripMarkdown(op.name),
-              explanation: stripMarkdown(op.explanation),
-              edgeCases: stripArray(op.edgeCases),
-              code: op.code, // Keep code as-is
-              timeComplexity: op.timeComplexity,
-              spaceComplexity: op.spaceComplexity
-            }))
-          : [];
-        
-        // Clean comparison array
-        const cleanComparisons = Array.isArray(notes.comparisonWithAlternatives)
-          ? notes.comparisonWithAlternatives.map(c => ({
-              ...c,
-              structure: stripMarkdown(c.structure),
-              comparison: stripMarkdown(c.comparison)
-            }))
-          : [];
-        
-        // Clean industry applications
-        const cleanIndustryApps = Array.isArray(notes.industryApplications)
-          ? notes.industryApplications.map(app => ({
-              application: stripMarkdown(app.application),
-              explanation: stripMarkdown(app.explanation),
-              companies: app.companies || []
-            }))
-          : [];
-        
-        // Clean interview problems
-        const cleanInterviewProblems = Array.isArray(notes.interviewProblems)
-          ? notes.interviewProblems.map(p => ({
-              name: stripMarkdown(p.name),
-              difficulty: p.difficulty,
-              leetcodeNumber: p.leetcodeNumber,
-              whyThisProblem: stripMarkdown(p.whyThisProblem)
-            }))
-          : [];
-        
-        // Clean common mistakes (now objects, not strings)
-        const cleanMistakes = Array.isArray(notes.commonMistakes)
-          ? notes.commonMistakes.map(m => {
-              if (typeof m === 'string') return { mistake: stripMarkdown(m) };
-              return {
-                mistake: stripMarkdown(m.mistake),
-                why: stripMarkdown(m.why),
-                consequence: stripMarkdown(m.consequence),
-                fix: stripMarkdown(m.fix)
-              };
-            })
-          : [];
-        
-        // Clean pro tips (now objects, not strings)
-        const cleanProTips = Array.isArray(notes.proTips)
-          ? notes.proTips.map(t => {
-              if (typeof t === 'string') return { tip: '', content: stripMarkdown(t) };
-              return {
-                tip: stripMarkdown(t.tip),
-                content: stripMarkdown(t.content)
-              };
-            })
-          : [];
-        
+
+      // Detect and normalize according to returned archetype
+      const detectedType = notes.type || archetype;
+
+      // ─────────────────────────────────────────────────────────────
+      // NORMALIZE: DATA STRUCTURE
+      // ─────────────────────────────────────────────────────────────
+      if (detectedType === 'data_structure') {
+        const beginner = notes.beginnerTrack || {};
+        const advanced = notes.advancedTrack || {};
+        const playbook = notes.interviewPlaybook || {};
+
         return {
-          type: 'topic',
+          type: 'data_structure',
           title: stripMarkdown(notes.title) || `Mastering ${subject}`,
-          conceptFoundation: cleanConceptFoundation,
-          technicalAnatomy: cleanTechnicalAnatomy,
-          operations: cleanOperations,
-          complexityTable: notes.complexityTable || null,
-          comparisonWithAlternatives: cleanComparisons,
-          industryApplications: cleanIndustryApps,
-          interviewProblems: cleanInterviewProblems,
-          commonMistakes: cleanMistakes,
-          proTips: cleanProTips,
-          masteryChecklist: stripArray(notes.masteryChecklist)
+          category: stripMarkdown(notes.category) || 'Data Structure',
+          overview: stripMarkdown(notes.overview || beginner.eli5Definition || `Architectural guide for ${subject}.`),
+          
+          beginnerTrack: {
+            eli5Definition: stripMarkdown(beginner.eli5Definition || notes.overview || ''),
+            realWorldAnalogy: stripMarkdown(beginner.realWorldAnalogy || ''),
+            whyItExists: stripMarkdown(beginner.whyItExists || ''),
+            memoryLayoutAscii: beginner.memoryLayoutAscii || '',
+            coreMentalModel: stripMarkdown(beginner.coreMentalModel || '')
+          },
+
+          coreOperations: Array.isArray(notes.coreOperations) ? notes.coreOperations.map(op => ({
+            name: stripMarkdown(op.name || 'Operation'),
+            timeComplexity: op.timeComplexity || { best: 'O(1)', average: 'O(1)', worst: 'O(N)' },
+            spaceComplexity: op.spaceComplexity || 'O(1)',
+            stepByStepExplanation: stripMarkdown(op.stepByStepExplanation || op.explanation || ''),
+            code: op.code || '',
+            edgeCases: stripArr(op.edgeCases)
+          })) : [],
+
+          advancedTrack: {
+            javaCollectionsInternals: stripMarkdown(advanced.javaCollectionsInternals || ''),
+            hardwareAndMemoryMechanics: stripMarkdown(advanced.hardwareAndMemoryMechanics || ''),
+            tradeoffMatrix: Array.isArray(advanced.tradeoffMatrix) ? advanced.tradeoffMatrix.map(tm => ({
+              comparedAgainst: stripMarkdown(tm.comparedAgainst || ''),
+              advantage: stripMarkdown(tm.advantage || ''),
+              disadvantage: stripMarkdown(tm.disadvantage || ''),
+              whenToPickWhich: stripMarkdown(tm.whenToPickWhich || '')
+            })) : [],
+            subtleInvariants: stripArr(advanced.subtleInvariants)
+          },
+
+          interviewPlaybook: {
+            triggerSignals: stripArr(playbook.triggerSignals),
+            pitfallsAndAntiPatterns: Array.isArray(playbook.pitfallsAndAntiPatterns) ? playbook.pitfallsAndAntiPatterns.map(p => ({
+              pitfall: stripMarkdown(p.pitfall || p.mistake || ''),
+              consequence: stripMarkdown(p.consequence || p.why || ''),
+              fix: stripMarkdown(p.fix || '')
+            })) : [],
+            canonicalProblems: Array.isArray(playbook.canonicalProblems) ? playbook.canonicalProblems.map(p => ({
+              name: stripMarkdown(p.name || ''),
+              difficulty: p.difficulty || 'Medium',
+              leetcodeNumber: p.leetcodeNumber || null,
+              whyThisProblem: stripMarkdown(p.whyThisProblem || ''),
+              keyStrategy: stripMarkdown(p.keyStrategy || '')
+            })) : [],
+            masteryChecklist: stripArr(playbook.masteryChecklist)
+          },
+
+          // Legacy backwards-compatibility mappings
+          commonMistakes: Array.isArray(playbook.pitfallsAndAntiPatterns) ? playbook.pitfallsAndAntiPatterns.map(p => ({
+            mistake: stripMarkdown(p.pitfall || ''),
+            why: stripMarkdown(p.consequence || ''),
+            fix: stripMarkdown(p.fix || '')
+          })) : [],
+          proTips: stripArr(playbook.triggerSignals).map(s => ({ tip: 'Interview Signal', content: s }))
         };
       }
-      
-      // ═══════════════════════════════════════════════════════════════
-      // RETURN STRUCTURE FOR PATTERNS (Algorithmic techniques)
-      // ═══════════════════════════════════════════════════════════════
-      // Apply to complexity object
-      const cleanComplexity = notes.complexity ? {
-        time: stripMarkdown(notes.complexity.time),
-        space: stripMarkdown(notes.complexity.space),
-        bestCase: stripMarkdown(notes.complexity.bestCase),
-        worstCase: stripMarkdown(notes.complexity.worstCase)
-      } : { time: 'O(n)', space: 'O(1)' };
-      
-      // Apply to coreApproach object
-      const cleanCoreApproach = notes.coreApproach ? {
-        intuition: stripMarkdown(notes.coreApproach.intuition),
-        steps: stripArray(notes.coreApproach.steps),
-        edgeCases: stripArray(notes.coreApproach.edgeCases),
-        pseudocode: notes.coreApproach.pseudocode // Keep pseudocode as-is (it's code)
-      } : { intuition: '', steps: [], edgeCases: [], pseudocode: '' };
-      
-      // Apply to exampleProblems array
-      const cleanExampleProblems = Array.isArray(notes.exampleProblems) 
-        ? notes.exampleProblems.map(p => ({
-            ...p,
-            name: stripMarkdown(p.name),
-            description: stripMarkdown(p.description),
-            intuition: stripMarkdown(p.intuition),
-            code: p.code // Keep code as-is
-          }))
-        : [];
-      
-      // Ensure all required fields exist with fallbacks and cleaned content
+
+      // ─────────────────────────────────────────────────────────────
+      // NORMALIZE: ALGORITHM
+      // ─────────────────────────────────────────────────────────────
+      if (detectedType === 'algorithm') {
+        const beginner = notes.beginnerTrack || {};
+        const template = notes.productionTemplate || {};
+        const advanced = notes.advancedTrack || {};
+        const playbook = notes.interviewPlaybook || {};
+
+        return {
+          type: 'algorithm',
+          title: stripMarkdown(notes.title) || `Mastering ${subject}`,
+          paradigm: stripMarkdown(notes.paradigm) || 'Algorithm',
+          overview: stripMarkdown(notes.overview || beginner.coreIntuition || `Algorithmic deep-dive for ${subject}.`),
+
+          beginnerTrack: {
+            coreIntuition: stripMarkdown(beginner.coreIntuition || notes.overview || ''),
+            realWorldAnalogy: stripMarkdown(beginner.realWorldAnalogy || ''),
+            visualTrace: {
+              sampleInput: stripMarkdown(beginner.visualTrace?.sampleInput || ''),
+              steps: Array.isArray(beginner.visualTrace?.steps) ? beginner.visualTrace.steps.map(s => ({
+                phase: stripMarkdown(s.phase || ''),
+                state: stripMarkdown(s.state || ''),
+                action: stripMarkdown(s.action || ''),
+                remaining: stripMarkdown(s.remaining || '')
+              })) : []
+            }
+          },
+
+          productionTemplate: {
+            code: template.code || '',
+            lineByLineNotes: stripArr(template.lineByLineNotes)
+          },
+
+          advancedTrack: {
+            mathematicalInvariant: stripMarkdown(advanced.mathematicalInvariant || ''),
+            complexityDerivation: advanced.complexityDerivation || {
+              timeBest: 'O(1)',
+              timeAverage: 'O(N)',
+              timeWorst: 'O(N)',
+              space: 'O(1)',
+              recurrenceRelation: ''
+            },
+            variationsAndExtensions: Array.isArray(advanced.variationsAndExtensions) ? advanced.variationsAndExtensions.map(v => ({
+              variationName: stripMarkdown(v.variationName || ''),
+              coreDifference: stripMarkdown(v.coreDifference || ''),
+              snippet: v.snippet || ''
+            })) : []
+          },
+
+          interviewPlaybook: {
+            triggerSignals: stripArr(playbook.triggerSignals),
+            pitfallsAndTraps: Array.isArray(playbook.pitfallsAndTraps) ? playbook.pitfallsAndTraps.map(p => ({
+              pitfall: stripMarkdown(p.pitfall || ''),
+              consequence: stripMarkdown(p.consequence || ''),
+              fix: stripMarkdown(p.fix || '')
+            })) : [],
+            canonicalProblems: Array.isArray(playbook.canonicalProblems) ? playbook.canonicalProblems.map(p => ({
+              name: stripMarkdown(p.name || ''),
+              difficulty: p.difficulty || 'Medium',
+              leetcodeNumber: p.leetcodeNumber || null,
+              whyThisProblem: stripMarkdown(p.whyThisProblem || ''),
+              keyStrategy: stripMarkdown(p.keyStrategy || '')
+            })) : [],
+            masteryChecklist: stripArr(playbook.masteryChecklist)
+          },
+
+          // Legacy backwards-compatibility mappings
+          commonMistakes: Array.isArray(playbook.pitfallsAndTraps) ? playbook.pitfallsAndTraps.map(p => ({
+            mistake: stripMarkdown(p.pitfall || ''),
+            why: stripMarkdown(p.consequence || ''),
+            fix: stripMarkdown(p.fix || '')
+          })) : [],
+          proTips: stripArr(playbook.triggerSignals).map(s => ({ tip: 'Algorithm Signal', content: s }))
+        };
+      }
+
+      // ─────────────────────────────────────────────────────────────
+      // NORMALIZE: PATTERN
+      // ─────────────────────────────────────────────────────────────
+      const beginner = notes.beginnerTrack || {};
+      const template = notes.universalTemplate || {};
+      const advanced = notes.advancedTrack || {};
+      const playbook = notes.interviewPlaybook || {};
+
       return {
         type: 'pattern',
         title: stripMarkdown(notes.title) || `Mastering ${subject}`,
-        overview: stripMarkdown(notes.overview) || `Overview of ${subject} pattern/topic.`,
-        whenToUse: stripArray(notes.whenToUse),
-        complexity: cleanComplexity,
-        coreApproach: cleanCoreApproach,
-        exampleProblems: cleanExampleProblems,
-        commonMistakes: stripArray(notes.commonMistakes),
-        proTips: stripArray(notes.proTips)
+        paradigm: stripMarkdown(notes.paradigm) || 'Algorithmic Pattern',
+        overview: stripMarkdown(notes.overview || beginner.coreIntuition || `Mastery guide for ${subject}.`),
+
+        beginnerTrack: {
+          coreIntuition: stripMarkdown(beginner.coreIntuition || notes.overview || ''),
+          realWorldAnalogy: stripMarkdown(beginner.realWorldAnalogy || ''),
+          whyBruteForceFails: stripMarkdown(beginner.whyBruteForceFails || ''),
+          visualDiagramAscii: beginner.visualDiagramAscii || ''
+        },
+
+        universalTemplate: {
+          code: template.code || '',
+          templateHooks: stripArr(template.templateHooks)
+        },
+
+        advancedTrack: {
+          decisionFlowchart: Array.isArray(advanced.decisionFlowchart) ? advanced.decisionFlowchart.map(df => ({
+            scenario: stripMarkdown(df.scenario || ''),
+            indicator: stripMarkdown(df.indicator || ''),
+            action: stripMarkdown(df.action || '')
+          })) : [],
+          subtleInvariants: stripArr(advanced.subtleInvariants),
+          antiPatterns: stripArr(advanced.antiPatterns)
+        },
+
+        interviewPlaybook: {
+          triggerSignals: stripArr(playbook.triggerSignals),
+          pitfallsAndTraps: Array.isArray(playbook.pitfallsAndTraps) ? playbook.pitfallsAndTraps.map(p => ({
+            pitfall: stripMarkdown(p.pitfall || ''),
+            fix: stripMarkdown(p.fix || '')
+          })) : [],
+          solvedProblems: Array.isArray(playbook.solvedProblems) ? playbook.solvedProblems.map(p => ({
+            name: stripMarkdown(p.name || ''),
+            difficulty: p.difficulty || 'Medium',
+            leetcodeNumber: p.leetcodeNumber || null,
+            description: stripMarkdown(p.description || ''),
+            intuition: stripMarkdown(p.intuition || ''),
+            code: p.code || ''
+          })) : [],
+          masteryChecklist: stripArr(playbook.masteryChecklist)
+        },
+
+        // Legacy backwards-compatibility mappings
+        whenToUse: stripArr(playbook.triggerSignals),
+        commonMistakes: stripArr(playbook.pitfallsAndTraps).map(p => p.pitfall || ''),
+        proTips: stripArr(advanced.subtleInvariants),
+        exampleProblems: Array.isArray(playbook.solvedProblems) ? playbook.solvedProblems.map(p => ({
+          name: stripMarkdown(p.name || ''),
+          difficulty: p.difficulty || 'Medium',
+          description: stripMarkdown(p.description || ''),
+          intuition: stripMarkdown(p.intuition || ''),
+          code: p.code || ''
+        })) : []
       };
     } catch (e) {
       console.error('Learning notes generation failed:', e.message);

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   BookOpen, 
   ChevronRight, 
@@ -6,12 +7,14 @@ import {
   Circle,
   LayoutGrid,
   BarChart3,
-  Target
+  Target,
+  Sparkles
 } from 'lucide-react';
 import { dsaPatternsCategories, getDsaPatternsStats } from '../data/dsaPatterns';
 import SheetProblemModal from '../components/features/sheets/SheetProblemModal';
 
 function DsaPatternsPage() {
+  const navigate = useNavigate();
   const [expandedCategories, setExpandedCategories] = useState(new Set());
   const [selectedProblem, setSelectedProblem] = useState(null);
   const [sortMode, setSortMode] = useState('category');
@@ -63,9 +66,8 @@ function DsaPatternsPage() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-14.4 h-14.4 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg overflow-hidden">
-            <img src="/padho with pratyush.jpeg" alt="Padho With Pratyush" className="w-16zoom in the logo by further 10%
-             h-16 object-contain" />
+          <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg overflow-hidden">
+            <img src="/padho with pratyush.jpeg" alt="Padho With Pratyush" className="w-16 h-16 object-contain" />
           </div>
           <div>
             <h1 className="text-3xl font-black text-white tracking-tight">Padho With Pratyush Pattern Sheet</h1>
@@ -174,6 +176,18 @@ function DsaPatternsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/learn?pattern=${encodeURIComponent(category.name)}&auto=true`);
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 text-xs font-semibold flex items-center gap-1.5 transition-all"
+                      title="Study pattern deep-dive, templates & interview playbooks"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Study Pattern</span>
+                    </button>
                     <div className="text-right">
                       <span className="text-sm font-bold text-dark-400">{solvedInCategory}/{category.problems.length}</span>
                     </div>
