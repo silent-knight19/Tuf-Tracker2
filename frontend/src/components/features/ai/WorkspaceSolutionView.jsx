@@ -159,7 +159,7 @@ export default function WorkspaceSolutionView({
             {isStepsExpanded && (
               <div className="p-3.5 pt-0 space-y-2 border-t border-border/50">
                 {approachSteps.map((step, idx) => {
-                  const cleanedText = step.replace(/^Step\s+\d+:\s*/i, '');
+                  const cleanedText = typeof step === 'string' ? step.replace(/^Step\s+\d+:\s*/i, '') : (step?.step || step?.text || JSON.stringify(step));
                   return (
                     <div key={idx} className="flex items-start gap-2.5 text-xs">
                       <span className="w-5 h-5 rounded-md bg-surface-raised border border-border text-foreground-subtle text-[11px] font-mono font-semibold flex items-center justify-center shrink-0 mt-0.5">

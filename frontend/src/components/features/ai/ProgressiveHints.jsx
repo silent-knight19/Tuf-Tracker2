@@ -59,7 +59,7 @@ export default function ProgressiveHints({ hints = [], className = '' }) {
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
             </div>
             <p className="text-xs text-foreground-muted leading-relaxed">
-              {hint}
+              {typeof hint === 'string' ? hint : (hint?.hint || hint?.text || JSON.stringify(hint))}
             </p>
           </div>
         ))}

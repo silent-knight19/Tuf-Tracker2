@@ -91,9 +91,9 @@ export default function StudyGuideView({
     brute: notes.bruteForce
   };
   const activeSolution = solutions?.[activeTier] || solutions?.optimal || solutions?.better || solutions?.brute;
-  const pitfalls = notes.pitfallsAndTraps || [];
+  const pitfalls = notes.pitfallsAndTraps || notes.pitfallsAndAntiPatterns || notes.interviewPlaybook?.pitfallsAndTraps || notes.interviewPlaybook?.pitfallsAndAntiPatterns || [];
   const interviewPlaybook = notes.interviewPlaybook || null;
-  const isomorphicLadder = notes.isomorphicLadder || notes.relatedProblems || [];
+  const isomorphicLadder = notes.isomorphicLadder || notes.relatedProblems || notes.interviewPlaybook?.canonicalProblems || notes.interviewPlaybook?.solvedProblems || [];
 
   // Legacy fallback fields
   const keyInsights = notes.keyInsights || [];
@@ -215,14 +215,17 @@ export default function StudyGuideView({
             Key Insights
           </h3>
           <ul className="space-y-2">
-            {keyInsights.map((insight, idx) => (
-              <li key={idx} className="text-xs sm:text-sm text-foreground-muted flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-md bg-primary/10 border border-primary/20 text-primary text-xs font-mono font-bold flex items-center justify-center shrink-0 mt-0.5">
-                  {idx + 1}
-                </span>
-                <span className="leading-relaxed">{insight}</span>
-              </li>
-            ))}
+            {keyInsights.map((insight, idx) => {
+              const text = typeof insight === 'string' ? insight : (insight?.insight || insight?.point || insight?.text || JSON.stringify(insight));
+              return (
+                <li key={idx} className="text-xs sm:text-sm text-foreground-muted flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-md bg-primary/10 border border-primary/20 text-primary text-xs font-mono font-bold flex items-center justify-center shrink-0 mt-0.5">
+                    {idx + 1}
+                  </span>
+                  <span className="leading-relaxed">{text}</span>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
@@ -356,12 +359,15 @@ export default function StudyGuideView({
                   <span className="text-[10px] font-bold uppercase tracking-wider text-foreground-subtle block mb-1">
                     Algorithmic Derivation
                   </span>
-                  {activeSolution.derivation.map((step, idx) => (
-                    <div key={idx} className="flex items-start gap-2">
-                      <span className="text-primary font-mono font-bold">{idx + 1}.</span>
-                      <span className="leading-relaxed">{step}</span>
-                    </div>
-                  ))}
+                  {activeSolution.derivation.map((step, idx) => {
+                    const text = typeof step === 'string' ? step : (step?.step || step?.text || JSON.stringify(step));
+                    return (
+                      <div key={idx} className="flex items-start gap-2">
+                        <span className="text-primary font-mono font-bold">{idx + 1}.</span>
+                        <span className="leading-relaxed">{text}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -370,12 +376,15 @@ export default function StudyGuideView({
                 <div className="text-xs text-foreground-muted bg-surface-subtle p-3 rounded-lg border border-border leading-relaxed">
                   {Array.isArray(activeSolution.explanation) ? (
                     <div className="space-y-1">
-                      {activeSolution.explanation.map((s, i) => (
-                        <div key={i} className="flex gap-2">
-                          <span className="text-primary font-mono font-bold">{i + 1}.</span>
-                          <span>{s}</span>
-                        </div>
-                      ))}
+                      {activeSolution.explanation.map((s, i) => {
+                        const text = typeof s === 'string' ? s : (s?.text || s?.explanation || JSON.stringify(s));
+                        return (
+                          <div key={i} className="flex gap-2">
+                            <span className="text-primary font-mono font-bold">{i + 1}.</span>
+                            <span>{text}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     activeSolution.explanation
@@ -442,35 +451,42 @@ export default function StudyGuideView({
           </div>
 
           <div className="space-y-3">
-            {pitfalls.map((item, idx) => (
-              <div
-                key={idx}
-                className="p-3.5 rounded-xl bg-surface-raised border border-border hover:border-rose-500/25 transition-colors space-y-2 text-xs"
-              >
-                <div className="flex items-start gap-2">
-                  <span className="px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold text-[10px] uppercase shrink-0 mt-0.5">
-                    The Trap
-                  </span>
-                  <span className="font-semibold text-foreground leading-relaxed">
-                    {item.trap}
-                  </span>
+            {pitfalls.map((item, idx) => {
+              const isObj = typeof item === 'object' && item !== null;
+              const trapText = isObj ? (item.trap || item.pitfall || item.mistake || item.title || '') : String(item || '');
+              const failingCase = isObj ? (item.failingCase || item.consequence || item.whyItFails || item.why || '') : '';
+              const fixText = isObj ? (item.fix || item.correctAlternative || item.solution || '') : '';
+
+              return (
+                <div
+                  key={idx}
+                  className="p-3.5 rounded-xl bg-surface-raised border border-border hover:border-rose-500/25 transition-colors space-y-2 text-xs"
+                >
+                  <div className="flex items-start gap-2">
+                    <span className="px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold text-[10px] uppercase shrink-0 mt-0.5">
+                      The Trap
+                    </span>
+                    <span className="font-semibold text-foreground leading-relaxed">
+                      {trapText}
+                    </span>
+                  </div>
+
+                  {failingCase && (
+                    <div className="flex items-center gap-2 text-foreground-muted pl-2 border-l-2 border-border font-mono text-[11px]">
+                      <span className="text-foreground-subtle text-[10px] uppercase tracking-wider shrink-0">Fails on:</span>
+                      <span className="text-rose-300 truncate">{failingCase}</span>
+                    </div>
+                  )}
+
+                  {fixText && (
+                    <div className="flex items-start gap-2 text-emerald-400 pl-2 border-l-2 border-emerald-500/30">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 shrink-0 mt-0.5">Safe Fix:</span>
+                      <span className="text-foreground-muted leading-relaxed">{fixText}</span>
+                    </div>
+                  )}
                 </div>
-
-                {item.failingCase && (
-                  <div className="flex items-center gap-2 text-foreground-muted pl-2 border-l-2 border-border font-mono text-[11px]">
-                    <span className="text-foreground-subtle text-[10px] uppercase tracking-wider shrink-0">Fails on:</span>
-                    <span className="text-rose-300 truncate">{item.failingCase}</span>
-                  </div>
-                )}
-
-                {item.fix && (
-                  <div className="flex items-start gap-2 text-emerald-400 pl-2 border-l-2 border-emerald-500/30">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 shrink-0 mt-0.5">Safe Fix:</span>
-                    <span className="text-foreground-muted leading-relaxed">{item.fix}</span>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -483,12 +499,46 @@ export default function StudyGuideView({
             Common Mistakes
           </h3>
           <ul className="space-y-2">
-            {commonMistakes.map((mistake, idx) => (
-              <li key={idx} className="text-xs sm:text-sm text-foreground-muted flex items-start gap-2">
-                <span className="text-rose-400 mt-1 shrink-0">•</span>
-                <span className="leading-relaxed">{mistake}</span>
-              </li>
-            ))}
+            {commonMistakes.map((mistake, idx) => {
+              const isObj = typeof mistake === 'object' && mistake !== null;
+              const mistakeText = isObj ? (mistake.mistake || mistake.pitfall || mistake.trap || mistake.title || '') : String(mistake || '');
+              const whyText = isObj ? (mistake.why || mistake.consequence || mistake.whyItFails || '') : '';
+              const fixText = isObj ? (mistake.fix || mistake.solution || mistake.correctAlternative || '') : '';
+
+              if (isObj && (whyText || fixText)) {
+                return (
+                  <li key={idx} className="text-xs sm:text-sm text-foreground-muted flex items-start gap-2.5 p-3 rounded-lg bg-surface-raised border border-border">
+                    <span className="text-rose-400 mt-0.5 shrink-0 font-bold">•</span>
+                    <div className="space-y-1.5 flex-1">
+                      {mistakeText && (
+                        <div className="leading-relaxed font-semibold text-rose-300">
+                          {mistakeText}
+                        </div>
+                      )}
+                      {whyText && (
+                        <div className="text-[11px] text-foreground-muted">
+                          <span className="font-semibold text-foreground-subtle">Why it fails: </span>
+                          {whyText}
+                        </div>
+                      )}
+                      {fixText && (
+                        <div className="text-[11px] text-emerald-400">
+                          <span className="font-semibold text-emerald-500">Fix: </span>
+                          {fixText}
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                );
+              }
+
+              return (
+                <li key={idx} className="text-xs sm:text-sm text-foreground-muted flex items-start gap-2">
+                  <span className="text-rose-400 mt-1 shrink-0">•</span>
+                  <span className="leading-relaxed">{mistakeText}</span>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
@@ -526,12 +576,15 @@ export default function StudyGuideView({
                     Minute 0: Verbalize Out Loud
                   </span>
                   <ul className="space-y-1.5">
-                    {interviewPlaybook.minute0Clarifications.map((q, idx) => (
-                      <li key={idx} className="text-xs text-foreground-muted flex items-start gap-2">
-                        <span className="text-amber-400 mt-0.5">•</span>
-                        <span className="leading-relaxed">{q}</span>
-                      </li>
-                    ))}
+                    {interviewPlaybook.minute0Clarifications.map((q, idx) => {
+                      const text = typeof q === 'string' ? q : (q?.question || q?.text || JSON.stringify(q));
+                      return (
+                        <li key={idx} className="text-xs text-foreground-muted flex items-start gap-2">
+                          <span className="text-amber-400 mt-0.5">•</span>
+                          <span className="leading-relaxed">{text}</span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}
@@ -544,12 +597,15 @@ export default function StudyGuideView({
                     Dry-Run Invariant Checklist
                   </span>
                   <ul className="space-y-1.5">
-                    {interviewPlaybook.edgeCasesToDryRun.map((c, idx) => (
-                      <li key={idx} className="text-xs text-foreground-muted flex items-start gap-2">
-                        <span className="text-emerald-400 mt-0.5">✓</span>
-                        <span className="leading-relaxed">{c}</span>
-                      </li>
-                    ))}
+                    {interviewPlaybook.edgeCasesToDryRun.map((c, idx) => {
+                      const text = typeof c === 'string' ? c : (c?.case || c?.edgeCase || c?.text || JSON.stringify(c));
+                      return (
+                        <li key={idx} className="text-xs text-foreground-muted flex items-start gap-2">
+                          <span className="text-emerald-400 mt-0.5">✓</span>
+                          <span className="leading-relaxed">{text}</span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               )}
@@ -566,11 +622,14 @@ export default function StudyGuideView({
             Practice Recommendations
           </h3>
           <ul className="space-y-2">
-            {practiceTips.map((tip, idx) => (
-              <li key={idx} className="text-xs sm:text-sm text-foreground-muted flex items-start gap-2 pl-2 border-l-2 border-emerald-500/30">
-                <span className="leading-relaxed">{tip}</span>
-              </li>
-            ))}
+            {practiceTips.map((tip, idx) => {
+              const text = typeof tip === 'string' ? tip : (tip?.tip || tip?.recommendation || tip?.text || JSON.stringify(tip));
+              return (
+                <li key={idx} className="text-xs sm:text-sm text-foreground-muted flex items-start gap-2 pl-2 border-l-2 border-emerald-500/30">
+                  <span className="leading-relaxed">{text}</span>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}

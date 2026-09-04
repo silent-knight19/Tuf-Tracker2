@@ -64,7 +64,20 @@ export default function SolutionTiers({ solutions, className = '' }) {
       {/* Explanation */}
       {currentSolution?.explanation && (
         <div className="rounded-xl border border-border bg-surface p-4 text-xs text-foreground-muted leading-relaxed">
-          {currentSolution.explanation}
+          {Array.isArray(currentSolution.explanation) ? (
+            <div className="space-y-1">
+              {currentSolution.explanation.map((s, i) => (
+                <div key={i} className="flex gap-2">
+                  <span className="text-primary font-mono font-bold">{i + 1}.</span>
+                  <span>{typeof s === 'string' ? s : JSON.stringify(s)}</span>
+                </div>
+              ))}
+            </div>
+          ) : typeof currentSolution.explanation === 'string' ? (
+            currentSolution.explanation
+          ) : (
+            JSON.stringify(currentSolution.explanation)
+          )}
         </div>
       )}
 

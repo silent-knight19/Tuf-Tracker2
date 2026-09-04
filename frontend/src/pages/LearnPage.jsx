@@ -1013,7 +1013,7 @@ function LearnPage() {
                       {advanced.antiPatterns.map((ap, apIdx) => (
                         <li key={apIdx} className="flex items-start gap-2">
                           <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
-                          <span>{ap}</span>
+                          <span>{typeof ap === 'string' ? ap : (ap?.pattern || ap?.text || JSON.stringify(ap))}</span>
                         </li>
                       ))}
                     </ul>
@@ -1032,7 +1032,7 @@ function LearnPage() {
                   {advanced.subtleInvariants.map((inv, iIdx) => (
                     <li key={iIdx} className="flex items-start gap-2">
                       <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                      <span>{inv}</span>
+                      <span>{typeof inv === 'string' ? inv : (inv?.invariant || inv?.text || JSON.stringify(inv))}</span>
                     </li>
                   ))}
                 </ul>
@@ -1064,7 +1064,7 @@ function LearnPage() {
                   {playbook.triggerSignals.map((sig, sIdx) => (
                     <div key={sIdx} className="p-3 rounded-lg bg-surface-raised border border-border flex items-start gap-2 text-xs text-foreground-muted">
                       <ChevronRight className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                      <span>{sig}</span>
+                      <span>{typeof sig === 'string' ? sig : (sig?.signal || sig?.text || JSON.stringify(sig))}</span>
                     </div>
                   ))}
                 </div>
@@ -1078,24 +1078,31 @@ function LearnPage() {
                   <AlertCircle className="w-4 h-4" /> Pitfalls, Bugs & Concrete Defenses
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {(playbook.pitfallsAndAntiPatterns || playbook.pitfallsAndTraps || []).map((p, pIdx) => (
-                    <div key={pIdx} className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/20 space-y-2">
-                      <h4 className="font-bold text-rose-400 text-xs flex items-center gap-1.5">
-                        <AlertCircle className="w-3.5 h-3.5" />
-                        {p.pitfall}
-                      </h4>
-                      {p.consequence && (
-                        <p className="text-[11px] text-gray-400">
-                          <strong className="text-gray-300">Consequence:</strong> {p.consequence}
-                        </p>
-                      )}
-                      {p.fix && (
-                        <p className="text-[11px] text-emerald-300">
-                          <strong className="text-emerald-400">Fix / Defense:</strong> {p.fix}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                  {(playbook.pitfallsAndAntiPatterns || playbook.pitfallsAndTraps || []).map((p, pIdx) => {
+                    const isObj = typeof p === 'object' && p !== null;
+                    const pitfallText = isObj ? (p.pitfall || p.mistake || p.trap || '') : String(p || '');
+                    const consequenceText = isObj ? (p.consequence || p.why || '') : '';
+                    const fixText = isObj ? (p.fix || p.correctAlternative || '') : '';
+
+                    return (
+                      <div key={pIdx} className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/20 space-y-2">
+                        <h4 className="font-bold text-rose-400 text-xs flex items-center gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          {pitfallText}
+                        </h4>
+                        {consequenceText && (
+                          <p className="text-[11px] text-gray-400">
+                            <strong className="text-gray-300">Consequence:</strong> {consequenceText}
+                          </p>
+                        )}
+                        {fixText && (
+                          <p className="text-[11px] text-emerald-300">
+                            <strong className="text-emerald-400">Fix / Defense:</strong> {fixText}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

@@ -1862,11 +1862,7 @@ CRITICAL RULES:
           },
 
           // Legacy backwards-compatibility mappings
-          commonMistakes: Array.isArray(playbook.pitfallsAndAntiPatterns) ? playbook.pitfallsAndAntiPatterns.map(p => ({
-            mistake: stripMarkdown(p.pitfall || ''),
-            why: stripMarkdown(p.consequence || ''),
-            fix: stripMarkdown(p.fix || '')
-          })) : [],
+          commonMistakes: Array.isArray(playbook.pitfallsAndAntiPatterns) ? playbook.pitfallsAndAntiPatterns.map(p => stripMarkdown(p.pitfall || p.mistake || '')) : [],
           proTips: stripArr(playbook.triggerSignals).map(s => ({ tip: 'Interview Signal', content: s }))
         };
       }
@@ -1939,11 +1935,7 @@ CRITICAL RULES:
           },
 
           // Legacy backwards-compatibility mappings
-          commonMistakes: Array.isArray(playbook.pitfallsAndTraps) ? playbook.pitfallsAndTraps.map(p => ({
-            mistake: stripMarkdown(p.pitfall || ''),
-            why: stripMarkdown(p.consequence || ''),
-            fix: stripMarkdown(p.fix || '')
-          })) : [],
+          commonMistakes: Array.isArray(playbook.pitfallsAndTraps) ? playbook.pitfallsAndTraps.map(p => stripMarkdown(p.pitfall || p.mistake || '')) : [],
           proTips: stripArr(playbook.triggerSignals).map(s => ({ tip: 'Algorithm Signal', content: s }))
         };
       }
